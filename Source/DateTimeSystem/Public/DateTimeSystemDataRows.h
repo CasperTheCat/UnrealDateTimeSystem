@@ -11,39 +11,98 @@
 
 
 USTRUCT(BlueprintType)
-struct FDateTimeSystemClimateRow : public FTableRowBase
+struct FDateTimeSystemClimateOverrideRow : public FTableRowBase
 {
 	GENERATED_USTRUCT_BODY()
 
 public:
 
-	FDateTimeSystemClimateRow()
+	FDateTimeSystemClimateOverrideRow()
 	{
 	}
 
-	// When Game's DayIndex is equal. This overrides
-	// Depending on GameState settings, it may also *set* the date to this
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-		int DayIndex;
+	int Day;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-		int Day;
+	int Month;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-		int Month;
+	int Year;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-		int Year;
+	float HighTemp;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-		float HighTemp;
+	float LowTemp;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-		float LowTemp;
+	float RelativeHumidity;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-		FGameplayTagContainer CallbackAttributes;
+	float DewPoint;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FGameplayTagContainer MiscData;
 };
+
+FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemClimateOverrideRow& Row)
+{
+	auto DHash = GetTypeHash(Row.Day);
+	auto MHash = GetTypeHash(Row.Month);
+	auto YHash = GetTypeHash(Row.Year);
+
+	auto Hash = HashCombine(YHash, MHash);
+	return HashCombine(Hash, DHash);
+}
+
+
+
+
+USTRUCT(BlueprintType)
+struct FDateTimeSystemClimateMonthlyRow : public FTableRowBase
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+
+	FDateTimeSystemClimateMonthlyRow()
+	{
+	}
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int Day;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int Month;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int Year;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float MonthlyHighTemp;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float MonthlyLowTemp;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float RelativeHumidity;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float DewPoint;
+};
+
+FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemClimateMonthlyRow& Row)
+{
+	auto DHash = GetTypeHash(Row.Day);
+	auto MHash = GetTypeHash(Row.Month);
+	auto YHash = GetTypeHash(Row.Year);
+
+	auto Hash = HashCombine(YHash, MHash);
+	return HashCombine(Hash, DHash);
+}
+
+
 
 
 
@@ -85,12 +144,16 @@ public:
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemDateOverrideRow& Row)
 {
-	return Row.DayIndex;
-
-	auto DIHash = GetTypeHash(Row.DayIndex);
 	auto DHash = GetTypeHash(Row.Day);
 	auto MHash = GetTypeHash(Row.Month);
 	auto YHash = GetTypeHash(Row.Year);
+
+	auto Hash = HashCombine(YHash, MHash);
+	return HashCombine(Hash, DHash);
+
+	return Row.DayIndex;
+
+	auto DIHash = GetTypeHash(Row.DayIndex);
 
 	auto DateHash = HashCombine(HashCombine(DIHash, DHash), HashCombine(MHash, YHash));
 
@@ -103,6 +166,10 @@ FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemDateOverrideRow& Row)
 
 	return DateHash;//HashCombine(DateHash, TempHash);
 }
+
+
+
+
 
 USTRUCT(BlueprintType)
 struct FDateTimeSystemYearbookRow : public FTableRowBase
@@ -130,7 +197,6 @@ public:
 
 	//UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	//float MonthlyLowTemp;
-
 };
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemYearbookRow& Row)

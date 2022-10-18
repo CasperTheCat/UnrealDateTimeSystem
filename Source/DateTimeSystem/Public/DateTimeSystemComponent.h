@@ -180,24 +180,10 @@ private:
     // Set when Yearbook is populated
     int LengthOfCalendarYearInDays;
 
-    // Stored
-    float LastHighTemp;
-    float LastLowTemp;
-
-    // Cached Values
-    FDateTimeSystemPackedCacheFloat CachedHighTemp;
-    FDateTimeSystemPackedCacheFloat CachedLowTemp;
-    FDateTimeSystemPackedCacheFloat CachedNextLowTemp;
-
-    FDateTimeSystemPackedCacheFloat CachedAnalyticalMonthlyHighTemp;
-    FDateTimeSystemPackedCacheFloat CachedAnalyticalMonthlyLowTemp;
-
     FDateTimeSystemPackedCacheFloat CachedSolarFractionalYear;
     FDateTimeSystemPackedCacheFloat CachedSolarDeclinationAngle;
     FDateTimeSystemPackedCacheFloat CachedSolarTimeCorrection;
-
     FDateTimeSystemPackedCacheInt CachedDoesLeap;
-
     TMap<uint32, FVector> CachedSunVectors;
 
 public:

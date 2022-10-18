@@ -24,18 +24,18 @@ private:
     float TicksPerSecond;
 
     UPROPERTY(EditDefaultsOnly)
-    UDataTable* YearBookTable;
+    UDataTable* ClimateTable;
 
     UPROPERTY(EditDefaultsOnly)
-    UDataTable* DateOverridesTable;
+    UDataTable* ClimateOverridesTable;
 
-    // Create YearBook and DateOverrides + Array to force lifetimes
-    TArray<FDateTimeSystemDateOverrideRow*> DOTemps;
-    TMap< uint32, FDateTimeSystemDateOverrideRow*> DateOverrides;
-    TArray<FDateTimeSystemYearbookRow*> YearBook;
+    // Create ClimateBook and DateOverrides + Array to force lifetimes
+    TArray<FDateTimeSystemClimateOverrideRow*> DOTemps;
+    TMap< uint32, FDateTimeSystemClimateOverrideRow*> DateOverrides;
+    TArray<FDateTimeSystemClimateMonthlyRow*> ClimateBook;
 
     UPROPERTY()
-    UDateTimeSystemComponent *DummyParentComponent;
+    UDateTimeSystemComponent *DateTimeSystem;
 
     // Stored
     float LastHighTemp;
@@ -81,6 +81,8 @@ private:
     void UpdateCurrentTemperature(float DeltaTime);
 
     void InternalDateChanged(FDateTimeSystemStruct& DateStruct);
+
+    UDateTimeSystemComponent* FindComponent();
 
 public:
     UClimateComponent();

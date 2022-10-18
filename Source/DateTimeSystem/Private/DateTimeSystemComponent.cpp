@@ -248,25 +248,26 @@ float UDateTimeSystemComponent::GetCurrentTemperature(FVector Location, float Cu
 	// We're disabled...
 	checkNoEntry();
 
+	return 0;
 	// Okay. Our Current Temp is going to be dumb.
 	// Which low are we using? The first or last?
 
-	FDateTimeSystemStruct LocalDateStruct{};
-	GetTodaysDateTZ(LocalDateStruct, TimezoneInfo);
+	//FDateTimeSystemStruct LocalDateStruct{};
+	//GetTodaysDateTZ(LocalDateStruct, TimezoneInfo);
 
-	auto FracDay = GetFractionalDay(LocalDateStruct);
+	//auto FracDay = GetFractionalDay(LocalDateStruct);
 
-	auto HighTemp = GetDailyHigh(LocalDateStruct);
-	auto LowTemp = CachedLowTemp.Value;
-	if (FracDay > 0.5)
-	{
-		// Need today's low, rather than the prior
-		LowTemp = GetDailyLow(LocalDateStruct);
-	}
+	//auto HighTemp = GetDailyHigh(LocalDateStruct);
+	//auto LowTemp = CachedLowTemp.Value;
+	//if (FracDay > 0.5)
+	//{
+	//	// Need today's low, rather than the prior
+	//	LowTemp = GetDailyLow(LocalDateStruct);
+	//}
 
-	auto Output = ModulateTemperature(Location, CurrentTemperature, SecondsSinceUpdate, LowTemp, HighTemp, TimezoneInfo);
-	
-	return Output;
+	//auto Output = ModulateTemperature(Location, CurrentTemperature, SecondsSinceUpdate, LowTemp, HighTemp, TimezoneInfo);
+	//
+	//return Output;
 }
 
 float UDateTimeSystemComponent::GetFractionalDay(FDateTimeSystemStruct& DateStruct)
@@ -550,11 +551,7 @@ void UDateTimeSystemComponent::Invalidate(EDateTimeSystemInvalidationTypes Type 
 	// Not cleared on frame-to-frame invalidation
 	if (Type >= EDateTimeSystemInvalidationTypes::Day)
 	{
-		CachedHighTemp.Valid = false;
-		CachedLowTemp.Valid = false;
-		CachedNextLowTemp.Valid = false;
-		CachedAnalyticalMonthlyHighTemp.Valid = false;
-		CachedAnalyticalMonthlyLowTemp.Valid = false;
+
 	}
 
 	// Clear sun vector helpers
@@ -735,13 +732,13 @@ bool UDateTimeSystemComponent::InternalDoesLeap(int Year)
 	// Check Cache
 	if (CachedDoesLeap.Valid)
 	{
-		return CachedDoesLeap.Value;
+		return bool(CachedDoesLeap.Value);
 	}
 
 	CachedDoesLeap.Value = DoesYearLeap(Year);
 	CachedDoesLeap.Valid = true;
 
-	return CachedDoesLeap.Value;
+	return bool(CachedDoesLeap.Value);
 }
 
 void UDateTimeSystemComponent::InternalTick(float DeltaTime)
@@ -759,12 +756,6 @@ void UDateTimeSystemComponent::InternalTick(float DeltaTime)
 		//CachedAnalyticalMonthlyHighTemp.Valid = false;
 		//CachedAnalyticalMonthlyLowTemp.Valid = false;
 		Invalidate(EDateTimeSystemInvalidationTypes::Day);
-
-		// Handle rolling the starting temp of day n+1 to the ending of n
-		CachedLowTemp.Value = CachedNextLowTemp.Value;
-		CachedLowTemp.Valid = true;
-		LastHighTemp = CachedHighTemp.Value;
-		LastLowTemp = CachedLowTemp.Value;
 
 		// Check Override
 		auto Row = GetDateOverride(&InternalDate);
@@ -784,35 +775,10 @@ void UDateTimeSystemComponent::InternalTick(float DeltaTime)
 				DateOverrideCallback.Broadcast(LV, asPtr->CallbackAttributes);
 			}
 		}
-		else
-		{
-			// Go ahead and compute the new values
-			CachedAnalyticalMonthlyHighTemp.Value = GetAnalyticalHighForDate(InternalDate);
-			CachedAnalyticalMonthlyHighTemp.Valid = true;
-			CachedAnalyticalMonthlyLowTemp.Value = GetAnalyticalLowForDate(InternalDate);
-			CachedAnalyticalMonthlyLowTemp.Valid = true;
-
-			auto DummyTagContainer = FGameplayTagContainer();
-
-			CachedNextLowTemp.Value = DailyLowModulation(InternalDate, DummyTagContainer, CachedAnalyticalMonthlyLowTemp.Value, CachedLowTemp.Value, CachedHighTemp.Value);
-			CachedNextLowTemp.Valid = true;
-			CachedHighTemp.Value = DailyHighModulation(InternalDate, DummyTagContainer, CachedAnalyticalMonthlyHighTemp.Value, CachedLowTemp.Value, CachedHighTemp.Value);
-			CachedHighTemp.Valid = true;
-		}
 
 		// Broadcast that the date has changed
 		DateChangeCallback.Broadcast(InternalDate);
 	}
-	else
-	{
-		// Re-validate Daily Caches. These only update daily, and no date change has occured
-		CachedAnalyticalMonthlyHighTemp.Valid = true;
-		CachedAnalyticalMonthlyLowTemp.Valid = true;
-		CachedNextLowTemp.Valid = true;
-		CachedHighTemp.Valid = true;
-		CachedLowTemp.Valid = true;
-	}
-
 }
 
 void UDateTimeSystemComponent::InternalBegin()
@@ -847,10 +813,6 @@ void UDateTimeSystemComponent::InternalBegin()
 			}
 		}
 	}
-
-	// Set Prevalue
-	CachedLowTemp.Value = GetDailyLow(InternalDate);
-	CachedLowTemp.Valid = true;
 }
 
 float UDateTimeSystemComponent::SolarTimeCorrection(float YearInRadians)

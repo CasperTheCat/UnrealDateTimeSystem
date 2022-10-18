@@ -1,6 +1,8 @@
 // [TEMPLATE_COPYRIGHT]
 
 #include "ClimateComponent.h"
+#include "Interfaces.h"
+#include "GameFramework/GameState.h"
 
 void UClimateComponent::ClimateSetup()
 {
@@ -31,18 +33,18 @@ FDateTimeSystemStruct UClimateComponent::GetLocalTime()
 
 float UClimateComponent::GetMonthlyHighTemperature(int MonthIndex)
 {
-	if (MonthIndex < YearBook.Num())
+	if (MonthIndex < ClimateBook.Num())
 	{
-		return YearBook[MonthIndex]->MonthlyHighTemp;
+		return ClimateBook[MonthIndex]->MonthlyHighTemp;
 	}
 	return 0.0f;
 }
 
 float UClimateComponent::GetMonthlyLowTemperature(int MonthIndex)
 {
-	if (MonthIndex < YearBook.Num())
+	if (MonthIndex < ClimateBook.Num())
 	{
-		return YearBook[MonthIndex]->MonthlyLowTemp;
+		return ClimateBook[MonthIndex]->MonthlyLowTemp;
 	}
 	return 0.0f;
 }
@@ -60,10 +62,10 @@ float UClimateComponent::DailyHighModulation_Implementation(UPARAM(ref)FDateTime
 float UClimateComponent::ModulateTemperature_Implementation(float Temperature, float SecondsSinceUpdate, float LowTemperature, float HighTemperature)
 {
 	// Get the sun vector. We want to suppress the temperature when it's below the horizon
-	if(DummyParentComponent)
+	if(DateTimeSystem)
 	{
 
-		auto SunVector = DummyParentComponent->GetSunVector(ReferenceLatitude, ReferenceLongitude);
+		auto SunVector = DateTimeSystem->GetSunVector(ReferenceLatitude, ReferenceLongitude);
 
 		if (FVector::DotProduct(SunVector, FVector::UpVector) > 0)
 		{
@@ -76,7 +78,7 @@ float UClimateComponent::ModulateTemperature_Implementation(float Temperature, f
 			return FMath::FInterpTo(Temperature, LowTemperature, SecondsSinceUpdate, 0.04);
 		}
 
-		//auto FracDay = DummyParentComponent->GetFractionalDay(LocalTime);
+		//auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
 		//auto Multi = FMath::Sin(PI * FracDay);
 		//return FMath::Lerp(LowTemperature, HighTemperature, Multi);
 	}
@@ -91,9 +93,9 @@ void UClimateComponent::UpdateCurrentTemperature(float DeltaTime)
 {
 	// Okay. Our Current Temp is going to be dumb.
 	// Which low are we using? The first or last?
-	if(DummyParentComponent)
+	if(DateTimeSystem)
 	{
-		auto FracDay = DummyParentComponent->GetFractionalDay(LocalTime);
+		auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
 
 		auto HighTemp = GetDailyHigh(LocalTime);
 		auto LowTemp = CachedLowTemp.Value;
@@ -110,19 +112,81 @@ void UClimateComponent::UpdateCurrentTemperature(float DeltaTime)
 void UClimateComponent::InternalDateChanged(FDateTimeSystemStruct& DateStruct)
 {
 	// Handle what was once done on InternalTick
-	if (DummyParentComponent)
-	{
-		// Temperatures
-		CachedNextLowTemp.Value = DailyLowModulation(DateStruct, asPtr->CallbackAttributes, asPtr->LowTemp, CachedLowTemp.Value, CachedHighTemp.Value);
-		CachedHighTemp.Value = DailyHighModulation(DateStruct, asPtr->CallbackAttributes, asPtr->HighTemp, CachedLowTemp.Value, CachedHighTemp.Value);
+	Invalidate(EDateTimeSystemInvalidationTypes::Day);
 
+	// Handle rolling the starting temp of day n+1 to the ending of n
+	CachedLowTemp.Value = CachedNextLowTemp.Value;
+	CachedLowTemp.Valid = true;
+	LastHighTemp = CachedHighTemp.Value;
+	LastLowTemp = CachedLowTemp.Value;
+
+	auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
+	if (Row)
+	{
+		auto asPtr = *Row;
+		if (asPtr)
+		{
+			// Temperatures
+			CachedNextLowTemp.Value = DailyLowModulation(DateStruct, asPtr->MiscData, asPtr->LowTemp, CachedLowTemp.Value, CachedHighTemp.Value);
+			CachedHighTemp.Value = DailyHighModulation(DateStruct, asPtr->MiscData, asPtr->HighTemp, CachedLowTemp.Value, CachedHighTemp.Value);
+			CachedNextLowTemp.Valid = true;
+			CachedHighTemp.Valid = true;
+		}
+	}
+	else
+	{
+		// Go ahead and compute the new values
+		CachedAnalyticalMonthlyHighTemp.Value = GetAnalyticalHighForDate(DateStruct);
+		CachedAnalyticalMonthlyHighTemp.Valid = true;
+		CachedAnalyticalMonthlyLowTemp.Value = GetAnalyticalLowForDate(DateStruct);
+		CachedAnalyticalMonthlyLowTemp.Valid = true;
+
+		auto DummyTagContainer = FGameplayTagContainer();
+
+		CachedNextLowTemp.Value = DailyLowModulation(DateStruct, DummyTagContainer, CachedAnalyticalMonthlyLowTemp.Value, CachedLowTemp.Value, CachedHighTemp.Value);
 		CachedNextLowTemp.Valid = true;
+		CachedHighTemp.Value = DailyHighModulation(DateStruct, DummyTagContainer, CachedAnalyticalMonthlyHighTemp.Value, CachedLowTemp.Value, CachedHighTemp.Value);
 		CachedHighTemp.Valid = true;
 	}
+
+
+	
 
 	// Date has changed
 	// Call the BP function
 	DateChanged(DateStruct);
+}
+
+UDateTimeSystemComponent* UClimateComponent::FindComponent()
+{
+	auto World = GetWorld();
+	if (World)
+	{
+		auto GameInst = World->GetGameInstance();
+		if (GameInst)
+		{
+			// Try to get from here
+			auto AsType = Cast<IDateTimeSystemInterface>(GameInst);
+			if (AsType)
+			{
+				// 
+				return AsType->GetDateTimeSystem();
+			}
+		}
+
+		// If we're here, Instance failed to get the time system.
+		auto GameState = World->GetGameState();
+		if (GameState)
+		{
+			auto AsType = Cast<IDateTimeSystemInterface>(GameState);
+			if (AsType)
+			{
+				return AsType->GetDateTimeSystem();
+			}
+		}
+	}
+
+	return nullptr;
 }
 
 float UClimateComponent::GetCurrentTemperature()
@@ -132,10 +196,12 @@ float UClimateComponent::GetCurrentTemperature()
 
 void UClimateComponent::InternalTick(float DeltaTime)
 {
-	if(DummyParentComponent)
+	Invalidate(EDateTimeSystemInvalidationTypes::Frame);
+
+	if(DateTimeSystem)
 	{
 		// Update Local Time. We need it for a few things
-		DummyParentComponent->GetTodaysDateTZ(LocalTime, TimezoneInfo);
+		DateTimeSystem->GetTodaysDateTZ(LocalTime, TimezoneInfo);
 
 		UpdateCurrentTemperature(DeltaTime);
 	}
@@ -143,9 +209,35 @@ void UClimateComponent::InternalTick(float DeltaTime)
 
 void UClimateComponent::InternalBegin()
 {
-	if (DummyParentComponent)
+	// Let's go
+	if (ClimateTable)
 	{
-		DummyParentComponent->DateChangeCallback.AddDynamic(this, DateChanged);
+		ClimateTable->GetAllRows<FDateTimeSystemClimateMonthlyRow>(FString("Climate Rows"), ClimateBook);
+	}
+
+	if (ClimateOverridesTable)
+	{
+		ClimateOverridesTable->GetAllRows<FDateTimeSystemClimateOverrideRow>(FString("Climate Rows"), DOTemps);
+
+		for (auto val : DOTemps)
+		{
+			DateOverrides.Add(GetTypeHash(val), val);
+		}
+	}
+
+	// Try to Find DateTime
+	DateTimeSystem = FindComponent();
+
+	if (DateTimeSystem)
+	{
+		DateTimeSystem->DateChangeCallback.AddDynamic(this, &UClimateComponent::DateChanged);
+
+		FDateTimeSystemStruct Today;
+		DateTimeSystem->GetTodaysDateTZ(Today, TimezoneInfo);
+
+		// Set Prevalue
+		CachedLowTemp.Value = GetDailyLow(Today);
+		CachedLowTemp.Valid = true;
 	}
 }
 
@@ -163,18 +255,18 @@ float UClimateComponent::GetAnalyticalHighForDate(FDateTimeSystemStruct& DateStr
 	else
 	{
 		// We need 
-		if (DateStruct.Month < YearBook.Num() && DummyParentComponent)
+		if (DateStruct.Month < ClimateBook.Num() && DateTimeSystem)
 		{
 			// Which do we need. We need the fractional month value
-			auto MonthFrac = DummyParentComponent->GetFractionalMonth(DateStruct);
-			auto CurrentMonthHigh = YearBook[DateStruct.Month]->MonthlyHighTemp;
+			auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
+			auto CurrentMonthHigh = ClimateBook[DateStruct.Month]->MonthlyHighTemp;
 			auto BlendFrac = FMath::Abs(MonthFrac - 0.5);
 
 			if (MonthFrac > 0.5)
 			{
 				// Future Month
-				auto OtherIndex = (DateStruct.Month + 1) % YearBook.Num();
-				auto OtherValue = YearBook[OtherIndex]->MonthlyHighTemp;
+				auto OtherIndex = (DateStruct.Month + 1) % ClimateBook.Num();
+				auto OtherValue = ClimateBook[OtherIndex]->MonthlyHighTemp;
 
 				// High is lerp frac
 				CachedAnalyticalMonthlyHighTemp.Value = FMath::Lerp(CurrentMonthHigh, OtherValue, BlendFrac);
@@ -182,8 +274,8 @@ float UClimateComponent::GetAnalyticalHighForDate(FDateTimeSystemStruct& DateStr
 			else
 			{
 				// Future Month
-				auto OtherIndex = (YearBook.Num() + (DateStruct.Month - 1)) % YearBook.Num();
-				auto OtherValue = YearBook[OtherIndex]->MonthlyHighTemp;
+				auto OtherIndex = (ClimateBook.Num() + (DateStruct.Month - 1)) % ClimateBook.Num();
+				auto OtherValue = ClimateBook[OtherIndex]->MonthlyHighTemp;
 
 				// High is lerp frac
 				CachedAnalyticalMonthlyHighTemp.Value = FMath::Lerp(OtherValue, CurrentMonthHigh, BlendFrac);
@@ -205,18 +297,18 @@ float UClimateComponent::GetAnalyticalLowForDate(FDateTimeSystemStruct& DateStru
 	else
 	{
 		// We need 
-		if (DateStruct.Month < YearBook.Num() && DummyParentComponent)
+		if (DateStruct.Month < ClimateBook.Num() && DateTimeSystem)
 		{
 			// Which do we need. We need the fractional month value
-			auto MonthFrac = DummyParentComponent->GetFractionalMonth(DateStruct);
-			auto CurrentMonthLow = YearBook[DateStruct.Month]->MonthlyLowTemp;
+			auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
+			auto CurrentMonthLow = ClimateBook[DateStruct.Month]->MonthlyLowTemp;
 			auto BlendFrac = FMath::Abs(MonthFrac - 0.5);
 
 			if (MonthFrac > 0.5)
 			{
 				// Future Month
-				auto OtherIndex = (DateStruct.Month + 1) % YearBook.Num();
-				auto OtherValue = YearBook[OtherIndex]->MonthlyLowTemp;
+				auto OtherIndex = (DateStruct.Month + 1) % ClimateBook.Num();
+				auto OtherValue = ClimateBook[OtherIndex]->MonthlyLowTemp;
 
 				// High is lerp frac
 				CachedAnalyticalMonthlyLowTemp.Value = FMath::Lerp(CurrentMonthLow, OtherValue, BlendFrac);
@@ -224,8 +316,8 @@ float UClimateComponent::GetAnalyticalLowForDate(FDateTimeSystemStruct& DateStru
 			else
 			{
 				// Future Month
-				auto OtherIndex = (YearBook.Num() + (DateStruct.Month - 1)) % YearBook.Num();
-				auto OtherValue = YearBook[OtherIndex]->MonthlyLowTemp;
+				auto OtherIndex = (ClimateBook.Num() + (DateStruct.Month - 1)) % ClimateBook.Num();
+				auto OtherValue = ClimateBook[OtherIndex]->MonthlyLowTemp;
 
 				// High is lerp frac
 				CachedAnalyticalMonthlyLowTemp.Value = FMath::Lerp(OtherValue, CurrentMonthLow, BlendFrac);
@@ -244,35 +336,30 @@ float UClimateComponent::GetDailyHigh(FDateTimeSystemStruct& DateStruct)
 		return CachedHighTemp.Value;
 	}
 
-	if (DummyParentComponent)
+	// Check Override
+	auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
+	if (Row)
 	{
-		// Check Override
-		auto Row = DummyParentComponent->GetDateOverride(&DateStruct);
-		if (Row)
+		auto asPtr = *Row;
+		if(asPtr)
 		{
-			auto asPtr = *Row;
-			auto LV = FDateTimeSystemStruct::CreateFromRow(asPtr);
-
-			CachedHighTemp.Value = DailyHighModulation(LV, asPtr->CallbackAttributes, asPtr->HighTemp, LastLowTemp, LastHighTemp);
+			CachedHighTemp.Value = DailyHighModulation(DateStruct, asPtr->MiscData, asPtr->HighTemp, LastLowTemp, LastHighTemp);
 			CachedHighTemp.Valid = true;
 		}
-		else
-		{
-			// Go ahead and compute the new values
-			CachedAnalyticalMonthlyHighTemp.Value = GetAnalyticalHighForDate(DateStruct);
-			CachedAnalyticalMonthlyHighTemp.Valid = true;
+	}
+	else
+	{
+		// Go ahead and compute the new values
+		CachedAnalyticalMonthlyHighTemp.Value = GetAnalyticalHighForDate(DateStruct);
+		CachedAnalyticalMonthlyHighTemp.Valid = true;
 
-			auto DummyTagContainer = FGameplayTagContainer();
+		auto DummyTagContainer = FGameplayTagContainer();
 
-			CachedHighTemp.Value = DailyHighModulation(DateStruct, DummyTagContainer, CachedAnalyticalMonthlyHighTemp.Value, LastLowTemp, LastHighTemp);
-			CachedHighTemp.Valid = true;
-		}
-
-		return CachedHighTemp.Value;
+		CachedHighTemp.Value = DailyHighModulation(DateStruct, DummyTagContainer, CachedAnalyticalMonthlyHighTemp.Value, LastLowTemp, LastHighTemp);
+		CachedHighTemp.Valid = true;
 	}
 
-	// Hopefully, this gets noticed...
-	return 1000.f;
+	return CachedHighTemp.Value;
 }
 
 float UClimateComponent::GetDailyLow(FDateTimeSystemStruct& DateStruct)
@@ -284,35 +371,29 @@ float UClimateComponent::GetDailyLow(FDateTimeSystemStruct& DateStruct)
 		return CachedNextLowTemp.Value;
 	}
 
-	if(DummyParentComponent)
+	auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
+	if (Row)
 	{
-		// Check Override
-		auto Row = DummyParentComponent->GetDateOverride(&DateStruct);
-		if (Row)
+		auto asPtr = *Row;
+		if (asPtr)
 		{
-			auto asPtr = *Row;
-			auto LV = FDateTimeSystemStruct::CreateFromRow(asPtr);
-
-			CachedNextLowTemp.Value = DailyLowModulation(LV, asPtr->CallbackAttributes, asPtr->LowTemp, LastLowTemp, LastHighTemp);
-			CachedNextLowTemp.Valid = true;
+			CachedNextLowTemp.Value = DailyLowModulation(DateStruct, asPtr->MiscData, asPtr->LowTemp, LastLowTemp, LastHighTemp);
+			CachedHighTemp.Valid = true;
 		}
-		else
-		{
-			// Go ahead and compute the new values
-			CachedAnalyticalMonthlyLowTemp.Value = GetAnalyticalLowForDate(DateStruct);
-			CachedAnalyticalMonthlyLowTemp.Valid = true;
+	}
+	else
+	{
+		// Go ahead and compute the new values
+		CachedAnalyticalMonthlyLowTemp.Value = GetAnalyticalLowForDate(DateStruct);
+		CachedAnalyticalMonthlyLowTemp.Valid = true;
 
-			auto DummyTagContainer = FGameplayTagContainer();
+		auto DummyTagContainer = FGameplayTagContainer();
 
-			CachedNextLowTemp.Value = DailyLowModulation(DateStruct, DummyTagContainer, CachedAnalyticalMonthlyLowTemp.Value, LastLowTemp, LastHighTemp);
-			CachedNextLowTemp.Valid = true;
-		}
-
-		return CachedNextLowTemp.Value;
+		CachedNextLowTemp.Value = DailyLowModulation(DateStruct, DummyTagContainer, CachedAnalyticalMonthlyLowTemp.Value, LastLowTemp, LastHighTemp);
+		CachedNextLowTemp.Valid = true;
 	}
 
-	// We freezing a bit
-	return -274.f;
+	return CachedNextLowTemp.Value;
 }
 
 UClimateComponent::UClimateComponent()
@@ -329,3 +410,4 @@ UClimateComponent::UClimateComponent(const FObjectInitializer& ObjectInitializer
 {
 	ClimateSetup();
 }
+
