@@ -2,6 +2,26 @@
 
 #include "DateTimeSystemComponent.h"
 
+float HelperMod(double X, double Y)
+{
+	const double AbsY = FMath::Abs(Y);
+	if (AbsY <= 1.e-8)
+	{
+		return 0.0;
+	}
+
+	const double Div = (X / Y);
+	double Frac = FMath::Fractional(Div);
+
+	if (Frac < 0)
+	{
+		Frac += 1;
+	}
+
+	const double Result = Y * Frac;
+	return Result;
+}
+
 UDateTimeSystemComponent::UDateTimeSystemComponent()
 {
 	DateTimeSetup();
@@ -73,12 +93,43 @@ void UDateTimeSystemComponent::GetTomorrowsDateTZ(UPARAM(ref)FDateTimeSystemStru
 
 float UDateTimeSystemComponent::GetLatitudeFromLocation_Implementation(FVector Location)
 {
-	return FMath::DegreesToRadians(ReferenceLatitude);
+	auto LatLoc = Location.X * 0.01 * InvPlanetRadius * INV_PI * 2; // Divide distance walked by Pi/2
+	LatLoc += PercentLatitude;
+	auto ScaledX  = LatLoc - 1; // Shift range to from -1 to 1, to -2 to 0
+	auto Modded   = HelperMod(ScaledX, 4) - 2; // Take the modulus, which now goes from -2 to 2 when x is -3 to 1
+	auto Absolute = FMath::Abs(Modded) - 1; // Invert the negatives and give use a triangle wave
+
+	return HALF_PI * Absolute;
 }
 
 float UDateTimeSystemComponent::GetLongitudeFromLocation_Implementation(FVector Location)
 {
-	return FMath::DegreesToRadians(ReferenceLongitude);
+	// auto
+	auto LatLoc = Location.X * 0.01 * InvPlanetRadius * INV_PI * 2; // Divide distance walked by Pi/2
+	auto LongLoc = Location.Y * 0.01 * InvPlanetRadius * INV_PI;
+
+	LatLoc  += PercentLatitude;
+	LongLoc += PercentLongitude;
+
+	auto Flipped = HelperMod((LatLoc - 1) * 0.5, 2) < 1;
+	if (Flipped)
+	{
+		LongLoc += 1; // Flip into the other hemisphere
+	}
+
+	auto ScaledX = LongLoc;
+	auto Modded = HelperMod(ScaledX, 2);
+	//auto Absolute = FMath::Abs(Modded) - 1; // Radians
+
+
+	//FMath::Wrap(ScaledX, 0.0, 4.0);
+
+
+
+
+
+
+	return PI * Modded;
 }
 
 bool UDateTimeSystemComponent::DoesYearLeap_Implementation(int Year)
@@ -295,7 +346,7 @@ float UDateTimeSystemComponent::GetFractionalMonth(FDateTimeSystemStruct& DateSt
 
 float UDateTimeSystemComponent::GetFractionalOrbitalYear(FDateTimeSystemStruct& DateStruct)
 {
-	float FracDay = InternalDate.DayIndex - 1 + GetFractionalDay(DateStruct);
+	float FracDay = InternalDate.SolarDays - 1 + GetFractionalDay(DateStruct);
 	float FracYear = FracDay / DaysInOrbitalYear;
 	return FMath::Frac(FracYear);
 }
@@ -682,6 +733,20 @@ bool UDateTimeSystemComponent::SanitiseDateTime(FDateTimeSystemStruct& DateStruc
 	return false;
 }
 
+bool UDateTimeSystemComponent::SanitiseSolarDateTime(FDateTimeSystemStruct& DateStruct)
+{
+	// Check how many seconds we have solar wise
+	if (DateStruct.StoredSolarSeconds > LengthOfDay)
+	{
+		DateStruct.StoredSolarSeconds -= LengthOfDay;
+		++DateStruct.SolarDays;
+
+		return true;
+	}
+
+	return false;
+}
+
 float UDateTimeSystemComponent::GetSolarFractionalDay()
 {
 	float FracDay = (InternalDate.Seconds - LengthOfDay * 0.5) * InvLengthOfDay;
@@ -695,8 +760,8 @@ float UDateTimeSystemComponent::GetSolarFractionalYear()
 		return CachedSolarFractionalYear.Value;
 	}
 
-	float FracDays = InternalDate.DayIndex - 1 + (
-		(InternalDate.Seconds - LengthOfDay * 0.5) * InvLengthOfDay
+	float FracDays = InternalDate.SolarDays - 1 + (
+		(InternalDate.StoredSolarSeconds - LengthOfDay * 0.5) * InvLengthOfDay
 		);
 	float YearInRadians = (TWO_PI / DaysInOrbitalYear) * (FracDays);
 
@@ -748,7 +813,9 @@ void UDateTimeSystemComponent::InternalTick(float DeltaTime)
 
 	// Increment Time
 	InternalDate.Seconds += DeltaTime * TimeScale;
+	InternalDate.StoredSolarSeconds += DeltaTime * TimeScale;
 	auto DidRoll = SanitiseDateTime(InternalDate);
+	SanitiseSolarDateTime(InternalDate);
 
 	if (DidRoll)
 	{
@@ -783,7 +850,12 @@ void UDateTimeSystemComponent::InternalTick(float DeltaTime)
 
 void UDateTimeSystemComponent::InternalBegin()
 {
-	InvLengthOfDay = 1 / LengthOfDay;
+	InvLengthOfDay   = 1 / LengthOfDay;
+	InvPlanetRadius  = 1 / (PlanetRadius * 1000);
+	PercentLatitude  = FMath::DegreesToRadians(ReferenceLatitude) * INV_PI * 2;
+	PercentLongitude = FMath::DegreesToRadians(ReferenceLongitude) * INV_PI;
+
+	
 
 	// Let's go
 	if (YearBookTable)
@@ -813,6 +885,21 @@ void UDateTimeSystemComponent::InternalBegin()
 			}
 		}
 	}
+
+	double Val = InternalDate.Year * DaysInOrbitalYear;
+	double Days = GetFractionalCalendarYear(InternalDate) * DaysInOrbitalYear;
+	InternalDate.SolarDays = FMath::TruncToInt(Val) + FMath::TruncToInt(Days);
+	InternalDate.StoredSolarSeconds = (FMath::Fractional(Val) + FMath::Fractional(Days)) * LengthOfDay;
+}
+
+FVector UDateTimeSystemComponent::AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection)
+{
+	// Internally, we use X northing, Y easting, and Z surface normal
+	auto InverseRotation = NorthingDirection.ToOrientationRotator().GetInverse();
+	
+	auto RetVal = FRotationMatrix(InverseRotation).TransformVector(WorldLocation);
+
+	return FVector(RetVal);
 }
 
 float UDateTimeSystemComponent::SolarTimeCorrection(float YearInRadians)

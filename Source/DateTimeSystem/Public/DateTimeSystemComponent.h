@@ -48,20 +48,27 @@ struct FDateTimeSystemStruct
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadWrite)
+public:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     float Seconds;
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int Day;
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int Month;
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int Year;
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int DayIndex;
+
+    UPROPERTY(BlueprintReadWrite)
+    int SolarDays;
+
+    UPROPERTY(BlueprintReadWrite)
+    float StoredSolarSeconds;
 
 public:
     float GetTimeInMinutes()
@@ -124,7 +131,7 @@ private:
     UPROPERTY(EditDefaultsOnly)
     float LengthOfDay;
 
-    float InvLengthOfDay;
+    double InvLengthOfDay;
 
     UPROPERTY(EditDefaultsOnly)
     float TicksPerSecond;
@@ -138,14 +145,20 @@ private:
     UPROPERTY(EditDefaultsOnly)
     float ReferenceLatitude;
 
+    float PercentLatitude;
+
     UPROPERTY(EditDefaultsOnly)
     float ReferenceLongitude;
+
+    float PercentLongitude;
 
     UPROPERTY(EditDefaultsOnly)
     float SolsticeOffsetInDays;
 
     UPROPERTY(EditDefaultsOnly)
     float PlanetRadius;
+
+    double InvPlanetRadius;
 
     UPROPERTY(EditDefaultsOnly)
     UDataTable* YearBookTable;
@@ -160,6 +173,7 @@ private:
     UPROPERTY(EditDefaultsOnly)
     bool UseDayIndexForOverride;
 
+    // Used
     //UPROPERTY(SaveGame)
     //uint32 Day;
 
@@ -183,6 +197,7 @@ private:
     FDateTimeSystemPackedCacheFloat CachedSolarFractionalYear;
     FDateTimeSystemPackedCacheFloat CachedSolarDeclinationAngle;
     FDateTimeSystemPackedCacheFloat CachedSolarTimeCorrection;
+    FDateTimeSystemPackedCacheFloat CachedSolarDaysOfYear;
     FDateTimeSystemPackedCacheInt CachedDoesLeap;
     TMap<uint32, FVector> CachedSunVectors;
 
@@ -226,6 +241,7 @@ private:
     int GetMonthsInYear(int YearIndex);
 
     bool SanitiseDateTime(FDateTimeSystemStruct& DateStruct);
+    bool SanitiseSolarDateTime(FDateTimeSystemStruct& DateStruct);
 
     float GetSolarFractionalDay();
     float GetSolarFractionalYear();
@@ -305,6 +321,9 @@ public:
 
     UFUNCTION(BlueprintCallable)
     void InternalBegin();
+
+    UFUNCTION(BlueprintCallable)
+    FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection);
 
     UFUNCTION(BlueprintCallable)
     FName GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct& DateStruct);
