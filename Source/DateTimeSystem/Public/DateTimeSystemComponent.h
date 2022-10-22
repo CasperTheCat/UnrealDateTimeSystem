@@ -62,6 +62,9 @@ public:
     int Year;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int DayOfWeek;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int DayIndex;
 
     UPROPERTY(BlueprintReadWrite)
@@ -119,8 +122,8 @@ struct FDateTimeSystemTimezoneStruct
     float HoursDeltaFromMeridian;
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, FDateTimeSystemStruct&, NewDate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, FDateTimeSystemStruct, NewDate, FGameplayTagContainer, Attribute);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, UPARAM(ref) FDateTimeSystemStruct&, NewDate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, UPARAM(ref) FDateTimeSystemStruct&, NewDate, FGameplayTagContainer, Attribute);
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class DATETIMESYSTEM_API UDateTimeSystemComponent : public UActorComponent
@@ -159,6 +162,9 @@ private:
     float PlanetRadius;
 
     double InvPlanetRadius;
+
+    UPROPERTY(EditDefaultsOnly)
+    int DaysInWeek;
 
     UPROPERTY(EditDefaultsOnly)
     UDataTable* YearBookTable;
@@ -200,6 +206,7 @@ private:
     FDateTimeSystemPackedCacheFloat CachedSolarDaysOfYear;
     FDateTimeSystemPackedCacheInt CachedDoesLeap;
     TMap<uint32, FVector> CachedSunVectors;
+    TMap<uint32, FVector> CachedMoonVectors;
 
 public:
     // Do we *really* want to save this and not just bake it with EditDefaults?
@@ -233,6 +240,8 @@ private:
 
     int GetLengthOfCalendarYear(int Year);
 
+    float GetJulianDay(FDateTimeSystemStruct& DateStruct);
+    //float GetDay(FDateTimeSystemStruct& DateStruct);
 
     float GetDeclinationAngle(FDateTimeSystemStruct& DateStruct);
 
@@ -284,16 +293,28 @@ public:
     virtual bool DoesYearLeap_Implementation(int Year);
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-    FRotator GetSunRotationForLocation(FVector Location, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo);
-    virtual FRotator GetSunRotationForLocation_Implementation(FVector Location, FDateTimeSystemTimezoneStruct& TimezoneInfo);
+    FRotator GetSunRotationForLocation(FVector Location);
+    virtual FRotator GetSunRotationForLocation_Implementation(FVector Location);
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-    FRotator GetSunRotation(FDateTimeSystemTimezoneStruct TimezoneInfo);
-    virtual FRotator GetSunRotation_Implementation(FDateTimeSystemTimezoneStruct TimezoneInfo);
+    FRotator GetSunRotation();
+    virtual FRotator GetSunRotation_Implementation();
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     FVector GetSunVector(float Latitude, float Longitude);
     virtual FVector GetSunVector_Implementation(float Latitude, float Longitude);
+
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    FRotator GetMoonRotationForLocation(FVector Location);
+    virtual FRotator GetMoonRotationForLocation_Implementation(FVector Location);
+
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    FRotator GetMoonRotation();
+    virtual FRotator GetMoonRotation_Implementation();
+
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    FVector GetMoonVector(float Latitude, float Longitude);
+    virtual FVector GetMoonVector_Implementation(float Latitude, float Longitude);
 
     UFUNCTION(BlueprintCallable)
     float GetFractionalDay(UPARAM(ref) FDateTimeSystemStruct& DateStruct);
@@ -345,9 +366,16 @@ public:
     UFUNCTION(BlueprintCallable)
     float GetCurrentTemperature(FVector Location, float CurrentTemperature, float SecondsSinceUpdate, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo);
 
-    //UFUNCTION(BlueprintCallable)
-    //static float GetSeconds
-    // Crazy Function to set local location
+
+    // Set the thing, directly
+    UFUNCTION(BlueprintCallable)
+    void SetUTCDateTime(FDateTimeSystemStruct& DateStruct);
+
+    // Return a copy of the internal struct
+    // We make a copy to allow us to destroy the object without
+    // risking a lifetime
+    UFUNCTION(BlueprintCallable)
+    FDateTimeSystemStruct GetUTCDateTime();
 
     friend class UClimateComponent;
 

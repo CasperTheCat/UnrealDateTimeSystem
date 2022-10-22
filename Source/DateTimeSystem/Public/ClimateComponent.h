@@ -13,6 +13,7 @@
 DECLARE_STATS_GROUP(TEXT("ClimateSystem"), STATGROUP_ACIClimateSys, STATCAT_Advanced);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FTemperatureChangeDelegate, float, NewTemperature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FLocalDateTimeEvent);
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class DATETIMESYSTEM_API UClimateComponent : public UActorComponent
@@ -41,10 +42,16 @@ private:
     float LastHighTemp;
     float LastLowTemp;
 
+    bool SunHasRisen;
+
     // Cached Values
     FDateTimeSystemPackedCacheFloat CachedHighTemp;
     FDateTimeSystemPackedCacheFloat CachedLowTemp;
     FDateTimeSystemPackedCacheFloat CachedNextLowTemp;
+
+    FDateTimeSystemPackedCacheFloat CachedPriorRH;
+    FDateTimeSystemPackedCacheFloat CachedNextRH;
+    FDateTimeSystemPackedCacheFloat CachedAnalyticalRH;
 
     FDateTimeSystemPackedCacheFloat CachedAnalyticalMonthlyHighTemp;
     FDateTimeSystemPackedCacheFloat CachedAnalyticalMonthlyLowTemp;
@@ -55,8 +62,23 @@ public:
     UPROPERTY(BlueprintAssignable)
     FTemperatureChangeDelegate TemperatureChangeCallback;
 
+    UPROPERTY(BlueprintAssignable)
+    FLocalDateTimeEvent SunriseCallback;
+
+    UPROPERTY(BlueprintAssignable)
+    FLocalDateTimeEvent SunsetCallback;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
     float CurrentTemperature;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    float CurrentRelativeHumidity;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    float CurrentDewPoint;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    float SeaLevel;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
     float ReferenceLatitude;
@@ -75,10 +97,14 @@ private:
     float GetAnalyticalHighForDate(FDateTimeSystemStruct& DateStruct);
     float GetAnalyticalLowForDate(FDateTimeSystemStruct& DateStruct);
 
+    float GetAnalyticalRHForDate(FDateTimeSystemStruct& DateStruct);
+
     float GetDailyHigh(FDateTimeSystemStruct& DateStruct);
     float GetDailyLow(FDateTimeSystemStruct& DateStruct);
+    float GetDailyRH(FDateTimeSystemStruct& DateStruct);
 
     void UpdateCurrentTemperature(float DeltaTime);
+    void UpdateCurrentClimate(float DeltaTime);
 
     void InternalDateChanged(FDateTimeSystemStruct& DateStruct);
 
@@ -127,4 +153,25 @@ public:
 
     UFUNCTION(BlueprintCallable)
     float GetCurrentTemperature();
+
+    UFUNCTION(BlueprintCallable)
+    float GetCurrentTemperatureForLocation(FVector Location);
+
+    UFUNCTION(BlueprintCallable)
+    float GetCurrentFeltTemperature();
+
+    UFUNCTION(BlueprintCallable)
+    float GetCurrentFeltTemperatureForLocation(FVector Location);
+
+    UFUNCTION(BlueprintCallable)
+    float GetHeatIndex();
+
+    UFUNCTION(BlueprintCallable)
+    float GetWindChillFromVector(FVector WindVector);
+
+    UFUNCTION(BlueprintCallable)
+    float GetWindChillFromVelocity(float WindVelocity);
+
+    UFUNCTION(BlueprintCallable)
+    float GetWindChill();
 };

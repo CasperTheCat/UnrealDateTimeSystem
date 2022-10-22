@@ -28,6 +28,7 @@ void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDate
 
 FDateTimeSystemStruct UClimateComponent::GetLocalTime()
 {
+	SunHasRisen = false;
 	return LocalTime;
 }
 
@@ -109,6 +110,27 @@ void UClimateComponent::UpdateCurrentTemperature(float DeltaTime)
 	}
 }
 
+void UClimateComponent::UpdateCurrentClimate(float DeltaTime)
+{
+	if (DateTimeSystem)
+	{
+		// Rel. Humidity
+		auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
+
+		//
+		auto NextRH = GetDailyRH(LocalTime);
+		auto LowRH = CachedLowTemp.Value;
+		CurrentRelativeHumidity = FMath::Lerp(LowRH, NextRH, FracDay);
+
+		// Ru
+		auto LambdaTRH = FMath::Loge(CurrentRelativeHumidity * 0.01f) +
+			((18.678f * CurrentTemperature) / (257.14f + CurrentTemperature));
+
+		// Tdp
+		CurrentDewPoint = (257.14f * LambdaTRH) / (18.678f - LambdaTRH);
+	}
+}
+
 void UClimateComponent::InternalDateChanged(FDateTimeSystemStruct& DateStruct)
 {
 	// Handle what was once done on InternalTick
@@ -119,6 +141,7 @@ void UClimateComponent::InternalDateChanged(FDateTimeSystemStruct& DateStruct)
 	CachedLowTemp.Valid = true;
 	LastHighTemp = CachedHighTemp.Value;
 	LastLowTemp = CachedLowTemp.Value;
+	CachedPriorRH.Value = CachedNextRH.Value;
 
 	auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
 	if (Row)
@@ -194,6 +217,81 @@ float UClimateComponent::GetCurrentTemperature()
 	return CurrentTemperature;
 }
 
+float UClimateComponent::GetCurrentTemperatureForLocation(FVector Location)
+{
+	auto AltitudeAboveSeaLevel = Location.Z - SeaLevel;
+	return CurrentTemperature - (AltitudeAboveSeaLevel * 0.0065f);
+	//return CurrentTemperature - (Location.Z * 0.001f * 6.5f);
+}
+
+float UClimateComponent::GetCurrentFeltTemperature()
+{
+	return 0.0f;
+}
+
+float UClimateComponent::GetCurrentFeltTemperatureForLocation(FVector Location)
+{
+	auto AltitudeAboveSeaLevel = Location.Z - SeaLevel;
+	return GetCurrentFeltTemperature() - (AltitudeAboveSeaLevel * 0.0065f);
+}
+
+float UClimateComponent::GetHeatIndex()
+{
+	auto T = CurrentTemperature;
+	auto R = CurrentRelativeHumidity;
+	auto TT = T * T;
+	auto RR = R * R;
+
+	// Constants
+	auto C1 = -8.78469475556f;
+	auto C2 = 1.61139411f;
+	auto C3 = 2.33854883889f;
+	auto C4 = -0.14611605f;
+	auto C5 = -0.012308084f;
+	auto C6 = -0.0164248277778f;
+	auto C7 = 2.211732e-3f;
+	auto C8 = 7.2546e-4f;
+	auto C9 = -3.582e-6f;
+
+	auto HeatIndex = C1 +
+		C2 * T +
+		C3 * R +
+		C4 * T * R +
+		C5 * TT +
+		C6 * RR +
+		C7 * TT * R +
+		C8 * T * RR +
+		C9 * TT * RR;
+
+	return HeatIndex - CurrentTemperature;
+}
+
+float UClimateComponent::GetWindChillFromVector(FVector WindVector)
+{
+	return GetWindChillFromVelocity(WindVector.Length());
+}
+
+float UClimateComponent::GetWindChillFromVelocity(float WindVelocity)
+{
+	auto T = CurrentTemperature;
+	auto V = FMath::Pow(WindVelocity, 0.16);
+
+	auto WC = 13.12 +
+		0.6215 * T -
+		11.37 * V +
+		0.3965 * T * V;
+
+	return WC - CurrentTemperature;
+}
+
+float UClimateComponent::GetWindChill()
+{
+	return 0.0f;
+}
+
+// Start a counter here so it captures the super call
+//DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetCameraView (Including Super::)"), STAT_ACIGetCameraViewInc, STATGROUP_ACIExtCam);
+
 void UClimateComponent::InternalTick(float DeltaTime)
 {
 	Invalidate(EDateTimeSystemInvalidationTypes::Frame);
@@ -204,6 +302,35 @@ void UClimateComponent::InternalTick(float DeltaTime)
 		DateTimeSystem->GetTodaysDateTZ(LocalTime, TimezoneInfo);
 
 		UpdateCurrentTemperature(DeltaTime);
+		UpdateCurrentClimate(DeltaTime);
+
+		// Guard against calling this.
+		// By default, it's just an O(1) lookup after UpdateCurrentTemp
+		// But if Modulate is customised, it may not be cached, so this would
+		// incur an unneeded penalty
+		if (SunriseCallback.IsBound() || SunsetCallback.IsBound())
+		{
+			// Okay, set want to check things
+			auto SunVector = DateTimeSystem->GetSunVector(ReferenceLatitude, ReferenceLongitude);
+
+			// Sunrise is 5deg under the horizon
+			if (FVector::DotProduct(SunVector, FVector::UpVector) > -0.087155f)
+			{
+				if (SunriseCallback.IsBound() && !SunHasRisen)
+				{
+					SunriseCallback.Broadcast();
+				}
+				SunHasRisen = true;
+			}
+			else
+			{
+				if (SunsetCallback.IsBound() && SunHasRisen)
+				{
+					SunsetCallback.Broadcast();
+				}
+				SunHasRisen = false;
+			}
+		}
 	}
 }
 
@@ -329,6 +456,47 @@ float UClimateComponent::GetAnalyticalLowForDate(FDateTimeSystemStruct& DateStru
 	return 0.0f;
 }
 
+float UClimateComponent::GetAnalyticalRHForDate(FDateTimeSystemStruct& DateStruct)
+{
+	// We have two things to do here. Return the cache, if it's valid
+	if (CachedAnalyticalRH.Valid)
+	{
+		return CachedAnalyticalRH.Value;
+	}
+	else
+	{
+		if (DateStruct.Month < ClimateBook.Num() && DateTimeSystem)
+		{
+			// Which do we need. We need the fractional month value
+			auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
+			auto CurrentRH = ClimateBook[DateStruct.Month]->RelativeHumidity;
+			auto BlendFrac = FMath::Abs(MonthFrac - 0.5);
+
+			if (MonthFrac > 0.5)
+			{
+				// Future Month
+				auto OtherIndex = (DateStruct.Month + 1) % ClimateBook.Num();
+				auto OtherValue = ClimateBook[OtherIndex]->RelativeHumidity;
+
+				// High is lerp frac
+				CachedAnalyticalRH.Value = FMath::Lerp(CurrentRH, OtherValue, BlendFrac);
+			}
+			else
+			{
+				// Future Month
+				auto OtherIndex = (ClimateBook.Num() + (DateStruct.Month - 1)) % ClimateBook.Num();
+				auto OtherValue = ClimateBook[OtherIndex]->RelativeHumidity;
+
+				// High is lerp frac
+				CachedAnalyticalRH.Value = FMath::Lerp(OtherValue, CurrentRH, BlendFrac);
+			}
+			CachedAnalyticalRH.Valid = true;
+			return CachedAnalyticalRH.Value;
+		}
+	}
+	return 0.0f;
+}
+
 float UClimateComponent::GetDailyHigh(FDateTimeSystemStruct& DateStruct)
 {
 	if (CachedHighTemp.Valid)
@@ -349,13 +517,9 @@ float UClimateComponent::GetDailyHigh(FDateTimeSystemStruct& DateStruct)
 	}
 	else
 	{
-		// Go ahead and compute the new values
-		CachedAnalyticalMonthlyHighTemp.Value = GetAnalyticalHighForDate(DateStruct);
-		CachedAnalyticalMonthlyHighTemp.Valid = true;
-
 		auto DummyTagContainer = FGameplayTagContainer();
 
-		CachedHighTemp.Value = DailyHighModulation(DateStruct, DummyTagContainer, CachedAnalyticalMonthlyHighTemp.Value, LastLowTemp, LastHighTemp);
+		CachedHighTemp.Value = DailyHighModulation(DateStruct, DummyTagContainer, GetAnalyticalHighForDate(DateStruct), LastLowTemp, LastHighTemp);
 		CachedHighTemp.Valid = true;
 	}
 
@@ -378,22 +542,48 @@ float UClimateComponent::GetDailyLow(FDateTimeSystemStruct& DateStruct)
 		if (asPtr)
 		{
 			CachedNextLowTemp.Value = DailyLowModulation(DateStruct, asPtr->MiscData, asPtr->LowTemp, LastLowTemp, LastHighTemp);
-			CachedHighTemp.Valid = true;
+			CachedNextLowTemp.Valid = true;
 		}
 	}
 	else
 	{
-		// Go ahead and compute the new values
-		CachedAnalyticalMonthlyLowTemp.Value = GetAnalyticalLowForDate(DateStruct);
-		CachedAnalyticalMonthlyLowTemp.Valid = true;
-
 		auto DummyTagContainer = FGameplayTagContainer();
 
-		CachedNextLowTemp.Value = DailyLowModulation(DateStruct, DummyTagContainer, CachedAnalyticalMonthlyLowTemp.Value, LastLowTemp, LastHighTemp);
+		CachedNextLowTemp.Value = DailyLowModulation(DateStruct, DummyTagContainer, GetAnalyticalLowForDate(DateStruct), LastLowTemp, LastHighTemp);
 		CachedNextLowTemp.Valid = true;
 	}
 
 	return CachedNextLowTemp.Value;
+}
+
+float UClimateComponent::GetDailyRH(FDateTimeSystemStruct& DateStruct)
+{
+	// Okay. We need to work out which Low we actually want
+
+	if (CachedNextRH.Valid)
+	{
+		return CachedNextRH.Value;
+	}
+
+	auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
+	if (Row)
+	{
+		auto asPtr = *Row;
+		if (asPtr)
+		{
+			CachedNextRH.Value = asPtr->RelativeHumidity;
+			CachedNextRH.Valid = true;
+		}
+	}
+	else
+	{
+		auto DummyTagContainer = FGameplayTagContainer();
+
+		CachedNextRH.Value = GetAnalyticalRHForDate(DateStruct);
+		CachedNextRH.Valid = true;
+	}
+
+	return CachedNextRH.Value;
 }
 
 UClimateComponent::UClimateComponent()

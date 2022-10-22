@@ -54,6 +54,7 @@ void UDateTimeSystemComponent::BeginPlay()
 
 void UDateTimeSystemComponent::GetTodaysDate(UPARAM(ref) FDateTimeSystemStruct& DateStruct)
 {
+	DateStruct = InternalDate;
 	DateStruct.Seconds = InternalDate.Seconds;
 	DateStruct.Day = InternalDate.Day;
 	DateStruct.Month = InternalDate.Month;
@@ -62,6 +63,7 @@ void UDateTimeSystemComponent::GetTodaysDate(UPARAM(ref) FDateTimeSystemStruct& 
 
 void UDateTimeSystemComponent::GetTodaysDateTZ(UPARAM(ref)FDateTimeSystemStruct& DateStruct, FDateTimeSystemTimezoneStruct& TimezoneInfo)
 {
+	DateStruct = InternalDate;
 	DateStruct.Seconds = InternalDate.Seconds + TimezoneInfo.HoursDeltaFromMeridian * 3600;
 	DateStruct.Day = InternalDate.Day;
 	DateStruct.Month = InternalDate.Month;
@@ -72,6 +74,7 @@ void UDateTimeSystemComponent::GetTodaysDateTZ(UPARAM(ref)FDateTimeSystemStruct&
 
 void UDateTimeSystemComponent::GetTomorrowsDate(UPARAM(ref) FDateTimeSystemStruct& DateStruct)
 {
+	DateStruct = InternalDate;
 	DateStruct.Day = InternalDate.Day + 1;
 	DateStruct.Month = InternalDate.Month;
 	DateStruct.Year = InternalDate.Year;
@@ -81,6 +84,7 @@ void UDateTimeSystemComponent::GetTomorrowsDate(UPARAM(ref) FDateTimeSystemStruc
 
 void UDateTimeSystemComponent::GetTomorrowsDateTZ(UPARAM(ref)FDateTimeSystemStruct& DateStruct, FDateTimeSystemTimezoneStruct& TimezoneInfo)
 {
+	DateStruct = InternalDate;
 	DateStruct.Seconds = InternalDate.Seconds + LengthOfDay + TimezoneInfo.HoursDeltaFromMeridian * 3600;
 	HandleDayRollover(DateStruct);
 
@@ -137,7 +141,7 @@ bool UDateTimeSystemComponent::DoesYearLeap_Implementation(int Year)
 	return false;
 }
 
-FRotator UDateTimeSystemComponent::GetSunRotationForLocation_Implementation(FVector Location, FDateTimeSystemTimezoneStruct& TimezoneInfo)
+FRotator UDateTimeSystemComponent::GetSunRotationForLocation_Implementation(FVector Location)
 {
 	auto Lat = GetLatitudeFromLocation(Location);
 	auto Long = GetLongitudeFromLocation(Location);
@@ -147,9 +151,9 @@ FRotator UDateTimeSystemComponent::GetSunRotationForLocation_Implementation(FVec
 	return Flip.ToOrientationRotator();
 }
 
-FRotator UDateTimeSystemComponent::GetSunRotation_Implementation(FDateTimeSystemTimezoneStruct TimezoneInfo)
+FRotator UDateTimeSystemComponent::GetSunRotation_Implementation()
 {
-	return GetSunRotationForLocation(FVector::ZeroVector, TimezoneInfo);
+	return GetSunRotationForLocation(FVector::ZeroVector);
 }
 
 FVector UDateTimeSystemComponent::GetSunVector_Implementation(float Latitude, float Longitude)
@@ -181,7 +185,7 @@ FVector UDateTimeSystemComponent::GetSunVector_Implementation(float Latitude, fl
 	float EQTime = SolarTimeCorrection(YearInRads);
 
 	// TimeOffset is acting 
-	float TimeOffset = EQTime + 4 * LocalLong;// -60 * TimezoneInfo.HoursDeltaFromMeridian;
+	float TimeOffset = EQTime + 4 * FMath::RadiansToDegrees(LocalLong);// -60 * TimezoneInfo.HoursDeltaFromMeridian;
 
 	// Get the time in minutes, and add the offset, also in minutes
 	float CorrectedTime = InternalDate.GetTimeInMinutes() + TimeOffset;
@@ -196,7 +200,7 @@ FVector UDateTimeSystemComponent::GetSunVector_Implementation(float Latitude, fl
 	float SY = FMath::Cos(LocalLat) * FMath::Sin(LatOut) - FMath::Sin(LocalLat) * FMath::Cos(LatOut) * FMath::Cos(LongDiff);
 	float SZ = FMath::Sin(LocalLat) * FMath::Sin(LatOut) + FMath::Cos(LocalLat) * FMath::Cos(LatOut) * FMath::Cos(LongDiff);
 
-	auto SunInverse = FVector(SY, SX, SZ);
+	auto SunInverse = FVector(SY, SX, SZ).GetSafeNormal();
 
 	CachedSunVectors.Add(HashType, SunInverse);
 
@@ -219,6 +223,68 @@ FVector UDateTimeSystemComponent::GetSunVector_Implementation(float Latitude, fl
 
 
 	//return FRotator(-90 - FMath::RadiansToDegrees(SolarElevation), 180 - SolarYaw, 0);
+}
+
+FRotator UDateTimeSystemComponent::GetMoonRotationForLocation_Implementation(FVector Location)
+{
+	auto Lat = GetLatitudeFromLocation(Location);
+	auto Long = GetLongitudeFromLocation(Location);
+	auto MoonInverse = GetMoonVector(Lat, Long);
+	FVector Flip = -MoonInverse;
+
+	return Flip.ToOrientationRotator();
+}
+
+FRotator UDateTimeSystemComponent::GetMoonRotation_Implementation()
+{
+	return GetMoonRotationForLocation(FVector::ZeroVector);
+}
+
+/////
+// https://www.nrel.gov/docs/fy10osti/47681.pdf
+FVector UDateTimeSystemComponent::GetMoonVector_Implementation(float Latitude, float Longitude)
+{
+	auto Day = GetJulianDay(InternalDate);
+	double T = Day * 0.0000273785078713210130047912388775;
+
+	auto H = InternalDate.StoredSolarSeconds * InvLengthOfDay;
+	auto SiderealTimeRads = 100.4606184 + 0.9856473662862 * Day + 15 * H + T * T;
+
+	double GLong = 218.3164477 +
+		481267.88123421 * T -
+		0.0015786 * T * T +
+		0.000001855835 * T * T * T -
+		0.000000015338834 * T * T * T * T;
+
+	double GLat = 93.2720950 +
+		483202.0175233 * T -
+		0.0036539 * T * T -
+		0.00000028360748723766307 * T * T * T +
+		0.00000000115833246458398 * T * T * T * T;
+
+	GLong = HelperMod(GLong, 360.f);
+	GLat = HelperMod(GLat, 360.f);
+
+
+	//auto DeclAngle = FMath::Asin(
+	//	FMath::Sin(Beta) * FMath::Cos(Epsilon) +
+	//	FMath::Cos(Beta) * FMath::Sin(Epsilon) * FMath::Sin(Lambda)
+	//);
+
+	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::SanitizeFloat(GLong));
+	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Magenta, FString::SanitizeFloat(GLat));
+
+	double LocalLat = Latitude;
+	double LocalLong = Longitude;
+	double LatOut = FMath::DegreesToRadians(GLat);
+	double LongOut = FMath::DegreesToRadians(GLong);
+	double LongDiff = LongOut - LocalLong;
+	double SX = FMath::Cos(LatOut) * FMath::Sin(LongDiff);
+	double SY = FMath::Cos(LocalLat) * FMath::Sin(LatOut) - FMath::Sin(LocalLat) * FMath::Cos(LatOut) * FMath::Cos(LongDiff);
+	double SZ = FMath::Sin(LocalLat) * FMath::Sin(LatOut) + FMath::Cos(LocalLat) * FMath::Cos(LatOut) * FMath::Cos(LongDiff);
+
+
+	return FVector(SX, SY, SZ);
 }
 
 float UDateTimeSystemComponent::GetMonthlyHighTemperature(int MonthIndex)
@@ -319,6 +385,16 @@ float UDateTimeSystemComponent::GetCurrentTemperature(FVector Location, float Cu
 	//auto Output = ModulateTemperature(Location, CurrentTemperature, SecondsSinceUpdate, LowTemp, HighTemp, TimezoneInfo);
 	//
 	//return Output;
+}
+
+void UDateTimeSystemComponent::SetUTCDateTime(FDateTimeSystemStruct& DateStruct)
+{
+	InternalDate = DateStruct;
+}
+
+FDateTimeSystemStruct UDateTimeSystemComponent::GetUTCDateTime()
+{
+	return InternalDate;
 }
 
 float UDateTimeSystemComponent::GetFractionalDay(FDateTimeSystemStruct& DateStruct)
@@ -574,10 +650,19 @@ int UDateTimeSystemComponent::GetLengthOfCalendarYear(int Year)
 	return LengthOfCalendarYearInDays + InternalDoesLeap(Year);
 }
 
+float UDateTimeSystemComponent::GetJulianDay(FDateTimeSystemStruct& DateStruct)
+{
+	auto SolarDays = 4716 * DaysInOrbitalYear + DateStruct.SolarDays;
+	auto Julian = SolarDays + (InternalDate.StoredSolarSeconds - LengthOfDay * 0.5) * InvLengthOfDay;
+
+	return Julian;
+}
+
 void UDateTimeSystemComponent::DateTimeSetup()
 {
 	OverridedDatesSetDate = false;
 	UseDayIndexForOverride = false;
+	DaysInWeek = 7;
 	TicksPerSecond = 4;
 	TimeScale = 300;
 	DaysInOrbitalYear = 365.25;
@@ -631,6 +716,7 @@ bool UDateTimeSystemComponent::HandleDayRollover(FDateTimeSystemStruct& DateStru
 	if (DateStruct.Seconds > LengthOfDay)
 	{
 		DateStruct.Seconds -= LengthOfDay;
+		DateStruct.DayOfWeek = (DateStruct.DayOfWeek + 1) % DaysInWeek;
 		++DateStruct.Day;
 		++DateStruct.DayIndex;
 
@@ -639,6 +725,7 @@ bool UDateTimeSystemComponent::HandleDayRollover(FDateTimeSystemStruct& DateStru
 	else if (DateStruct.Seconds < 0)
 	{
 		DateStruct.Seconds += LengthOfDay;
+		DateStruct.DayOfWeek = (DateStruct.DayOfWeek - 1) % DaysInWeek;
 		--DateStruct.Day;
 		--DateStruct.DayIndex;
 
@@ -749,7 +836,7 @@ bool UDateTimeSystemComponent::SanitiseSolarDateTime(FDateTimeSystemStruct& Date
 
 float UDateTimeSystemComponent::GetSolarFractionalDay()
 {
-	float FracDay = (InternalDate.Seconds - LengthOfDay * 0.5) * InvLengthOfDay;
+	float FracDay = (InternalDate.StoredSolarSeconds - LengthOfDay * 0.5) * InvLengthOfDay;
 	return FracDay;
 }
 
@@ -784,7 +871,7 @@ float UDateTimeSystemComponent::SolarDeclinationAngle(float YearInRadians)
 		0.006758 * FMath::Cos(2 * YearInRadians) +
 		0.000907 * FMath::Sin(2 * YearInRadians) -
 		0.002697 * FMath::Cos(3 * YearInRadians) +
-		0.00148 * FMath::Sin(3 * YearInRadians);
+		0.00148  * FMath::Sin(3 * YearInRadians);
 
 	CachedSolarDeclinationAngle.Valid = true;
 	CachedSolarDeclinationAngle.Value = A1;

@@ -40,9 +40,6 @@ public:
 	float RelativeHumidity;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	float DewPoint;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FGameplayTagContainer MiscData;
 };
 
@@ -87,9 +84,6 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	float RelativeHumidity;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	float DewPoint;
 };
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemClimateMonthlyRow& Row)
