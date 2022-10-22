@@ -220,7 +220,7 @@ float UClimateComponent::GetCurrentTemperature()
 float UClimateComponent::GetCurrentTemperatureForLocation(FVector Location)
 {
 	auto AltitudeAboveSeaLevel = Location.Z - SeaLevel;
-	return CurrentTemperature - (AltitudeAboveSeaLevel * 0.0065f);
+	return CurrentTemperature - (AltitudeAboveSeaLevel * 0.000065);
 	//return CurrentTemperature - (Location.Z * 0.001f * 6.5f);
 }
 
