@@ -6,6 +6,10 @@
 
 void UClimateComponent::ClimateSetup()
 {
+	TicksPerSecond = 4;
+	//PrimaryComponentTick.bCanEverTick = true;
+	bWantsInitializeComponent = true;
+	RegisterAllComponentTickFunctions(true);
 }
 
 void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDateTimeSystemInvalidationTypes::Frame)
@@ -119,7 +123,7 @@ void UClimateComponent::UpdateCurrentClimate(float DeltaTime)
 
 		//
 		auto NextRH = GetDailyRH(LocalTime);
-		auto LowRH = CachedLowTemp.Value;
+		auto LowRH = CachedPriorRH.Value;
 		CurrentRelativeHumidity = FMath::Lerp(LowRH, NextRH, FracDay);
 
 		// Ru
@@ -193,7 +197,7 @@ UDateTimeSystemComponent* UClimateComponent::FindComponent()
 			if (AsType)
 			{
 				// 
-				return AsType->GetDateTimeSystem();
+				return IDateTimeSystemInterface::Execute_GetDateTimeSystem(GameInst);
 			}
 		}
 
@@ -204,7 +208,8 @@ UDateTimeSystemComponent* UClimateComponent::FindComponent()
 			auto AsType = Cast<IDateTimeSystemInterface>(GameState);
 			if (AsType)
 			{
-				return AsType->GetDateTimeSystem();
+				return IDateTimeSystemInterface::Execute_GetDateTimeSystem(GameState);
+				//return AsType->GetDateTimeSystem();
 			}
 		}
 	}
@@ -233,6 +238,13 @@ float UClimateComponent::GetCurrentFeltTemperatureForLocation(FVector Location)
 {
 	auto AltitudeAboveSeaLevel = Location.Z - SeaLevel;
 	return GetCurrentFeltTemperature() - (AltitudeAboveSeaLevel * 0.0065f);
+}
+
+float UClimateComponent::GetCloudLevel()
+{
+	auto CloudHeightMetres = (CurrentDewPoint * 1000) * (1 / 6.5);
+
+	return CloudHeightMetres * 100;
 }
 
 float UClimateComponent::GetHeatIndex()
@@ -355,9 +367,9 @@ void UClimateComponent::InternalBegin()
 	// Try to Find DateTime
 	DateTimeSystem = FindComponent();
 
-	if (DateTimeSystem)
+	if (DateTimeSystem && !DateTimeSystem->IsPendingKill())
 	{
-		DateTimeSystem->DateChangeCallback.AddDynamic(this, &UClimateComponent::DateChanged);
+		DateTimeSystem->DateChangeCallback.AddDynamic(this, &UClimateComponent::InternalDateChanged);
 
 		FDateTimeSystemStruct Today;
 		DateTimeSystem->GetTodaysDateTZ(Today, TimezoneInfo);
@@ -599,5 +611,19 @@ UClimateComponent::UClimateComponent(UClimateComponent& Other)
 UClimateComponent::UClimateComponent(const FObjectInitializer& ObjectInitializer)
 {
 	ClimateSetup();
+}
+
+void UClimateComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	InternalBegin();
+}
+
+void UClimateComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	InternalTick(DeltaTime);
 }
 

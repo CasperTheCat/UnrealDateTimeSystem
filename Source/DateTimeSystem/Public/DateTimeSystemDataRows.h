@@ -68,15 +68,6 @@ public:
 	}
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	int Day;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	int Month;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	int Year;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	float MonthlyHighTemp;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
@@ -88,9 +79,9 @@ public:
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemClimateMonthlyRow& Row)
 {
-	auto DHash = GetTypeHash(Row.Day);
-	auto MHash = GetTypeHash(Row.Month);
-	auto YHash = GetTypeHash(Row.Year);
+	auto DHash = GetTypeHash(Row.MonthlyHighTemp);
+	auto MHash = GetTypeHash(Row.MonthlyLowTemp);
+	auto YHash = GetTypeHash(Row.RelativeHumidity);
 
 	auto Hash = HashCombine(YHash, MHash);
 	return HashCombine(Hash, DHash);

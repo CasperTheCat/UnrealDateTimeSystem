@@ -106,6 +106,7 @@ private:
     void UpdateCurrentTemperature(float DeltaTime);
     void UpdateCurrentClimate(float DeltaTime);
 
+    UFUNCTION()
     void InternalDateChanged(FDateTimeSystemStruct& DateStruct);
 
     UDateTimeSystemComponent* FindComponent();
@@ -114,6 +115,10 @@ public:
     UClimateComponent();
     UClimateComponent(UClimateComponent& Other);
     UClimateComponent(const FObjectInitializer& ObjectInitializer);
+
+    virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+    virtual void BeginPlay();
 
     /**
      * Warning! This function may be off by up to one frame if GetLocalTime
@@ -162,6 +167,9 @@ public:
 
     UFUNCTION(BlueprintCallable)
     float GetCurrentFeltTemperatureForLocation(FVector Location);
+
+    UFUNCTION(BlueprintCallable)
+    float GetCloudLevel();
 
     UFUNCTION(BlueprintCallable)
     float GetHeatIndex();
