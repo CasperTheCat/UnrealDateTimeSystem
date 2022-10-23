@@ -12,6 +12,27 @@
 
 DECLARE_STATS_GROUP(TEXT("ClimateSystem"), STATGROUP_ACIClimateSys, STATCAT_Advanced);
 
+
+
+UENUM(BlueprintType)
+enum class FDateTimeClimateTypes : uint8
+{
+    Clear,
+    Overcast,
+    LightRain,
+    HeavyRain,
+    Monsoon,
+    Fog,
+    Snow,
+    Hail,
+    Frost,
+
+    TOTAL_CLIMATE_TYPES
+};
+
+
+
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FTemperatureChangeDelegate, float, NewTemperature);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FLocalDateTimeEvent);
 
@@ -70,6 +91,9 @@ public:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
     float CurrentTemperature;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float TemperatureChangeSpeed;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
     float CurrentRelativeHumidity;

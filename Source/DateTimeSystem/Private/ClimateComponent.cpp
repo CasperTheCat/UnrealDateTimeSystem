@@ -76,11 +76,11 @@ float UClimateComponent::ModulateTemperature_Implementation(float Temperature, f
 		{
 			// Sun is above the horizon
 			// We want to start Lerping to high temperature slowly
-			return FMath::FInterpTo(Temperature, HighTemperature, SecondsSinceUpdate, 0.04);
+			return FMath::FInterpTo(Temperature, HighTemperature, SecondsSinceUpdate, TemperatureChangeSpeed);
 		}
 		else
 		{
-			return FMath::FInterpTo(Temperature, LowTemperature, SecondsSinceUpdate, 0.04);
+			return FMath::FInterpTo(Temperature, LowTemperature, SecondsSinceUpdate, TemperatureChangeSpeed);
 		}
 
 		//auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
@@ -237,12 +237,12 @@ float UClimateComponent::GetCurrentFeltTemperature()
 float UClimateComponent::GetCurrentFeltTemperatureForLocation(FVector Location)
 {
 	auto AltitudeAboveSeaLevel = Location.Z - SeaLevel;
-	return GetCurrentFeltTemperature() - (AltitudeAboveSeaLevel * 0.0065f);
+	return GetCurrentFeltTemperature() - (AltitudeAboveSeaLevel * 0.000065f);
 }
 
 float UClimateComponent::GetCloudLevel()
 {
-	auto CloudHeightMetres = (CurrentDewPoint * 1000) * (1 / 6.5);
+	auto CloudHeightMetres = (CurrentTemperature - CurrentDewPoint) * (1000 / 6.5f);
 
 	return CloudHeightMetres * 100;
 }
@@ -275,7 +275,11 @@ float UClimateComponent::GetHeatIndex()
 		C8 * T * RR +
 		C9 * TT * RR;
 
-	return HeatIndex - CurrentTemperature;
+	// We want to mute HI when temp is under 25C
+	// We can do this rolling off
+	auto HeatIndexDelta = HeatIndex - CurrentTemperature;
+
+	return FMath::Lerp(0, HeatIndexDelta, FMath::Clamp(CurrentTemperature - 25, 0, 1));
 }
 
 float UClimateComponent::GetWindChillFromVector(FVector WindVector)
@@ -293,7 +297,7 @@ float UClimateComponent::GetWindChillFromVelocity(float WindVelocity)
 		11.37 * V +
 		0.3965 * T * V;
 
-	return WC - CurrentTemperature;
+	return FMath::Min(0, WC - CurrentTemperature);
 }
 
 float UClimateComponent::GetWindChill()
