@@ -30,7 +30,37 @@ enum class FDateTimeClimateTypes : uint8
     TOTAL_CLIMATE_TYPES
 };
 
+USTRUCT(BlueprintType, Blueprintable)
+struct FDateTimeClimateDataStruct
+{
+    GENERATED_BODY()
 
+public:
+    // Encodes how much water there is in the world
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Wetness;
+
+    // Amount of Rain to apply to shader
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Rain;
+
+    // Accumulated Puddles
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Puddles;
+
+    // Amount of frost
+    // Similar to Wetness, but when cold
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Frost;
+
+    // Snow. I use this for light snow
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Snow;
+
+    // WindVector
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FVector Wind;
+};
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FTemperatureChangeDelegate, float, NewTemperature);

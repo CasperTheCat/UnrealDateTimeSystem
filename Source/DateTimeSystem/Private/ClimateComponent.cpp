@@ -371,7 +371,7 @@ void UClimateComponent::InternalBegin()
 	// Try to Find DateTime
 	DateTimeSystem = FindComponent();
 
-	if (DateTimeSystem && !DateTimeSystem->IsPendingKill())
+	if (DateTimeSystem && IsValid(DateTimeSystem))
 	{
 		DateTimeSystem->DateChangeCallback.AddDynamic(this, &UClimateComponent::InternalDateChanged);
 
