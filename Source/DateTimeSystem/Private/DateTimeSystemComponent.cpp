@@ -158,6 +158,8 @@ FRotator UDateTimeSystemComponent::GetSunRotation_Implementation()
 
 FVector UDateTimeSystemComponent::GetSunVector_Implementation(float Latitude, float Longitude)
 {
+	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetSunVector_Implementation"), STAT_ACIGetSunVector, STATGROUP_ACIDateTimeSys);
+
 	// Check Cache. We may compute this a few times per frame
 	auto HashType = HashCombine(GetTypeHash(Latitude), GetTypeHash(Longitude));
 	auto Cache = CachedSunVectors.Find(HashType);
@@ -244,23 +246,25 @@ FRotator UDateTimeSystemComponent::GetMoonRotation_Implementation()
 // https://www.nrel.gov/docs/fy10osti/47681.pdf
 FVector UDateTimeSystemComponent::GetMoonVector_Implementation(float Latitude, float Longitude)
 {
-	auto Day = GetJulianDay(InternalDate);
-	double T = Day * 0.0000273785078713210130047912388775;
+	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetMoonVector_Implementation"), STAT_ACIGetMoonVector, STATGROUP_ACIDateTimeSys);
+
+	double Day = GetJulianDay(InternalDate);
+	double T = Day * 0.00273785078713210130047912388775;
 
 	auto H = InternalDate.StoredSolarSeconds * InvLengthOfDay;
 	auto SiderealTimeRads = 100.4606184 + 0.9856473662862 * Day + 15 * H + T * T;
 
 	double GLong = 218.3164477 +
-		481267.88123421 * T -
-		0.0015786 * T * T +
-		0.000001855835 * T * T * T -
-		0.000000015338834 * T * T * T * T;
+		4812.6788123421 * T -
+		0.00000015786 * T * T;// +
+		//0.000000000001855835 * T * T * T -
+		//0.00000000000000015338834 * T * T * T * T;
 
 	double GLat = 93.2720950 +
-		483202.0175233 * T -
-		0.0036539 * T * T -
-		0.00000028360748723766307 * T * T * T +
-		0.00000000115833246458398 * T * T * T * T;
+		4832.020175233 * T -
+		0.00000036539 * T * T;// -
+		//0.00000000000028360748723766307 * T * T * T +
+		//0.0000000000000000115833246458398 * T * T * T * T;
 
 	GLong = HelperMod(GLong, 360.f);
 	GLat = HelperMod(GLat, 360.f);
@@ -271,8 +275,8 @@ FVector UDateTimeSystemComponent::GetMoonVector_Implementation(float Latitude, f
 	//	FMath::Cos(Beta) * FMath::Sin(Epsilon) * FMath::Sin(Lambda)
 	//);
 
-	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::SanitizeFloat(GLong));
-	GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Magenta, FString::SanitizeFloat(GLat));
+	//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::SanitizeFloat(GLong));
+	//GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Magenta, FString::SanitizeFloat(GLat));
 
 	double LocalLat = Latitude;
 	double LocalLong = Longitude;
@@ -405,6 +409,8 @@ float UDateTimeSystemComponent::GetFractionalDay(FDateTimeSystemStruct& DateStru
 
 float UDateTimeSystemComponent::GetFractionalMonth(FDateTimeSystemStruct& DateStruct)
 {
+	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetFractionalMonth"), STAT_ACIGetFractionalMonth, STATGROUP_ACIDateTimeSys);
+
 	// Yearbook is required for this
 	if (DateStruct.Month < YearBook.Num())
 	{
@@ -429,6 +435,8 @@ float UDateTimeSystemComponent::GetFractionalOrbitalYear(FDateTimeSystemStruct& 
 
 float UDateTimeSystemComponent::GetFractionalCalendarYear(FDateTimeSystemStruct& DateStruct)
 {
+	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetFractionalCalendarYear"), STAT_ACIGetFractionalCalendarYear, STATGROUP_ACIDateTimeSys);
+
 	// We don't know how long a year is without Yearbook
 	if (LengthOfCalendarYearInDays > 0 && DateStruct.Month < YearBook.Num())
 	{
@@ -650,12 +658,12 @@ int UDateTimeSystemComponent::GetLengthOfCalendarYear(int Year)
 	return LengthOfCalendarYearInDays + InternalDoesLeap(Year);
 }
 
-float UDateTimeSystemComponent::GetJulianDay(FDateTimeSystemStruct& DateStruct)
+double UDateTimeSystemComponent::GetJulianDay(FDateTimeSystemStruct& DateStruct)
 {
-	auto SolarDays = 4716 * DaysInOrbitalYear + DateStruct.SolarDays;
-	auto Julian = SolarDays + (InternalDate.StoredSolarSeconds - LengthOfDay * 0.5) * InvLengthOfDay;
+	auto JulianSolarDays = 4716 * DaysInOrbitalYear + DateStruct.SolarDays;
+	auto JulianPartialDays = (InternalDate.StoredSolarSeconds - LengthOfDay) * InvLengthOfDay;
 
-	return Julian;
+	return JulianSolarDays + JulianPartialDays;
 }
 
 void UDateTimeSystemComponent::DateTimeSetup()
@@ -803,6 +811,8 @@ int UDateTimeSystemComponent::GetMonthsInYear(int YearIndex)
 
 bool UDateTimeSystemComponent::SanitiseDateTime(FDateTimeSystemStruct& DateStruct)
 {
+	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("SanitiseDateTime"), STAT_ACISanitiseDateTime, STATGROUP_ACIDateTimeSys);
+
 	auto DidRolloverDay = HandleDayRollover(DateStruct);
 	if (DidRolloverDay)
 	{
@@ -860,6 +870,8 @@ float UDateTimeSystemComponent::GetSolarFractionalYear()
 
 float UDateTimeSystemComponent::SolarDeclinationAngle(float YearInRadians)
 {
+	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("SolarDeclinationAngle"), STAT_ACISolarDeclinationAngle, STATGROUP_ACIDateTimeSys);
+
 	if (CachedSolarDeclinationAngle.Valid)
 	{
 		return CachedSolarDeclinationAngle.Value;
@@ -897,6 +909,8 @@ void UDateTimeSystemComponent::InternalTick(float DeltaTime)
 {
 	// Invalidate Caches
 	Invalidate(EDateTimeSystemInvalidationTypes::Frame);
+
+	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("InternalTick"), STAT_ACIInternalTick, STATGROUP_ACIDateTimeSys);
 
 	// Increment Time
 	InternalDate.Seconds += DeltaTime * TimeScale;
@@ -942,7 +956,7 @@ void UDateTimeSystemComponent::InternalBegin()
 	PercentLatitude  = FMath::DegreesToRadians(ReferenceLatitude) * INV_PI * 2;
 	PercentLongitude = FMath::DegreesToRadians(ReferenceLongitude) * INV_PI;
 
-	
+	InternalDoesLeap(InternalDate.Year);
 
 	// Let's go
 	if (YearBookTable)
@@ -991,6 +1005,8 @@ FVector UDateTimeSystemComponent::AlignWorldLocationInternalCoordinates(FVector 
 
 float UDateTimeSystemComponent::SolarTimeCorrection(float YearInRadians)
 {
+	DECLARE_SCOPE_CYCLE_COUNTER(TEXT("SolarTimeCorrection"), STAT_ACISolarTimeCorrection, STATGROUP_ACIDateTimeSys);
+
 	if (CachedSolarTimeCorrection.Valid)
 	{
 		return CachedSolarTimeCorrection.Value;

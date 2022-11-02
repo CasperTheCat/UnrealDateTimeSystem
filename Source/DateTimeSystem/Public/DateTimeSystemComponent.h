@@ -240,7 +240,7 @@ private:
 
     int GetLengthOfCalendarYear(int Year);
 
-    float GetJulianDay(FDateTimeSystemStruct& DateStruct);
+    double GetJulianDay(FDateTimeSystemStruct& DateStruct);
     //float GetDay(FDateTimeSystemStruct& DateStruct);
 
     float GetDeclinationAngle(FDateTimeSystemStruct& DateStruct);
