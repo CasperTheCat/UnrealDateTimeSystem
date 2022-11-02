@@ -294,21 +294,12 @@ FVector UDateTimeSystemComponent::GetMoonVector_Implementation(float Latitude, f
 float UDateTimeSystemComponent::GetMonthlyHighTemperature(int MonthIndex)
 {
 	checkNoEntry();
-	//if (MonthIndex < YearBook.Num())
-	//{
-	//	
-	//	return YearBook[MonthIndex]->MonthlyHighTemp;
-	//}
 	return 0.0f;
 }
 
 float UDateTimeSystemComponent::GetMonthlyLowTemperature(int MonthIndex)
 {
 	checkNoEntry();
-	//if (MonthIndex < YearBook.Num())
-	//{
-	//	return YearBook[MonthIndex]->MonthlyLowTemp;
-	//}
 	return 0.0f;
 }
 
@@ -329,33 +320,19 @@ FName UDateTimeSystemComponent::GetNameOfMonth(UPARAM(ref)FDateTimeSystemStruct&
 
 float UDateTimeSystemComponent::DailyLowModulation_Implementation(UPARAM(ref)FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh)
 {
+	checkNoEntry();
 	return Temperature;
 }
 
 float UDateTimeSystemComponent::DailyHighModulation_Implementation(UPARAM(ref)FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh)
 {
+	checkNoEntry();
 	return Temperature;
 }
 
 float UDateTimeSystemComponent::ModulateTemperature_Implementation(FVector Location, float Temperature, float SecondsSinceUpdate, float LowTemperature, float HighTemperature, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo)
 {
-	// Get the sun vector. We want to suppress the temperature when it's below the horizon
-	
-	//auto Lat = GetLatitudeFromLocation(Location);
-	//auto Long = GetLongitudeFromLocation(Location);
-	//auto SunVector = GetSunVector(Lat, Long);
-
-	//if (FVector::DotProduct(SunVector, FVector::UpVector) > 0)
-	//{
-	//	// Sun is above the horizon
-	//	// We want to start Lerping to high temperature slowly
-	//	return FMath::FInterpTo(Temperature, HighTemperature, SecondsSinceUpdate, 0.04);
-	//}
-	//else
-	//{
-	//	return FMath::FInterpTo(Temperature, LowTemperature, SecondsSinceUpdate, 0.04);
-	//}
-
+	checkNoEntry();
 	FDateTimeSystemStruct LocalDateStruct{};
 	GetTodaysDateTZ(LocalDateStruct, TimezoneInfo);
 
@@ -366,29 +343,9 @@ float UDateTimeSystemComponent::ModulateTemperature_Implementation(FVector Locat
 
 float UDateTimeSystemComponent::GetCurrentTemperature(FVector Location, float CurrentTemperature, float SecondsSinceUpdate, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo)
 {
-	// We're disabled...
 	checkNoEntry();
 
 	return 0;
-	// Okay. Our Current Temp is going to be dumb.
-	// Which low are we using? The first or last?
-
-	//FDateTimeSystemStruct LocalDateStruct{};
-	//GetTodaysDateTZ(LocalDateStruct, TimezoneInfo);
-
-	//auto FracDay = GetFractionalDay(LocalDateStruct);
-
-	//auto HighTemp = GetDailyHigh(LocalDateStruct);
-	//auto LowTemp = CachedLowTemp.Value;
-	//if (FracDay > 0.5)
-	//{
-	//	// Need today's low, rather than the prior
-	//	LowTemp = GetDailyLow(LocalDateStruct);
-	//}
-
-	//auto Output = ModulateTemperature(Location, CurrentTemperature, SecondsSinceUpdate, LowTemp, HighTemp, TimezoneInfo);
-	//
-	//return Output;
 }
 
 void UDateTimeSystemComponent::SetUTCDateTime(FDateTimeSystemStruct& DateStruct)
@@ -460,86 +417,12 @@ float UDateTimeSystemComponent::GetFractionalCalendarYear(FDateTimeSystemStruct&
 float UDateTimeSystemComponent::GetAnalyticalHighForDate(FDateTimeSystemStruct& DateStruct)
 {
 	checkNoEntry();
-	// We have two things to do here. Return the cache, if it's valid
-	//if (CachedAnalyticalMonthlyHighTemp.Valid)
-	//{
-	//	return CachedAnalyticalMonthlyHighTemp.Value;
-	//}
-	//else
-	//{
-	//	// We need 
-	//	if (DateStruct.Month < YearBook.Num())
-	//	{
-	//		// Which do we need. We need the fractional month value
-	//		auto MonthFrac = GetFractionalMonth(DateStruct);
-	//		auto CurrentMonthHigh = YearBook[DateStruct.Month]->MonthlyHighTemp;
-	//		auto BlendFrac = FMath::Abs(MonthFrac - 0.5);
-
-	//		if (MonthFrac > 0.5)
-	//		{
-	//			// Future Month
-	//			auto OtherIndex = (DateStruct.Month + 1) % YearBook.Num();
-	//			auto OtherValue = YearBook[OtherIndex]->MonthlyHighTemp;
-
-	//			// High is lerp frac
-	//			CachedAnalyticalMonthlyHighTemp.Value = FMath::Lerp(CurrentMonthHigh, OtherValue, BlendFrac);
-	//		}
-	//		else
-	//		{
-	//			// Future Month
-	//			auto OtherIndex = (YearBook.Num() + (DateStruct.Month - 1)) % YearBook.Num();
-	//			auto OtherValue = YearBook[OtherIndex]->MonthlyHighTemp;
-
-	//			// High is lerp frac
-	//			CachedAnalyticalMonthlyHighTemp.Value = FMath::Lerp(OtherValue, CurrentMonthHigh, BlendFrac);
-	//		}
-	//		CachedAnalyticalMonthlyHighTemp.Valid = true;
-	//		return CachedAnalyticalMonthlyHighTemp.Value;
-	//	}
-	//}
 	return 0.0f;
 }
 
 float UDateTimeSystemComponent::GetAnalyticalLowForDate(FDateTimeSystemStruct& DateStruct)
 {
 	checkNoEntry();
-	// We have two things to do here. Return the cache, if it's valid
-	//if (CachedAnalyticalMonthlyLowTemp.Valid)
-	//{
-	//	return CachedAnalyticalMonthlyLowTemp.Value;
-	//}
-	//else
-	//{
-	//	// We need 
-	//	if (DateStruct.Month < YearBook.Num())
-	//	{
-	//		// Which do we need. We need the fractional month value
-	//		auto MonthFrac = GetFractionalMonth(DateStruct);
-	//		auto CurrentMonthLow = YearBook[DateStruct.Month]->MonthlyLowTemp;
-	//		auto BlendFrac = FMath::Abs(MonthFrac - 0.5);
-
-	//		if (MonthFrac > 0.5)
-	//		{
-	//			// Future Month
-	//			auto OtherIndex = (DateStruct.Month + 1) % YearBook.Num();
-	//			auto OtherValue = YearBook[OtherIndex]->MonthlyLowTemp;
-
-	//			// High is lerp frac
-	//			CachedAnalyticalMonthlyLowTemp.Value = FMath::Lerp(CurrentMonthLow, OtherValue, BlendFrac);
-	//		}
-	//		else
-	//		{
-	//			// Future Month
-	//			auto OtherIndex = (YearBook.Num() + (DateStruct.Month - 1)) % YearBook.Num();
-	//			auto OtherValue = YearBook[OtherIndex]->MonthlyLowTemp;
-
-	//			// High is lerp frac
-	//			CachedAnalyticalMonthlyLowTemp.Value = FMath::Lerp(OtherValue, CurrentMonthLow, BlendFrac);
-	//		}
-	//		CachedAnalyticalMonthlyLowTemp.Valid = true;
-	//		return CachedAnalyticalMonthlyLowTemp.Value;
-	//	}
-	//}
 	return 0.0f;
 }
 
@@ -547,110 +430,13 @@ float UDateTimeSystemComponent::GetDailyHigh(FDateTimeSystemStruct& DateStruct)
 {
 	checkNoEntry();
 	return 0;
-	//if (CachedHighTemp.Valid)
-	//{
-	//	return CachedHighTemp.Value;
-	//}
-
-	//// Check Override
-	//auto Row = GetDateOverride(&DateStruct);
-	//if (Row)
-	//{
-	//	auto asPtr = *Row;
-	//	auto LV = FDateTimeSystemStruct::CreateFromRow(asPtr);
-
-	//	CachedHighTemp.Value = DailyHighModulation(LV, asPtr->CallbackAttributes, asPtr->HighTemp, LastLowTemp, LastHighTemp);
-	//	CachedHighTemp.Valid = true;
-	//}
-	//else
-	//{
-	//	// Go ahead and compute the new values
-	//	CachedAnalyticalMonthlyHighTemp.Value = GetAnalyticalHighForDate(InternalDate);
-	//	CachedAnalyticalMonthlyHighTemp.Valid = true;
-
-	//	auto DummyTagContainer = FGameplayTagContainer();
-
-	//	CachedHighTemp.Value = DailyHighModulation(InternalDate, DummyTagContainer, CachedAnalyticalMonthlyHighTemp.Value, LastLowTemp, LastHighTemp);
-	//	CachedHighTemp.Valid = true;
-	//}
-
-	//return CachedHighTemp.Value;
 }
 
 float UDateTimeSystemComponent::GetDailyLow(FDateTimeSystemStruct& DateStruct)
 {
 	checkNoEntry();
-	// Okay. We need to work out which Low we actually want
 	return 0;
 
-	//if (CachedNextLowTemp.Valid)
-	//{
-	//	return CachedNextLowTemp.Value;
-	//}
-
-	//// Check Override
-	//auto Row = GetDateOverride(&DateStruct);
-	//if (Row)
-	//{
-	//	auto asPtr = *Row;
-	//	auto LV = FDateTimeSystemStruct::CreateFromRow(asPtr);
-
-	//	CachedNextLowTemp.Value = DailyLowModulation(LV, asPtr->CallbackAttributes, asPtr->LowTemp, LastLowTemp, LastHighTemp);
-	//	CachedNextLowTemp.Valid = true;
-	//}
-	//else
-	//{
-	//	// Go ahead and compute the new values
-	//	CachedAnalyticalMonthlyLowTemp.Value = GetAnalyticalLowForDate(InternalDate);
-	//	CachedAnalyticalMonthlyLowTemp.Valid = true;
-
-	//	auto DummyTagContainer = FGameplayTagContainer();
-
-	//	CachedNextLowTemp.Value = DailyLowModulation(InternalDate, DummyTagContainer, CachedAnalyticalMonthlyLowTemp.Value, LastLowTemp, LastHighTemp);
-	//	CachedNextLowTemp.Valid = true;
-	//}
-
-	//return CachedNextLowTemp.Value;
-
-	//if (CachedLowTemp.Valid)
-	//{
-	//	return CachedLowTemp.Value;
-	//}
-
-	//// Handle rolling the starting temp of day n+1 to the ending of n
-	//CachedLowTemp.Value = CachedNextLowTemp.Value;
-	//CachedLowTemp.Valid = true;
-
-	//// Check Override
-	//auto Row = DateOverrides.Find(InternalDate.DayIndex);
-	//if (Row)
-	//{
-	//	auto LV = FDateTimeSystemStruct::CreateFromRow(Row);
-
-	//	CachedNextLowTemp.Value = DailyLowModulation(LV, Row->CallbackAttributes, Row->LowTemp, CachedLowTemp.Value, CachedHighTemp.Value);
-	//	CachedHighTemp.Value = DailyHighModulation(LV, Row->CallbackAttributes, Row->HighTemp, CachedLowTemp.Value, CachedHighTemp.Value);
-
-	//	CachedNextLowTemp.Valid = true;
-	//	CachedHighTemp.Valid = true;
-	//}
-	//else
-	//{
-	//	// Go ahead and compute the new values
-	//	CachedAnalyticalMonthlyHighTemp.Value = GetAnalyticalHighForDate(InternalDate);
-	//	CachedAnalyticalMonthlyHighTemp.Valid = true;
-	//	CachedAnalyticalMonthlyLowTemp.Value = GetAnalyticalLowForDate(InternalDate);
-	//	CachedAnalyticalMonthlyLowTemp.Valid = true;
-
-	//	auto DummyTagContainer = FGameplayTagContainer();
-
-	//	CachedNextLowTemp.Value = DailyLowModulation(InternalDate, DummyTagContainer, CachedAnalyticalMonthlyLowTemp.Value, CachedLowTemp.Value, CachedHighTemp.Value);
-	//	CachedHighTemp.Value = DailyHighModulation(InternalDate, DummyTagContainer, CachedAnalyticalMonthlyHighTemp.Value, CachedLowTemp.Value, CachedHighTemp.Value);
-
-	//	CachedNextLowTemp.Valid = true;
-	//	CachedHighTemp.Valid = true;
-	//}
-
-	//return CachedHighTemp.Value;
 }
 
 int UDateTimeSystemComponent::GetLengthOfCalendarYear(int Year)
