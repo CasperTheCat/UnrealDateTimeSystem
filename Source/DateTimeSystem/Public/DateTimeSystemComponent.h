@@ -232,12 +232,6 @@ private:
     bool HandleMonthRollover(FDateTimeSystemStruct& DateStruct);
     bool HandleYearRollover(FDateTimeSystemStruct& DateStruct);
 
-    float GetAnalyticalHighForDate(FDateTimeSystemStruct& DateStruct);
-    float GetAnalyticalLowForDate(FDateTimeSystemStruct& DateStruct);
-
-    float GetDailyHigh(FDateTimeSystemStruct& DateStruct);
-    float GetDailyLow(FDateTimeSystemStruct& DateStruct);
-
     int GetLengthOfCalendarYear(int Year);
 
     double GetJulianDay(FDateTimeSystemStruct& DateStruct);
@@ -259,6 +253,8 @@ private:
 
     bool InternalDoesLeap(int Year);
 
+    virtual FRotator GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
+    virtual FRotator GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
 
 public:
     UDateTimeSystemComponent();
@@ -280,13 +276,19 @@ public:
     UFUNCTION(BlueprintCallable)
     void GetTomorrowsDateTZ(FDateTimeSystemStruct& DateStruct, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo);
 
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-    float GetLatitudeFromLocation(FVector Location);
-    virtual float GetLatitudeFromLocation_Implementation(FVector Location);
+    UFUNCTION(BlueprintCallable)
+    void GetYesterdaysDate(FDateTimeSystemStruct& DateStruct);
+
+    UFUNCTION(BlueprintCallable)
+    void GetYesterdaysDateTZ(FDateTimeSystemStruct& DateStruct, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo);
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-    float GetLongitudeFromLocation(FVector Location);
-    virtual float GetLongitudeFromLocation_Implementation(FVector Location);
+    float GetLatitudeFromLocation(float BaseLatitudePercent, FVector Location);
+    virtual float GetLatitudeFromLocation_Implementation(float BaseLatitudePercent, FVector Location);
+
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    float GetLongitudeFromLocation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
+    virtual float GetLongitudeFromLocation_Implementation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     bool DoesYearLeap(int Year);
@@ -329,12 +331,6 @@ public:
     float GetFractionalCalendarYear(UPARAM(ref) FDateTimeSystemStruct& DateStruct);
 
     UFUNCTION(BlueprintCallable)
-    float GetMonthlyHighTemperature(int MonthIndex);
-
-    UFUNCTION(BlueprintCallable)
-    float GetMonthlyLowTemperature(int MonthIndex);
-
-    UFUNCTION(BlueprintCallable)
     void DummyAddTick(float Time);
 
     UFUNCTION(BlueprintCallable)
@@ -348,24 +344,6 @@ public:
 
     UFUNCTION(BlueprintCallable)
     FName GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct& DateStruct);
-
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-    float DailyLowModulation(UPARAM(ref) FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh);
-    virtual float DailyLowModulation_Implementation(UPARAM(ref) FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh);
-
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-    float DailyHighModulation(UPARAM(ref) FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh);
-    virtual float DailyHighModulation_Implementation(UPARAM(ref) FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh);
-
-
-    // Called to modulate the temps over the day
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-    float ModulateTemperature(FVector Location, float Temperature, float SecondsSinceUpdate, float LowTemperature, float HighTemperature, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo);
-    virtual float ModulateTemperature_Implementation(FVector Location, float Temperature, float SecondsSinceUpdate, float LowTemperature, float HighTemperature, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo);
-
-    UFUNCTION(BlueprintCallable)
-    float GetCurrentTemperature(FVector Location, float CurrentTemperature, float SecondsSinceUpdate, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo);
-
 
     // Set the thing, directly
     UFUNCTION(BlueprintCallable)

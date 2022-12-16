@@ -37,7 +37,10 @@ public:
 	float LowTemp;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	float RelativeHumidity;
+	float DewPoint;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float DailyRainfall;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FGameplayTagContainer MiscData;
@@ -74,14 +77,17 @@ public:
 	float MonthlyLowTemp;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	float RelativeHumidity;
+	float DewPoint;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float Rainfall;
 };
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemClimateMonthlyRow& Row)
 {
 	auto DHash = GetTypeHash(Row.MonthlyHighTemp);
 	auto MHash = GetTypeHash(Row.MonthlyLowTemp);
-	auto YHash = GetTypeHash(Row.RelativeHumidity);
+	auto YHash = GetTypeHash(Row.DewPoint);
 
 	auto Hash = HashCombine(YHash, MHash);
 	return HashCombine(Hash, DHash);

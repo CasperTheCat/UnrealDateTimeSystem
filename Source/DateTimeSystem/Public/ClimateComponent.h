@@ -12,8 +12,6 @@
 
 DECLARE_STATS_GROUP(TEXT("ClimateSystem"), STATGROUP_ACIClimateSys, STATCAT_Advanced);
 
-
-
 UENUM(BlueprintType)
 enum class FDateTimeClimateTypes : uint8
 {
@@ -60,10 +58,24 @@ public:
     // WindVector
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FVector Wind;
+
+    // Temperataure
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Temperature;
+
+    // Temperataure
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float ChillOffset;
+
+    // Temperataure
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float HeatOffset;
 };
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FTemperatureChangeDelegate, float, NewTemperature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateClimateData, FDateTimeClimateDataStruct, ClimateData);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateClimateData, UPARAM(ref) FDateTimeClimateDataStruct&, ClimateData);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FLocalDateTimeEvent);
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
@@ -93,6 +105,11 @@ private:
     float LastHighTemp;
     float LastLowTemp;
 
+    float PercentileLatitude;
+    float PercentileLongitude;
+    float OneOverUpdateFrequency;
+    float AccumulatedDeltaForCallback;
+
     bool SunHasRisen;
 
     // Cached Values
@@ -100,9 +117,9 @@ private:
     FDateTimeSystemPackedCacheFloat CachedLowTemp;
     FDateTimeSystemPackedCacheFloat CachedNextLowTemp;
 
-    FDateTimeSystemPackedCacheFloat CachedPriorRH;
-    FDateTimeSystemPackedCacheFloat CachedNextRH;
-    FDateTimeSystemPackedCacheFloat CachedAnalyticalRH;
+    FDateTimeSystemPackedCacheFloat CachedPriorDewPoint;
+    FDateTimeSystemPackedCacheFloat CachedNextDewPoint;
+    FDateTimeSystemPackedCacheFloat CachedAnalyticalDewPoint;
 
     FDateTimeSystemPackedCacheFloat CachedAnalyticalMonthlyHighTemp;
     FDateTimeSystemPackedCacheFloat CachedAnalyticalMonthlyLowTemp;
@@ -112,6 +129,9 @@ private:
 public:
     UPROPERTY(BlueprintAssignable)
     FTemperatureChangeDelegate TemperatureChangeCallback;
+
+    UPROPERTY(BlueprintAssignable)
+    FUpdateClimateData UpdateLocalClimateCallback;
 
     UPROPERTY(BlueprintAssignable)
     FLocalDateTimeEvent SunriseCallback;
@@ -134,11 +154,17 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
     float SeaLevel;
 
+    UPROPERTY(SaveGame)
+    bool HasBoundToDate;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
     float ReferenceLatitude;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
     float ReferenceLongitude;
+
+    UPROPERTY(EditDefaultsOnly)
+    float DefaultClimateUpdateFrequency;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
     FDateTimeSystemTimezoneStruct TimezoneInfo;
@@ -151,11 +177,11 @@ private:
     float GetAnalyticalHighForDate(FDateTimeSystemStruct& DateStruct);
     float GetAnalyticalLowForDate(FDateTimeSystemStruct& DateStruct);
 
-    float GetAnalyticalRHForDate(FDateTimeSystemStruct& DateStruct);
+    float GetAnalyticalDewPointForDate(FDateTimeSystemStruct& DateStruct);
 
     float GetDailyHigh(FDateTimeSystemStruct& DateStruct);
     float GetDailyLow(FDateTimeSystemStruct& DateStruct);
-    float GetDailyRH(FDateTimeSystemStruct& DateStruct);
+    float GetDailyDewPoint(FDateTimeSystemStruct& DateStruct);
 
     void UpdateCurrentTemperature(float DeltaTime);
     void UpdateCurrentClimate(float DeltaTime);
@@ -193,6 +219,15 @@ public:
     UFUNCTION(BlueprintCallable)
     void InternalBegin();
 
+    UFUNCTION(BlueprintCallable)
+    void SetClimateUpdateFrequency(float Frequency);
+
+    UFUNCTION(BlueprintCallable)
+    FRotator GetLocalSunRotation(FVector Location);
+
+    UFUNCTION(BlueprintCallable)
+    FRotator GetLocalMoonRotation(FVector Location);
+
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     void DateChanged(UPARAM(ref) FDateTimeSystemStruct& DateStruct);
     virtual void DateChanged_Implementation(UPARAM(ref) FDateTimeSystemStruct& DateStruct);
@@ -204,11 +239,22 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     float DailyHighModulation(UPARAM(ref) FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh);
     virtual float DailyHighModulation_Implementation(UPARAM(ref) FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh);
-
     // Called to modulate the temps over the day
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     float ModulateTemperature(float Temperature, float SecondsSinceUpdate, float LowTemperature, float HighTemperature);
     virtual float ModulateTemperature_Implementation(float Temperature, float SecondsSinceUpdate, float LowTemperature, float HighTemperature);
+
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    float ModulateFogByRainfall(float FogHeight, float SecondsSinceUpdate, float RainLevel);
+    virtual float ModulateFogByRainfall_Implementation(float FogHeight, float SecondsSinceUpdate, float RainLevel);
+
+    UFUNCTION(BlueprintCallable)
+    float ModulateTemperatureByLocation(float Temperature, FVector Location);
+
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    FDateTimeClimateDataStruct GetUpdatedClimateData();
+    virtual FDateTimeClimateDataStruct GetUpdatedClimateData_Implementation();
+
 
     UFUNCTION(BlueprintCallable)
     float GetCurrentTemperature();
@@ -217,13 +263,16 @@ public:
     float GetCurrentTemperatureForLocation(FVector Location);
 
     UFUNCTION(BlueprintCallable)
-    float GetCurrentFeltTemperature();
+    float GetCurrentFeltTemperature(float WindVelocity);
 
     UFUNCTION(BlueprintCallable)
-    float GetCurrentFeltTemperatureForLocation(FVector Location);
+    float GetCurrentFeltTemperatureForLocation(float WindVelocity, FVector Location);
 
     UFUNCTION(BlueprintCallable)
     float GetCloudLevel();
+
+    UFUNCTION(BlueprintCallable)
+    float GetFogLevel();
 
     UFUNCTION(BlueprintCallable)
     float GetHeatIndex();
@@ -233,7 +282,4 @@ public:
 
     UFUNCTION(BlueprintCallable)
     float GetWindChillFromVelocity(float WindVelocity);
-
-    UFUNCTION(BlueprintCallable)
-    float GetWindChill();
 };

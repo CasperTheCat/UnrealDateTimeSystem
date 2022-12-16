@@ -85,7 +85,7 @@ void UDateTimeSystemComponent::GetTomorrowsDate(UPARAM(ref) FDateTimeSystemStruc
 void UDateTimeSystemComponent::GetTomorrowsDateTZ(UPARAM(ref)FDateTimeSystemStruct& DateStruct, FDateTimeSystemTimezoneStruct& TimezoneInfo)
 {
 	DateStruct = InternalDate;
-	DateStruct.Seconds = InternalDate.Seconds + LengthOfDay + TimezoneInfo.HoursDeltaFromMeridian * 3600;
+	DateStruct.Seconds = InternalDate.Seconds + TimezoneInfo.HoursDeltaFromMeridian * 3600;
 	HandleDayRollover(DateStruct);
 
 	DateStruct.Day = InternalDate.Day + 1;
@@ -95,10 +95,33 @@ void UDateTimeSystemComponent::GetTomorrowsDateTZ(UPARAM(ref)FDateTimeSystemStru
 	SanitiseDateTime(DateStruct);
 }
 
-float UDateTimeSystemComponent::GetLatitudeFromLocation_Implementation(FVector Location)
+void UDateTimeSystemComponent::GetYesterdaysDate(FDateTimeSystemStruct& DateStruct)
+{
+	DateStruct = InternalDate;
+	DateStruct.Day = InternalDate.Day - 1;
+	DateStruct.Month = InternalDate.Month;
+	DateStruct.Year = InternalDate.Year;
+
+	SanitiseDateTime(DateStruct);
+}
+
+void UDateTimeSystemComponent::GetYesterdaysDateTZ(FDateTimeSystemStruct& DateStruct, UPARAM(ref)FDateTimeSystemTimezoneStruct& TimezoneInfo)
+{
+	DateStruct = InternalDate;
+	DateStruct.Seconds = InternalDate.Seconds + TimezoneInfo.HoursDeltaFromMeridian * 3600;
+	HandleDayRollover(DateStruct);
+
+	DateStruct.Day = InternalDate.Day - 1;
+	DateStruct.Month = InternalDate.Month;
+	DateStruct.Year = InternalDate.Year;
+
+	SanitiseDateTime(DateStruct);
+}
+
+float UDateTimeSystemComponent::GetLatitudeFromLocation_Implementation(float BaseLatitudePercent, FVector Location)
 {
 	auto LatLoc = Location.X * 0.01 * InvPlanetRadius * INV_PI * 2; // Divide distance walked by Pi/2
-	LatLoc += PercentLatitude;
+	LatLoc += BaseLatitudePercent;
 	auto ScaledX  = LatLoc - 1; // Shift range to from -1 to 1, to -2 to 0
 	auto Modded   = HelperMod(ScaledX, 4) - 2; // Take the modulus, which now goes from -2 to 2 when x is -3 to 1
 	auto Absolute = FMath::Abs(Modded) - 1; // Invert the negatives and give use a triangle wave
@@ -106,14 +129,14 @@ float UDateTimeSystemComponent::GetLatitudeFromLocation_Implementation(FVector L
 	return HALF_PI * Absolute;
 }
 
-float UDateTimeSystemComponent::GetLongitudeFromLocation_Implementation(FVector Location)
+float UDateTimeSystemComponent::GetLongitudeFromLocation_Implementation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location)
 {
 	// auto
 	auto LatLoc = Location.X * 0.01 * InvPlanetRadius * INV_PI * 2; // Divide distance walked by Pi/2
 	auto LongLoc = Location.Y * 0.01 * InvPlanetRadius * INV_PI;
 
-	LatLoc  += PercentLatitude;
-	LongLoc += PercentLongitude;
+	LatLoc  += BaseLatitudePercent;
+	LongLoc += BaseLongitudePercent;
 
 	auto Flipped = HelperMod((LatLoc - 1) * 0.5, 2) < 1;
 	if (Flipped)
@@ -143,12 +166,7 @@ bool UDateTimeSystemComponent::DoesYearLeap_Implementation(int Year)
 
 FRotator UDateTimeSystemComponent::GetSunRotationForLocation_Implementation(FVector Location)
 {
-	auto Lat = GetLatitudeFromLocation(Location);
-	auto Long = GetLongitudeFromLocation(Location);
-	auto SunInverse = GetSunVector(Lat, Long);
-	FVector Flip = -SunInverse;
-
-	return Flip.ToOrientationRotator();
+	return GetLocalisedSunRotation(PercentLatitude, PercentLongitude, Location);
 }
 
 FRotator UDateTimeSystemComponent::GetSunRotation_Implementation()
@@ -229,12 +247,7 @@ FVector UDateTimeSystemComponent::GetSunVector_Implementation(float Latitude, fl
 
 FRotator UDateTimeSystemComponent::GetMoonRotationForLocation_Implementation(FVector Location)
 {
-	auto Lat = GetLatitudeFromLocation(Location);
-	auto Long = GetLongitudeFromLocation(Location);
-	auto MoonInverse = GetMoonVector(Lat, Long);
-	FVector Flip = -MoonInverse;
-
-	return Flip.ToOrientationRotator();
+	return GetLocalisedMoonRotation(PercentLatitude, PercentLongitude, Location);
 }
 
 FRotator UDateTimeSystemComponent::GetMoonRotation_Implementation()
@@ -291,20 +304,9 @@ FVector UDateTimeSystemComponent::GetMoonVector_Implementation(float Latitude, f
 	return FVector(SX, SY, SZ);
 }
 
-float UDateTimeSystemComponent::GetMonthlyHighTemperature(int MonthIndex)
-{
-	checkNoEntry();
-	return 0.0f;
-}
-
-float UDateTimeSystemComponent::GetMonthlyLowTemperature(int MonthIndex)
-{
-	checkNoEntry();
-	return 0.0f;
-}
-
 void UDateTimeSystemComponent::DummyAddTick(float Time)
 {
+	checkNoEntry();
 	InternalTick(Time);
 }
 
@@ -316,36 +318,6 @@ FName UDateTimeSystemComponent::GetNameOfMonth(UPARAM(ref)FDateTimeSystemStruct&
 	}
 
 	return FName();
-}
-
-float UDateTimeSystemComponent::DailyLowModulation_Implementation(UPARAM(ref)FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh)
-{
-	checkNoEntry();
-	return Temperature;
-}
-
-float UDateTimeSystemComponent::DailyHighModulation_Implementation(UPARAM(ref)FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh)
-{
-	checkNoEntry();
-	return Temperature;
-}
-
-float UDateTimeSystemComponent::ModulateTemperature_Implementation(FVector Location, float Temperature, float SecondsSinceUpdate, float LowTemperature, float HighTemperature, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo)
-{
-	checkNoEntry();
-	FDateTimeSystemStruct LocalDateStruct{};
-	GetTodaysDateTZ(LocalDateStruct, TimezoneInfo);
-
-	auto FracDay = GetFractionalDay(LocalDateStruct);
-	auto Multi = FMath::Sin(PI * FracDay);
-	return FMath::Lerp(LowTemperature, HighTemperature, Multi);
-}
-
-float UDateTimeSystemComponent::GetCurrentTemperature(FVector Location, float CurrentTemperature, float SecondsSinceUpdate, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo)
-{
-	checkNoEntry();
-
-	return 0;
 }
 
 void UDateTimeSystemComponent::SetUTCDateTime(FDateTimeSystemStruct& DateStruct)
@@ -412,31 +384,6 @@ float UDateTimeSystemComponent::GetFractionalCalendarYear(FDateTimeSystemStruct&
 
 	// Use Orbital
 	return GetFractionalOrbitalYear(DateStruct);
-}
-
-float UDateTimeSystemComponent::GetAnalyticalHighForDate(FDateTimeSystemStruct& DateStruct)
-{
-	checkNoEntry();
-	return 0.0f;
-}
-
-float UDateTimeSystemComponent::GetAnalyticalLowForDate(FDateTimeSystemStruct& DateStruct)
-{
-	checkNoEntry();
-	return 0.0f;
-}
-
-float UDateTimeSystemComponent::GetDailyHigh(FDateTimeSystemStruct& DateStruct)
-{
-	checkNoEntry();
-	return 0;
-}
-
-float UDateTimeSystemComponent::GetDailyLow(FDateTimeSystemStruct& DateStruct)
-{
-	checkNoEntry();
-	return 0;
-
 }
 
 int UDateTimeSystemComponent::GetLengthOfCalendarYear(int Year)
@@ -689,6 +636,26 @@ bool UDateTimeSystemComponent::InternalDoesLeap(int Year)
 	CachedDoesLeap.Valid = true;
 
 	return bool(CachedDoesLeap.Value);
+}
+
+FRotator UDateTimeSystemComponent::GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location)
+{
+	auto Lat = GetLatitudeFromLocation(PercentLatitude, Location);
+	auto Long = GetLongitudeFromLocation(PercentLatitude, PercentLongitude, Location);
+	auto SunInverse = GetSunVector(Lat, Long);
+	FVector Flip = -SunInverse;
+
+	return Flip.ToOrientationRotator();
+}
+
+FRotator UDateTimeSystemComponent::GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location)
+{
+	auto Lat = GetLatitudeFromLocation(PercentLatitude, Location);
+	auto Long = GetLongitudeFromLocation(PercentLatitude, PercentLongitude, Location);
+	auto MoonInverse = GetMoonVector(Lat, Long);
+	FVector Flip = -MoonInverse;
+
+	return Flip.ToOrientationRotator();
 }
 
 void UDateTimeSystemComponent::InternalTick(float DeltaTime)

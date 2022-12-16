@@ -10,6 +10,8 @@ void UClimateComponent::ClimateSetup()
 	//PrimaryComponentTick.bCanEverTick = true;
 	bWantsInitializeComponent = true;
 	RegisterAllComponentTickFunctions(true);
+	HasBoundToDate = true;
+	DefaultClimateUpdateFrequency = 30;
 }
 
 void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDateTimeSystemInvalidationTypes::Frame)
@@ -27,12 +29,14 @@ void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDate
 		CachedNextLowTemp.Valid = false;
 		CachedAnalyticalMonthlyHighTemp.Valid = false;
 		CachedAnalyticalMonthlyLowTemp.Valid = false;
+		CachedAnalyticalDewPoint.Valid = false;
+		CachedNextDewPoint.Valid = false;
 	}
 }
 
 FDateTimeSystemStruct UClimateComponent::GetLocalTime()
 {
-	SunHasRisen = false;
+	//SunHasRisen = false;
 	return LocalTime;
 }
 
@@ -92,6 +96,34 @@ float UClimateComponent::ModulateTemperature_Implementation(float Temperature, f
 
 }
 
+float UClimateComponent::ModulateFogByRainfall_Implementation(float FogHeight, float SecondsSinceUpdate, float RainLevel)
+{
+	return FogHeight;
+}
+
+float UClimateComponent::ModulateTemperatureByLocation(float Temperature, FVector Location)
+{
+	auto AltitudeAboveSeaLevel = Location.Z - SeaLevel;
+	return Temperature - (AltitudeAboveSeaLevel * 0.000065);
+}
+
+FDateTimeClimateDataStruct UClimateComponent::GetUpdatedClimateData_Implementation()
+{
+	auto WindVector = FVector(0, 0, 0);
+
+	FDateTimeClimateDataStruct Returnable{};
+	Returnable.Temperature = GetCurrentTemperature();
+	Returnable.HeatOffset = GetHeatIndex();
+	Returnable.Wind = WindVector;
+	Returnable.ChillOffset = GetWindChillFromVector(WindVector);
+	Returnable.Frost = 0.f;
+	Returnable.Rain = FMath::Sin(float(LocalTime.StoredSolarSeconds * (1.f / 86400.f) * 3.14)) * 0.5 + 0.5;
+	Returnable.Wetness = FMath::Cos(float(LocalTime.StoredSolarSeconds * (1.f / 86400.f) * 6.14)) * 0.5 + 0.5;
+
+	// 
+	return Returnable;
+}
+
 
 
 void UClimateComponent::UpdateCurrentTemperature(float DeltaTime)
@@ -122,16 +154,16 @@ void UClimateComponent::UpdateCurrentClimate(float DeltaTime)
 		auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
 
 		//
-		auto NextRH = GetDailyRH(LocalTime);
-		auto LowRH = CachedPriorRH.Value;
-		CurrentRelativeHumidity = FMath::Lerp(LowRH, NextRH, FracDay);
+		auto NextRH = GetDailyDewPoint(LocalTime);
+		auto LowRH = CachedPriorDewPoint.Value;
+		CurrentDewPoint = FMath::Lerp(LowRH, NextRH, FracDay);
 
 		// Ru
-		auto LambdaTRH = FMath::Loge(CurrentRelativeHumidity * 0.01f) +
-			((18.678f * CurrentTemperature) / (257.14f + CurrentTemperature));
+		auto LogRH = (CurrentDewPoint * 18.678f) / (257.14f + CurrentDewPoint) -
+			(CurrentTemperature * 18.678f) / (257.14f + CurrentTemperature);
 
-		// Tdp
-		CurrentDewPoint = (257.14f * LambdaTRH) / (18.678f - LambdaTRH);
+		// RH
+		CurrentRelativeHumidity = FMath::Exp(LogRH);
 	}
 }
 
@@ -145,7 +177,7 @@ void UClimateComponent::InternalDateChanged(FDateTimeSystemStruct& DateStruct)
 	CachedLowTemp.Valid = true;
 	LastHighTemp = CachedHighTemp.Value;
 	LastLowTemp = CachedLowTemp.Value;
-	CachedPriorRH.Value = CachedNextRH.Value;
+	CachedPriorDewPoint.Value = CachedNextDewPoint.Value;
 
 	auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
 	if (Row)
@@ -224,20 +256,17 @@ float UClimateComponent::GetCurrentTemperature()
 
 float UClimateComponent::GetCurrentTemperatureForLocation(FVector Location)
 {
-	auto AltitudeAboveSeaLevel = Location.Z - SeaLevel;
-	return CurrentTemperature - (AltitudeAboveSeaLevel * 0.000065);
-	//return CurrentTemperature - (Location.Z * 0.001f * 6.5f);
+	return ModulateTemperatureByLocation(CurrentTemperature, Location);
 }
 
-float UClimateComponent::GetCurrentFeltTemperature()
+float UClimateComponent::GetCurrentFeltTemperature(float WindVelocity)
 {
-	return 0.0f;
+	return GetCurrentTemperature() + GetHeatIndex() - GetWindChillFromVelocity(WindVelocity);
 }
 
-float UClimateComponent::GetCurrentFeltTemperatureForLocation(FVector Location)
+float UClimateComponent::GetCurrentFeltTemperatureForLocation(float WindVelocity, FVector Location)
 {
-	auto AltitudeAboveSeaLevel = Location.Z - SeaLevel;
-	return GetCurrentFeltTemperature() - (AltitudeAboveSeaLevel * 0.000065f);
+	return ModulateTemperatureByLocation(GetCurrentFeltTemperature(WindVelocity), Location);
 }
 
 float UClimateComponent::GetCloudLevel()
@@ -245,6 +274,13 @@ float UClimateComponent::GetCloudLevel()
 	auto CloudHeightMetres = (CurrentTemperature - CurrentDewPoint) * (1000 / 6.5f);
 
 	return CloudHeightMetres * 100;
+}
+
+float UClimateComponent::GetFogLevel()
+{
+	checkNoEntry();
+	auto CL = -GetCloudLevel();
+	return ModulateFogByRainfall(CL, 0, 0);
 }
 
 float UClimateComponent::GetHeatIndex()
@@ -300,11 +336,6 @@ float UClimateComponent::GetWindChillFromVelocity(float WindVelocity)
 	return FMath::Min(0, WC - CurrentTemperature);
 }
 
-float UClimateComponent::GetWindChill()
-{
-	return 0.0f;
-}
-
 // Start a counter here so it captures the super call
 //DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetCameraView (Including Super::)"), STAT_ACIGetCameraViewInc, STATGROUP_ACIExtCam);
 
@@ -347,11 +378,31 @@ void UClimateComponent::InternalTick(float DeltaTime)
 				SunHasRisen = false;
 			}
 		}
+
+		if (UpdateLocalClimateCallback.IsBound())
+		{
+			// Check if DeltaTime is greater than threshold
+			AccumulatedDeltaForCallback += DeltaTime;
+			if (AccumulatedDeltaForCallback > OneOverUpdateFrequency)
+			{
+				// Update
+				auto UpdatedClimateData = GetUpdatedClimateData();
+				UpdateLocalClimateCallback.Broadcast(UpdatedClimateData);
+				AccumulatedDeltaForCallback = 0.f;
+			}
+		}
+
+
 	}
 }
 
 void UClimateComponent::InternalBegin()
 {
+	PercentileLatitude = FMath::DegreesToRadians(ReferenceLatitude) * INV_PI * 2;
+	PercentileLongitude = FMath::DegreesToRadians(ReferenceLongitude) * INV_PI;
+
+	OneOverUpdateFrequency = 1 / DefaultClimateUpdateFrequency;
+
 	// Let's go
 	if (ClimateTable)
 	{
@@ -373,7 +424,11 @@ void UClimateComponent::InternalBegin()
 
 	if (DateTimeSystem && IsValid(DateTimeSystem))
 	{
-		DateTimeSystem->DateChangeCallback.AddDynamic(this, &UClimateComponent::InternalDateChanged);
+		if(!HasBoundToDate)
+		{
+			DateTimeSystem->DateChangeCallback.AddDynamic(this, &UClimateComponent::InternalDateChanged);
+			HasBoundToDate = true;
+		}
 
 		FDateTimeSystemStruct Today;
 		DateTimeSystem->GetTodaysDateTZ(Today, TimezoneInfo);
@@ -381,7 +436,43 @@ void UClimateComponent::InternalBegin()
 		// Set Prevalue
 		CachedLowTemp.Value = GetDailyLow(Today);
 		CachedLowTemp.Valid = true;
+
+
+
+		FDateTimeSystemStruct Yesterday;
+		DateTimeSystem->GetYesterdaysDateTZ(Yesterday, TimezoneInfo);
+		CachedPriorDewPoint.Value = GetDailyDewPoint(Yesterday);
+		CachedPriorDewPoint.Valid = true;
 	}
+}
+
+void UClimateComponent::SetClimateUpdateFrequency(float Frequency)
+{
+	if (Frequency == Frequency && Frequency > 0)
+	{
+		// Compute the reciprocal
+		OneOverUpdateFrequency = 1 / Frequency;
+	}
+}
+
+FRotator UClimateComponent::GetLocalSunRotation(FVector Location)
+{
+	if(DateTimeSystem)
+	{
+		return DateTimeSystem->GetLocalisedSunRotation(PercentileLatitude, PercentileLongitude, Location);
+	}
+
+	return FRotator();
+}
+
+FRotator UClimateComponent::GetLocalMoonRotation(FVector Location)
+{
+	if (DateTimeSystem)
+	{
+		return DateTimeSystem->GetLocalisedMoonRotation(PercentileLatitude, PercentileLongitude, Location);
+	}
+
+	return FRotator();
 }
 
 void UClimateComponent::DateChanged_Implementation(FDateTimeSystemStruct& DateStruct)
@@ -472,12 +563,12 @@ float UClimateComponent::GetAnalyticalLowForDate(FDateTimeSystemStruct& DateStru
 	return 0.0f;
 }
 
-float UClimateComponent::GetAnalyticalRHForDate(FDateTimeSystemStruct& DateStruct)
+float UClimateComponent::GetAnalyticalDewPointForDate(FDateTimeSystemStruct& DateStruct)
 {
 	// We have two things to do here. Return the cache, if it's valid
-	if (CachedAnalyticalRH.Valid)
+	if (CachedAnalyticalDewPoint.Valid)
 	{
-		return CachedAnalyticalRH.Value;
+		return CachedAnalyticalDewPoint.Value;
 	}
 	else
 	{
@@ -485,29 +576,29 @@ float UClimateComponent::GetAnalyticalRHForDate(FDateTimeSystemStruct& DateStruc
 		{
 			// Which do we need. We need the fractional month value
 			auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
-			auto CurrentRH = ClimateBook[DateStruct.Month]->RelativeHumidity;
+			auto CurrentRH = ClimateBook[DateStruct.Month]->DewPoint;
 			auto BlendFrac = FMath::Abs(MonthFrac - 0.5);
 
 			if (MonthFrac > 0.5)
 			{
 				// Future Month
 				auto OtherIndex = (DateStruct.Month + 1) % ClimateBook.Num();
-				auto OtherValue = ClimateBook[OtherIndex]->RelativeHumidity;
+				auto OtherValue = ClimateBook[OtherIndex]->DewPoint;
 
 				// High is lerp frac
-				CachedAnalyticalRH.Value = FMath::Lerp(CurrentRH, OtherValue, BlendFrac);
+				CachedAnalyticalDewPoint.Value = FMath::Lerp(CurrentRH, OtherValue, BlendFrac);
 			}
 			else
 			{
 				// Future Month
 				auto OtherIndex = (ClimateBook.Num() + (DateStruct.Month - 1)) % ClimateBook.Num();
-				auto OtherValue = ClimateBook[OtherIndex]->RelativeHumidity;
+				auto OtherValue = ClimateBook[OtherIndex]->DewPoint;
 
 				// High is lerp frac
-				CachedAnalyticalRH.Value = FMath::Lerp(OtherValue, CurrentRH, BlendFrac);
+				CachedAnalyticalDewPoint.Value = FMath::Lerp(OtherValue, CurrentRH, BlendFrac);
 			}
-			CachedAnalyticalRH.Valid = true;
-			return CachedAnalyticalRH.Value;
+			CachedAnalyticalDewPoint.Valid = true;
+			return CachedAnalyticalDewPoint.Value;
 		}
 	}
 	return 0.0f;
@@ -572,13 +663,13 @@ float UClimateComponent::GetDailyLow(FDateTimeSystemStruct& DateStruct)
 	return CachedNextLowTemp.Value;
 }
 
-float UClimateComponent::GetDailyRH(FDateTimeSystemStruct& DateStruct)
+float UClimateComponent::GetDailyDewPoint(FDateTimeSystemStruct& DateStruct)
 {
 	// Okay. We need to work out which Low we actually want
 
-	if (CachedNextRH.Valid)
+	if (CachedNextDewPoint.Valid)
 	{
-		return CachedNextRH.Value;
+		return CachedNextDewPoint.Value;
 	}
 
 	auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
@@ -587,19 +678,19 @@ float UClimateComponent::GetDailyRH(FDateTimeSystemStruct& DateStruct)
 		auto asPtr = *Row;
 		if (asPtr)
 		{
-			CachedNextRH.Value = asPtr->RelativeHumidity;
-			CachedNextRH.Valid = true;
+			CachedNextDewPoint.Value = asPtr->DewPoint;
+			CachedNextDewPoint.Valid = true;
 		}
 	}
 	else
 	{
 		auto DummyTagContainer = FGameplayTagContainer();
 
-		CachedNextRH.Value = GetAnalyticalRHForDate(DateStruct);
-		CachedNextRH.Valid = true;
+		CachedNextDewPoint.Value = GetAnalyticalDewPointForDate(DateStruct);
+		CachedNextDewPoint.Valid = true;
 	}
 
-	return CachedNextRH.Value;
+	return CachedNextDewPoint.Value;
 }
 
 UClimateComponent::UClimateComponent()
