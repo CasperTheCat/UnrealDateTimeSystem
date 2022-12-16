@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "GameplayTagContainer.h"
-#include "DateTimeSystemDataRows.h"
+#include "CoreMinimal.h"
 #include "DateTimeSystemComponent.h"
+#include "DateTimeSystemDataRows.h"
+#include "GameplayTagContainer.h"
 
 #include "ClimateComponent.generated.h"
 
@@ -72,10 +72,10 @@ public:
     float HeatOffset;
 };
 
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FTemperatureChangeDelegate, float, NewTemperature);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateClimateData, FDateTimeClimateDataStruct, ClimateData);
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateClimateData, UPARAM(ref) FDateTimeClimateDataStruct&, ClimateData);
+// DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateClimateData, UPARAM(ref) FDateTimeClimateDataStruct&,
+// ClimateData);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FLocalDateTimeEvent);
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
@@ -88,15 +88,15 @@ private:
     float TicksPerSecond;
 
     UPROPERTY(EditDefaultsOnly)
-    UDataTable* ClimateTable;
+    UDataTable *ClimateTable;
 
     UPROPERTY(EditDefaultsOnly)
-    UDataTable* ClimateOverridesTable;
+    UDataTable *ClimateOverridesTable;
 
     // Create ClimateBook and DateOverrides + Array to force lifetimes
-    TArray<FDateTimeSystemClimateOverrideRow*> DOTemps;
-    TMap< uint32, FDateTimeSystemClimateOverrideRow*> DateOverrides;
-    TArray<FDateTimeSystemClimateMonthlyRow*> ClimateBook;
+    TArray<FDateTimeSystemClimateOverrideRow *> DOTemps;
+    TMap<uint32, FDateTimeSystemClimateOverrideRow *> DateOverrides;
+    TArray<FDateTimeSystemClimateMonthlyRow *> ClimateBook;
 
     UPROPERTY()
     UDateTimeSystemComponent *DateTimeSystem;
@@ -174,29 +174,30 @@ private:
     void Invalidate(EDateTimeSystemInvalidationTypes Type);
 
 private:
-    float GetAnalyticalHighForDate(FDateTimeSystemStruct& DateStruct);
-    float GetAnalyticalLowForDate(FDateTimeSystemStruct& DateStruct);
+    float GetAnalyticalHighForDate(FDateTimeSystemStruct &DateStruct);
+    float GetAnalyticalLowForDate(FDateTimeSystemStruct &DateStruct);
 
-    float GetAnalyticalDewPointForDate(FDateTimeSystemStruct& DateStruct);
+    float GetAnalyticalDewPointForDate(FDateTimeSystemStruct &DateStruct);
 
-    float GetDailyHigh(FDateTimeSystemStruct& DateStruct);
-    float GetDailyLow(FDateTimeSystemStruct& DateStruct);
-    float GetDailyDewPoint(FDateTimeSystemStruct& DateStruct);
+    float GetDailyHigh(FDateTimeSystemStruct &DateStruct);
+    float GetDailyLow(FDateTimeSystemStruct &DateStruct);
+    float GetDailyDewPoint(FDateTimeSystemStruct &DateStruct);
 
     void UpdateCurrentTemperature(float DeltaTime);
     void UpdateCurrentClimate(float DeltaTime);
 
     UFUNCTION()
-    void InternalDateChanged(FDateTimeSystemStruct& DateStruct);
+    void InternalDateChanged(FDateTimeSystemStruct &DateStruct);
 
-    UDateTimeSystemComponent* FindComponent();
+    UDateTimeSystemComponent *FindComponent();
 
 public:
     UClimateComponent();
-    UClimateComponent(UClimateComponent& Other);
-    UClimateComponent(const FObjectInitializer& ObjectInitializer);
+    UClimateComponent(UClimateComponent &Other);
+    UClimateComponent(const FObjectInitializer &ObjectInitializer);
 
-    virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+    virtual void TickComponent(float DeltaTime, enum ELevelTick TickType,
+                               FActorComponentTickFunction *ThisTickFunction) override;
 
     virtual void BeginPlay();
 
@@ -229,20 +230,27 @@ public:
     FRotator GetLocalMoonRotation(FVector Location);
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-    void DateChanged(UPARAM(ref) FDateTimeSystemStruct& DateStruct);
-    virtual void DateChanged_Implementation(UPARAM(ref) FDateTimeSystemStruct& DateStruct);
+    void DateChanged(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+    virtual void DateChanged_Implementation(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-    float DailyLowModulation(UPARAM(ref) FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh);
-    virtual float DailyLowModulation_Implementation(UPARAM(ref) FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh);
+    float DailyLowModulation(UPARAM(ref) FDateTimeSystemStruct &DateStruct, FGameplayTagContainer &Attributes,
+                             float Temperature, float PreviousDayLow, float PreviousDayHigh);
+    virtual float DailyLowModulation_Implementation(UPARAM(ref) FDateTimeSystemStruct &DateStruct,
+                                                    FGameplayTagContainer &Attributes, float Temperature,
+                                                    float PreviousDayLow, float PreviousDayHigh);
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-    float DailyHighModulation(UPARAM(ref) FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh);
-    virtual float DailyHighModulation_Implementation(UPARAM(ref) FDateTimeSystemStruct& DateStruct, FGameplayTagContainer& Attributes, float Temperature, float PreviousDayLow, float PreviousDayHigh);
+    float DailyHighModulation(UPARAM(ref) FDateTimeSystemStruct &DateStruct, FGameplayTagContainer &Attributes,
+                              float Temperature, float PreviousDayLow, float PreviousDayHigh);
+    virtual float DailyHighModulation_Implementation(UPARAM(ref) FDateTimeSystemStruct &DateStruct,
+                                                     FGameplayTagContainer &Attributes, float Temperature,
+                                                     float PreviousDayLow, float PreviousDayHigh);
     // Called to modulate the temps over the day
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     float ModulateTemperature(float Temperature, float SecondsSinceUpdate, float LowTemperature, float HighTemperature);
-    virtual float ModulateTemperature_Implementation(float Temperature, float SecondsSinceUpdate, float LowTemperature, float HighTemperature);
+    virtual float ModulateTemperature_Implementation(float Temperature, float SecondsSinceUpdate, float LowTemperature,
+                                                     float HighTemperature);
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     float ModulateFogByRainfall(float FogHeight, float SecondsSinceUpdate, float RainLevel);
@@ -254,7 +262,6 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     FDateTimeClimateDataStruct GetUpdatedClimateData();
     virtual FDateTimeClimateDataStruct GetUpdatedClimateData_Implementation();
-
 
     UFUNCTION(BlueprintCallable)
     float GetCurrentTemperature();

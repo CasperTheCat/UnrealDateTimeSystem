@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "GameplayTagContainer.h"
+#include "CoreMinimal.h"
 #include "DateTimeSystemDataRows.h"
+#include "GameplayTagContainer.h"
 
 #include "DateTimeSystemComponent.generated.h"
 
@@ -41,7 +41,6 @@ struct FDateTimeSystemPackedCacheInt
     int32 Valid : 1;
     int32 Value : 31;
 };
-
 
 USTRUCT(BlueprintType, Blueprintable)
 struct FDateTimeSystemStruct
@@ -79,7 +78,7 @@ public:
         return Seconds / 60;
     }
 
-    void SetFromRow(FDateTimeSystemDateOverrideRow* Row)
+    void SetFromRow(FDateTimeSystemDateOverrideRow *Row)
     {
         Seconds = 0;
         Day = Row->Day;
@@ -87,7 +86,7 @@ public:
         Year = Row->Year;
     }
 
-    static FDateTimeSystemStruct CreateFromRow(FDateTimeSystemDateOverrideRow* Row)
+    static FDateTimeSystemStruct CreateFromRow(FDateTimeSystemDateOverrideRow *Row)
     {
         auto RetVal = FDateTimeSystemStruct{};
         RetVal.Seconds = 0;
@@ -100,7 +99,7 @@ public:
     }
 };
 
-FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemStruct& Row)
+FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemStruct &Row)
 {
     return Row.DayIndex;
     auto DIHash = GetTypeHash(Row.DayIndex);
@@ -122,8 +121,9 @@ struct FDateTimeSystemTimezoneStruct
     float HoursDeltaFromMeridian;
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, UPARAM(ref) FDateTimeSystemStruct&, NewDate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, UPARAM(ref) FDateTimeSystemStruct&, NewDate, FGameplayTagContainer, Attribute);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, UPARAM(ref) FDateTimeSystemStruct &, NewDate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, UPARAM(ref) FDateTimeSystemStruct &, NewDate,
+                                             FGameplayTagContainer, Attribute);
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class DATETIMESYSTEM_API UDateTimeSystemComponent : public UActorComponent
@@ -167,10 +167,10 @@ private:
     int DaysInWeek;
 
     UPROPERTY(EditDefaultsOnly)
-    UDataTable* YearBookTable;
+    UDataTable *YearBookTable;
 
     UPROPERTY(EditDefaultsOnly)
-    UDataTable* DateOverridesTable;
+    UDataTable *DateOverridesTable;
 
     // UTC Time. To avoid conversions
     UPROPERTY(SaveGame, EditDefaultsOnly)
@@ -180,22 +180,22 @@ private:
     bool UseDayIndexForOverride;
 
     // Used
-    //UPROPERTY(SaveGame)
-    //uint32 Day;
+    // UPROPERTY(SaveGame)
+    // uint32 Day;
 
-    //UPROPERTY(SaveGame)
-    //uint32 Month;
+    // UPROPERTY(SaveGame)
+    // uint32 Month;
 
-    //UPROPERTY(SaveGame)
-    //uint32 Year;
+    // UPROPERTY(SaveGame)
+    // uint32 Year;
 
-    //UPROPERTY(SaveGame)
-    //uint32 DayIndex;
+    // UPROPERTY(SaveGame)
+    // uint32 DayIndex;
 
     // Create YearBook and DateOverrides + Array to force lifetimes
-    TArray<FDateTimeSystemDateOverrideRow*> DOTemps;
-    TMap< uint32, FDateTimeSystemDateOverrideRow*> DateOverrides;
-    TArray<FDateTimeSystemYearbookRow*> YearBook;
+    TArray<FDateTimeSystemDateOverrideRow *> DOTemps;
+    TMap<uint32, FDateTimeSystemDateOverrideRow *> DateOverrides;
+    TArray<FDateTimeSystemYearbookRow *> YearBook;
 
     // Set when Yearbook is populated
     int LengthOfCalendarYearInDays;
@@ -225,26 +225,26 @@ private:
 
 private:
     uint32 GetHashForDate(FDateTimeSystemStruct *DateStruct);
-    uint32 GetHashForDate(FDateTimeSystemDateOverrideRow* DateStruct);
-    FDateTimeSystemDateOverrideRow** GetDateOverride(FDateTimeSystemStruct* DateStruct);
+    uint32 GetHashForDate(FDateTimeSystemDateOverrideRow *DateStruct);
+    FDateTimeSystemDateOverrideRow **GetDateOverride(FDateTimeSystemStruct *DateStruct);
 
-    bool HandleDayRollover(FDateTimeSystemStruct& DateStruct);
-    bool HandleMonthRollover(FDateTimeSystemStruct& DateStruct);
-    bool HandleYearRollover(FDateTimeSystemStruct& DateStruct);
+    bool HandleDayRollover(FDateTimeSystemStruct &DateStruct);
+    bool HandleMonthRollover(FDateTimeSystemStruct &DateStruct);
+    bool HandleYearRollover(FDateTimeSystemStruct &DateStruct);
 
     int GetLengthOfCalendarYear(int Year);
 
-    double GetJulianDay(FDateTimeSystemStruct& DateStruct);
-    //float GetDay(FDateTimeSystemStruct& DateStruct);
+    double GetJulianDay(FDateTimeSystemStruct &DateStruct);
+    // float GetDay(FDateTimeSystemStruct& DateStruct);
 
-    float GetDeclinationAngle(FDateTimeSystemStruct& DateStruct);
+    float GetDeclinationAngle(FDateTimeSystemStruct &DateStruct);
 
     int GetDaysInCurrentMonth();
     int GetDaysInMonth(int MonthIndex);
     int GetMonthsInYear(int YearIndex);
 
-    bool SanitiseDateTime(FDateTimeSystemStruct& DateStruct);
-    bool SanitiseSolarDateTime(FDateTimeSystemStruct& DateStruct);
+    bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct);
+    bool SanitiseSolarDateTime(FDateTimeSystemStruct &DateStruct);
 
     float GetSolarFractionalDay();
     float GetSolarFractionalYear();
@@ -258,29 +258,31 @@ private:
 
 public:
     UDateTimeSystemComponent();
-    UDateTimeSystemComponent(UDateTimeSystemComponent& Other);
-    UDateTimeSystemComponent(const FObjectInitializer& ObjectInitializer);
-    virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+    UDateTimeSystemComponent(UDateTimeSystemComponent &Other);
+    UDateTimeSystemComponent(const FObjectInitializer &ObjectInitializer);
+    virtual void TickComponent(float DeltaTime, enum ELevelTick TickType,
+                               FActorComponentTickFunction *ThisTickFunction) override;
 
     virtual void BeginPlay();
 
     UFUNCTION(BlueprintCallable)
-    void GetTodaysDate(FDateTimeSystemStruct& DateStruct);
+    void GetTodaysDate(FDateTimeSystemStruct &DateStruct);
 
     UFUNCTION(BlueprintCallable)
-    void GetTodaysDateTZ(FDateTimeSystemStruct& DateStruct, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo);
+    void GetTodaysDateTZ(FDateTimeSystemStruct &DateStruct, UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo);
 
     UFUNCTION(BlueprintCallable)
-    void GetTomorrowsDate(FDateTimeSystemStruct& DateStruct);
+    void GetTomorrowsDate(FDateTimeSystemStruct &DateStruct);
 
     UFUNCTION(BlueprintCallable)
-    void GetTomorrowsDateTZ(FDateTimeSystemStruct& DateStruct, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo);
+    void GetTomorrowsDateTZ(FDateTimeSystemStruct &DateStruct, UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo);
 
     UFUNCTION(BlueprintCallable)
-    void GetYesterdaysDate(FDateTimeSystemStruct& DateStruct);
+    void GetYesterdaysDate(FDateTimeSystemStruct &DateStruct);
 
     UFUNCTION(BlueprintCallable)
-    void GetYesterdaysDateTZ(FDateTimeSystemStruct& DateStruct, UPARAM(ref) FDateTimeSystemTimezoneStruct& TimezoneInfo);
+    void GetYesterdaysDateTZ(FDateTimeSystemStruct &DateStruct,
+                             UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo);
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     float GetLatitudeFromLocation(float BaseLatitudePercent, FVector Location);
@@ -288,7 +290,8 @@ public:
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     float GetLongitudeFromLocation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
-    virtual float GetLongitudeFromLocation_Implementation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
+    virtual float GetLongitudeFromLocation_Implementation(float BaseLatitudePercent, float BaseLongitudePercent,
+                                                          FVector Location);
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     bool DoesYearLeap(int Year);
@@ -319,16 +322,16 @@ public:
     virtual FVector GetMoonVector_Implementation(float Latitude, float Longitude);
 
     UFUNCTION(BlueprintCallable)
-    float GetFractionalDay(UPARAM(ref) FDateTimeSystemStruct& DateStruct);
+    float GetFractionalDay(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     UFUNCTION(BlueprintCallable)
-    float GetFractionalMonth(UPARAM(ref) FDateTimeSystemStruct& DateStruct);
+    float GetFractionalMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     UFUNCTION(BlueprintCallable)
-    float GetFractionalOrbitalYear(UPARAM(ref) FDateTimeSystemStruct& DateStruct);
+    float GetFractionalOrbitalYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     UFUNCTION(BlueprintCallable)
-    float GetFractionalCalendarYear(UPARAM(ref) FDateTimeSystemStruct& DateStruct);
+    float GetFractionalCalendarYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     UFUNCTION(BlueprintCallable)
     void DummyAddTick(float Time);
@@ -343,11 +346,11 @@ public:
     FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection);
 
     UFUNCTION(BlueprintCallable)
-    FName GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct& DateStruct);
+    FName GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     // Set the thing, directly
     UFUNCTION(BlueprintCallable)
-    void SetUTCDateTime(FDateTimeSystemStruct& DateStruct);
+    void SetUTCDateTime(FDateTimeSystemStruct &DateStruct);
 
     // Return a copy of the internal struct
     // We make a copy to allow us to destroy the object without
@@ -356,5 +359,4 @@ public:
     FDateTimeSystemStruct GetUTCDateTime();
 
     friend class UClimateComponent;
-
 };

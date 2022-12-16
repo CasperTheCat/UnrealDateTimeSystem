@@ -10,16 +10,16 @@
 UINTERFACE(MinimalAPI, Blueprintable)
 class UDateTimeSystemInterface : public UInterface
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 };
 
 class DATETIMESYSTEM_API IDateTimeSystemInterface
-{    
+{
     GENERATED_BODY()
 
 public:
     /** Add interface function declarations here */
     UFUNCTION(BlueprintNativeEvent)
-    UDateTimeSystemComponent* GetDateTimeSystem();
-    virtual UDateTimeSystemComponent* GetDateTimeSystem_Implementation();
+    UDateTimeSystemComponent *GetDateTimeSystem();
+    virtual UDateTimeSystemComponent *GetDateTimeSystem_Implementation();
 };
