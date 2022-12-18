@@ -48,28 +48,28 @@ struct FDateTimeSystemStruct
     GENERATED_BODY()
 
 public:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     float Seconds;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     int Day;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     int Month;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     int Year;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     int DayOfWeek;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     int DayIndex;
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(SaveGame, BlueprintReadWrite)
     int SolarDays;
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(SaveGame, BlueprintReadWrite)
     float StoredSolarSeconds;
 
 public:
