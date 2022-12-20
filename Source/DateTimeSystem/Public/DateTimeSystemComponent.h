@@ -97,6 +97,23 @@ public:
 
         return RetVal;
     }
+
+    FDateTimeSystemStruct &operator+=(const FDateTimeSystemStruct &Other)
+    {
+        this->Seconds += Other.Seconds;
+        this->Day += Other.Seconds;
+        this->DayIndex += Other.DayIndex;
+        this->Month += Other.Month;
+        this->Year += Other.Year;
+
+        return *this;
+    }
+
+    friend FDateTimeSystemStruct operator+(FDateTimeSystemStruct Us, const FDateTimeSystemStruct &Other)
+    {
+        Us += Other;
+        return Us;
+    }
 };
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemStruct &Row)
@@ -334,13 +351,13 @@ public:
     float GetFractionalCalendarYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     UFUNCTION(BlueprintCallable)
-    void DummyAddTick(float Time);
-
-    UFUNCTION(BlueprintCallable)
     void InternalTick(float DeltaTime);
 
     UFUNCTION(BlueprintCallable)
     void InternalBegin();
+
+    UFUNCTION(BlueprintCallable)
+    void InternalInitialise();
 
     UFUNCTION(BlueprintCallable)
     FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection);
@@ -357,6 +374,9 @@ public:
     // risking a lifetime
     UFUNCTION(BlueprintCallable)
     FDateTimeSystemStruct GetUTCDateTime();
+
+    UFUNCTION(BlueprintCallable)
+    void AddDateStruct(FDateTimeSystemStruct &DateStruct);
 
     friend class UClimateComponent;
 };

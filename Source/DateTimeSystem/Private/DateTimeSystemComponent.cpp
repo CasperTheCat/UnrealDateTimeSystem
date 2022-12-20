@@ -294,12 +294,6 @@ FVector UDateTimeSystemComponent::GetMoonVector_Implementation(float Latitude, f
     return FVector(SX, SY, SZ);
 }
 
-void UDateTimeSystemComponent::DummyAddTick(float Time)
-{
-    checkNoEntry();
-    InternalTick(Time);
-}
-
 FName UDateTimeSystemComponent::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
 {
     if (DateStruct.Month < YearBook.Num())
@@ -313,11 +307,31 @@ FName UDateTimeSystemComponent::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct
 void UDateTimeSystemComponent::SetUTCDateTime(FDateTimeSystemStruct &DateStruct)
 {
     InternalDate = DateStruct;
+
+    // NOTE: This may make DTS change slightly after a load from save... So we can skip this
+    //InternalInitialise();
 }
 
 FDateTimeSystemStruct UDateTimeSystemComponent::GetUTCDateTime()
 {
     return InternalDate;
+}
+
+void UDateTimeSystemComponent::AddDateStruct(FDateTimeSystemStruct &DateStruct)
+{
+    // New function to add struct
+    //DateStruct.
+    InternalDate += DateStruct;
+
+    // Okay, now we do something a little different
+    // DayOfWeek is not updated and it's value is ignored in incoming DateStruct
+    InternalDate.DayOfWeek = (InternalDate.DayOfWeek + DateStruct.Day) % DaysInWeek;
+
+    // Sanitise
+    SanitiseDateTime(InternalDate);
+
+    // Reinit
+    InternalInitialise();
 }
 
 float UDateTimeSystemComponent::GetFractionalDay(FDateTimeSystemStruct &DateStruct)
@@ -443,7 +457,20 @@ float UDateTimeSystemComponent::GetDeclinationAngle(FDateTimeSystemStruct &DateS
 bool UDateTimeSystemComponent::HandleDayRollover(FDateTimeSystemStruct &DateStruct)
 {
     // Check how many seconds we have
-    if (DateStruct.Seconds > LengthOfDay)
+    if (DateStruct.Seconds >= LengthOfDay * 2 || DateStruct.Seconds < -LengthOfDay)
+    {
+        // Switch to a mode that enables us to handle multiple days.
+        // This is not merged as it needs testing
+        auto NumberOfDays = FMath::TruncToInt(FMath::Floor(DateStruct.Seconds / LengthOfDay));
+
+        DateStruct.Seconds -= NumberOfDays * LengthOfDay;
+        DateStruct.DayOfWeek = (DateStruct.DayOfWeek + NumberOfDays) % DaysInWeek;
+        DateStruct.Day += NumberOfDays;
+        DateStruct.DayIndex += NumberOfDays;
+
+        return true;
+    }
+    else if (DateStruct.Seconds > LengthOfDay)
     {
         DateStruct.Seconds -= LengthOfDay;
         DateStruct.DayOfWeek = (DateStruct.DayOfWeek + 1) % DaysInWeek;
@@ -472,7 +499,7 @@ bool UDateTimeSystemComponent::HandleMonthRollover(FDateTimeSystemStruct &DateSt
     if (DateStruct.Day > DaysInMonth)
     {
         DateStruct.Day -= DaysInMonth;
-        ++DateStruct.Month;
+        ++DateStruct.Month;   
 
         return true;
     }
@@ -538,11 +565,33 @@ bool UDateTimeSystemComponent::SanitiseDateTime(FDateTimeSystemStruct &DateStruc
     auto DidRolloverDay = HandleDayRollover(DateStruct);
     if (DidRolloverDay)
     {
-        // Rollover Month and Year
-        auto DidRolloverMonth = HandleMonthRollover(DateStruct);
-        if (DidRolloverMonth)
+        // Loop externally to the month function
+        // It's cleaner
+        auto DidRolloverMonth = false; 
         {
-            auto DidRolloverYear = HandleYearRollover(DateStruct);
+
+            auto ContinueLoop = false;
+            do
+            {
+                ContinueLoop = HandleMonthRollover(DateStruct);
+                DidRolloverMonth = ContinueLoop || DidRolloverMonth;
+            }
+            while (ContinueLoop);
+        }
+        
+        // Rollover Month and Year
+        //auto DidRolloverMonth = HandleMonthRollover(DateStruct);
+        if (DidRolloverMonth)
+        {            
+            {
+                auto ContinueLoop = false;
+                do
+                {
+                    ContinueLoop = HandleYearRollover(DateStruct);
+                    //auto DidRolloverYear = ContinueLoop;
+                }
+                while (ContinueLoop); 
+            }
         }
 
         // Now, we want to fire the datechange
@@ -726,6 +775,11 @@ void UDateTimeSystemComponent::InternalBegin()
         }
     }
 
+    InternalInitialise();
+}
+
+void UDateTimeSystemComponent::InternalInitialise()
+{
     double Val = InternalDate.Year * DaysInOrbitalYear;
     double Days = GetFractionalCalendarYear(InternalDate) * DaysInOrbitalYear;
     InternalDate.SolarDays = FMath::TruncToInt(Val) + FMath::TruncToInt(Days);
