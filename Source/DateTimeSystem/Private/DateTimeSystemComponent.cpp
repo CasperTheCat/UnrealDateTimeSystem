@@ -332,6 +332,8 @@ void UDateTimeSystemComponent::AddDateStruct(FDateTimeSystemStruct &DateStruct)
 
     // Reinit
     InternalInitialise();
+
+    InternalTick(0);
 }
 
 float UDateTimeSystemComponent::GetFractionalDay(FDateTimeSystemStruct &DateStruct)

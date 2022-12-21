@@ -101,7 +101,7 @@ public:
     FDateTimeSystemStruct &operator+=(const FDateTimeSystemStruct &Other)
     {
         this->Seconds += Other.Seconds;
-        this->Day += Other.Seconds;
+        this->Day += Other.Day;
         this->DayIndex += Other.DayIndex;
         this->Month += Other.Month;
         this->Year += Other.Year;
@@ -376,7 +376,7 @@ public:
     FDateTimeSystemStruct GetUTCDateTime();
 
     UFUNCTION(BlueprintCallable)
-    void AddDateStruct(FDateTimeSystemStruct &DateStruct);
+    void AddDateStruct(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     friend class UClimateComponent;
 };
