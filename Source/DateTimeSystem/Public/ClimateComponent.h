@@ -74,6 +74,7 @@ public:
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FTemperatureChangeDelegate, float, NewTemperature);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateClimateData, FDateTimeClimateDataStruct, ClimateData);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDTSUpdateTime, FDateTimeSystemStruct, NewDate);
 // DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateClimateData, UPARAM(ref) FDateTimeClimateDataStruct&,
 // ClimateData);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FLocalDateTimeEvent);
@@ -107,10 +108,13 @@ private:
 
     float PercentileLatitude;
     float PercentileLongitude;
+    float RadLatitude;
+    float RadLongitude;
     float OneOverUpdateFrequency;
     float AccumulatedDeltaForCallback;
 
     bool SunHasRisen;
+    bool SunHasSet;
 
     // Cached Values
     FDateTimeSystemPackedCacheFloat CachedHighTemp;
@@ -134,16 +138,25 @@ public:
     FUpdateClimateData UpdateLocalClimateCallback;
 
     UPROPERTY(BlueprintAssignable)
+    FDTSUpdateTime UpdateLocalTime;
+
+    UPROPERTY(BlueprintAssignable)
     FLocalDateTimeEvent SunriseCallback;
 
     UPROPERTY(BlueprintAssignable)
     FLocalDateTimeEvent SunsetCallback;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(BlueprintAssignable)
+    FLocalDateTimeEvent TwilightCallback;
+
+    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
     float CurrentTemperature;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     float TemperatureChangeSpeed;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float FogChangeSpeed;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
     float CurrentRelativeHumidity;
@@ -156,6 +169,21 @@ public:
 
     UPROPERTY(SaveGame)
     bool HasBoundToDate;
+
+    UPROPERTY(SaveGame)
+    float CurrentFog;
+
+    UPROPERTY()
+    float DTSTimeScale;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    float TemperatureCatchupThreshold;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    float SunPositionBelowHorizonThreshold;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    float SunPositionAboveHorizonThreshold;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
     float ReferenceLatitude;
@@ -172,6 +200,8 @@ public:
 private:
     void ClimateSetup();
     void Invalidate(EDateTimeSystemInvalidationTypes Type);
+
+    void UpdateLocalTimePassthrough(FDateTimeSystemStruct& NewTime);
 
 private:
     float GetAnalyticalHighForDate(FDateTimeSystemStruct &DateStruct);
@@ -276,13 +306,22 @@ public:
     float GetCurrentFeltTemperatureForLocation(float WindVelocity, FVector Location);
 
     UFUNCTION(BlueprintCallable)
+    float GetCurrentDewPointForLocation(FVector Location);
+
+    UFUNCTION(BlueprintCallable)
+    float GetRelativeHumidityForLocation(FVector Location);
+
+    UFUNCTION(BlueprintCallable)
     float GetCloudLevel();
 
     UFUNCTION(BlueprintCallable)
-    float GetFogLevel();
+    float GetFogLevel(float DeltaTime, float Scale = 1.f);
 
     UFUNCTION(BlueprintCallable)
     float GetHeatIndex();
+
+    UFUNCTION(BlueprintCallable)
+    float GetHeatIndexForLocation(FVector Location);
 
     UFUNCTION(BlueprintCallable)
     float GetWindChillFromVector(FVector WindVector);

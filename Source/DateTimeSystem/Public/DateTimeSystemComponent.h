@@ -102,9 +102,18 @@ public:
     {
         this->Seconds += Other.Seconds;
         this->Day += Other.Day;
-        this->DayIndex += Other.DayIndex;
         this->Month += Other.Month;
         this->Year += Other.Year;
+
+        return *this;
+    }
+
+    FDateTimeSystemStruct &operator-=(const FDateTimeSystemStruct &Other)
+    {
+        this->Seconds -= Other.Seconds;
+        this->Day -= Other.Day;
+        this->Month -= Other.Month;
+        this->Year -= Other.Year;
 
         return *this;
     }
@@ -112,6 +121,12 @@ public:
     friend FDateTimeSystemStruct operator+(FDateTimeSystemStruct Us, const FDateTimeSystemStruct &Other)
     {
         Us += Other;
+        return Us;
+    }
+
+    friend FDateTimeSystemStruct operator-(FDateTimeSystemStruct Us, const FDateTimeSystemStruct &Other)
+    {
+        Us -= Other;
         return Us;
     }
 };
@@ -235,6 +250,9 @@ public:
 
     UPROPERTY(BlueprintAssignable)
     FOverridesDelegate DateOverrideCallback;
+
+    UPROPERTY(BlueprintAssignable)
+    FDateChangeDelegate TimeUpdate;
 
 private:
     void DateTimeSetup();
@@ -366,8 +384,9 @@ public:
     FName GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     // Set the thing, directly
+    // Use SkipInitialisation if we are loading a checkpoint
     UFUNCTION(BlueprintCallable)
-    void SetUTCDateTime(FDateTimeSystemStruct &DateStruct);
+    void SetUTCDateTime(FDateTimeSystemStruct &DateStruct, bool SkipInitialisation = false);
 
     // Return a copy of the internal struct
     // We make a copy to allow us to destroy the object without
@@ -375,8 +394,18 @@ public:
     UFUNCTION(BlueprintCallable)
     FDateTimeSystemStruct GetUTCDateTime();
 
+    /**
+     * Functions for Adding and Setting time in increments
+     */
+
     UFUNCTION(BlueprintCallable)
     void AddDateStruct(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+
+    UFUNCTION(BlueprintCallable)
+    void AdvancedToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+
+    UFUNCTION(BlueprintCallable)
+    bool AdvancedToClockTime(int Hour, int Minute, int Second, bool Safety = true);
 
     friend class UClimateComponent;
 };

@@ -42,7 +42,10 @@ void UDateTimeSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-    InternalTick(DeltaTime);
+    if (TimeScale > 0.f)
+    {
+        InternalTick(DeltaTime);
+    }
 }
 
 void UDateTimeSystemComponent::BeginPlay()
@@ -304,12 +307,21 @@ FName UDateTimeSystemComponent::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct
     return FName();
 }
 
-void UDateTimeSystemComponent::SetUTCDateTime(FDateTimeSystemStruct &DateStruct)
+void UDateTimeSystemComponent::SetUTCDateTime(FDateTimeSystemStruct &DateStruct, bool SkipInitialisation)
 {
     InternalDate = DateStruct;
 
     // NOTE: This may make DTS change slightly after a load from save... So we can skip this
-    //InternalInitialise();
+    if (!SkipInitialisation)
+    {
+        // Sanitise
+        SanitiseDateTime(InternalDate);
+
+        // Reinit
+        InternalInitialise();
+
+        InternalTick(0);
+    }
 }
 
 FDateTimeSystemStruct UDateTimeSystemComponent::GetUTCDateTime()
@@ -317,15 +329,98 @@ FDateTimeSystemStruct UDateTimeSystemComponent::GetUTCDateTime()
     return InternalDate;
 }
 
+void UDateTimeSystemComponent::AdvancedToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
+{
+    // Technically, we want to compute the delta of Internal to DateStruct, then add it
+    auto Delta = DateStruct - InternalDate;
+    AddDateStruct(Delta);
+}
+
+bool UDateTimeSystemComponent::AdvancedToClockTime(int Hour, int Minute, int Second, bool Safety)
+{
+    // Struct to adding
+    FDateTimeSystemStruct Local{};
+
+    // Step one. Compute the second value of this
+    auto ClockTimeInSeconds = (Hour * 60 + Minute) * 60 + Second;
+    auto TimeToTravel = ClockTimeInSeconds - InternalDate.Seconds;
+
+    // Step two. Have we already missed this clock time?
+    // If we have, we'll get it tomorrow. Unless, we are really close to the wanted time.
+    // Set Safety to False to override
+    if (TimeToTravel > 0)
+    {
+        Local.Seconds = TimeToTravel;
+        AddDateStruct(Local);
+        return true;
+    }
+    else
+    {
+        Local.Seconds = TimeToTravel + LengthOfDay;
+
+        // Are we trying to go backwards by less than 30 minutes
+        if (Safety && FMath::Abs(TimeToTravel) < 1800)
+        {
+            // Okay, we want to warn the caller. It's possible that the adjustment
+            // is valid, but they need to call with Safety off
+            return false;
+        }
+
+        AddDateStruct(Local);
+        return true;
+    }
+}
+
 void UDateTimeSystemComponent::AddDateStruct(FDateTimeSystemStruct &DateStruct)
 {
-    // New function to add struct
-    //DateStruct.
+    // DayIndex must be maintained
+    auto DeltaDayIndex = DateStruct.Day;
+
+    // Compute the advancement of months
+    for (int32 i = 0; i < DateStruct.Month; ++i)
+    {
+        auto CurrentMonthDays = GetDaysInMonth((InternalDate.Month + i) % GetMonthsInYear(InternalDate.Year));
+        auto MonthDays = GetDaysInMonth((InternalDate.Month + i + 1) % GetMonthsInYear(InternalDate.Year));
+
+        auto ShortSkip = (InternalDate.Day + 1) - MonthDays;
+
+        if (ShortSkip > 0)
+        {
+            CurrentMonthDays -= ShortSkip;
+        }
+
+        DeltaDayIndex += CurrentMonthDays;
+    }
+
+    // Compute the advancement of months
+    for (int32 i = 0; i < DateStruct.Year; ++i)
+    {
+        auto CurrentYearDays = GetLengthOfCalendarYear(InternalDate.Year + i);
+        auto CurrentYearLeap = DoesYearLeap(InternalDate.Year + i);
+        auto NextYearLeap = DoesYearLeap(InternalDate.Year + i + 1);
+
+        // Hardcoded FebLeap hack
+        if (InternalDate.Month > 1 && CurrentYearLeap)
+        {
+            // GetLengthOfCalendar will be +1 for the day that's already been counted
+            --CurrentYearDays;
+        }
+        else if (InternalDate.Month > 1 && NextYearLeap)
+        {
+            // Current year will report one short
+            ++CurrentYearDays;
+        }
+
+        DeltaDayIndex += CurrentYearDays;
+    }
+
+    // DateStruct.
     InternalDate += DateStruct;
+    InternalDate.DayIndex += DeltaDayIndex;
 
     // Okay, now we do something a little different
     // DayOfWeek is not updated and it's value is ignored in incoming DateStruct
-    InternalDate.DayOfWeek = (InternalDate.DayOfWeek + DateStruct.Day) % DaysInWeek;
+    InternalDate.DayOfWeek = (InternalDate.DayOfWeek + DeltaDayIndex) % DaysInWeek;
 
     // Sanitise
     SanitiseDateTime(InternalDate);
@@ -501,7 +596,7 @@ bool UDateTimeSystemComponent::HandleMonthRollover(FDateTimeSystemStruct &DateSt
     if (DateStruct.Day > DaysInMonth)
     {
         DateStruct.Day -= DaysInMonth;
-        ++DateStruct.Month;   
+        ++DateStruct.Month;
 
         return true;
     }
@@ -569,7 +664,7 @@ bool UDateTimeSystemComponent::SanitiseDateTime(FDateTimeSystemStruct &DateStruc
     {
         // Loop externally to the month function
         // It's cleaner
-        auto DidRolloverMonth = false; 
+        auto DidRolloverMonth = false;
         {
 
             auto ContinueLoop = false;
@@ -580,19 +675,19 @@ bool UDateTimeSystemComponent::SanitiseDateTime(FDateTimeSystemStruct &DateStruc
             }
             while (ContinueLoop);
         }
-        
+
         // Rollover Month and Year
-        //auto DidRolloverMonth = HandleMonthRollover(DateStruct);
+        // auto DidRolloverMonth = HandleMonthRollover(DateStruct);
         if (DidRolloverMonth)
-        {            
+        {
             {
                 auto ContinueLoop = false;
                 do
                 {
                     ContinueLoop = HandleYearRollover(DateStruct);
-                    //auto DidRolloverYear = ContinueLoop;
+                    // auto DidRolloverYear = ContinueLoop;
                 }
-                while (ContinueLoop); 
+                while (ContinueLoop);
             }
         }
 
@@ -676,8 +771,8 @@ bool UDateTimeSystemComponent::InternalDoesLeap(int Year)
 FRotator UDateTimeSystemComponent::GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent,
                                                            FVector Location)
 {
-    auto Lat = GetLatitudeFromLocation(PercentLatitude, Location);
-    auto Long = GetLongitudeFromLocation(PercentLatitude, PercentLongitude, Location);
+    auto Lat = GetLatitudeFromLocation(BaseLatitudePercent, Location);
+    auto Long = GetLongitudeFromLocation(BaseLatitudePercent, BaseLongitudePercent, Location);
     auto SunInverse = GetSunVector(Lat, Long);
     FVector Flip = -SunInverse;
 
@@ -687,8 +782,8 @@ FRotator UDateTimeSystemComponent::GetLocalisedSunRotation(float BaseLatitudePer
 FRotator UDateTimeSystemComponent::GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent,
                                                             FVector Location)
 {
-    auto Lat = GetLatitudeFromLocation(PercentLatitude, Location);
-    auto Long = GetLongitudeFromLocation(PercentLatitude, PercentLongitude, Location);
+    auto Lat = GetLatitudeFromLocation(BaseLatitudePercent, Location);
+    auto Long = GetLongitudeFromLocation(BaseLatitudePercent, BaseLongitudePercent, Location);
     auto MoonInverse = GetMoonVector(Lat, Long);
     FVector Flip = -MoonInverse;
 
@@ -725,17 +820,31 @@ void UDateTimeSystemComponent::InternalTick(float DeltaTime)
             if (OverridedDatesSetDate)
             {
                 InternalDate.SetFromRow(asPtr);
-                DateOverrideCallback.Broadcast(InternalDate, asPtr->CallbackAttributes);
+                if (DateOverrideCallback.IsBound())
+                {
+                    DateOverrideCallback.Broadcast(InternalDate, asPtr->CallbackAttributes);
+                }
             }
             else
             {
                 auto LV = FDateTimeSystemStruct::CreateFromRow(asPtr);
-                DateOverrideCallback.Broadcast(LV, asPtr->CallbackAttributes);
+                if (DateOverrideCallback.IsBound())
+                {
+                    DateOverrideCallback.Broadcast(LV, asPtr->CallbackAttributes);
+                }
             }
         }
 
         // Broadcast that the date has changed
-        DateChangeCallback.Broadcast(InternalDate);
+        if (DateChangeCallback.IsBound())
+        {
+            DateChangeCallback.Broadcast(InternalDate);
+        }
+    }
+
+    if (TimeUpdate.IsBound())
+    {
+        TimeUpdate.Broadcast(InternalDate);
     }
 }
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "DateTimeSystemComponent.h"
+#include "ClimateComponent.h"
 
 #include "Interfaces.generated.h"
 
@@ -22,4 +23,22 @@ public:
     UFUNCTION(BlueprintNativeEvent)
     UDateTimeSystemComponent *GetDateTimeSystem();
     virtual UDateTimeSystemComponent *GetDateTimeSystem_Implementation();
+};
+
+// ClimateInterface
+UINTERFACE(MinimalAPI, Blueprintable)
+class UDateTimeSystemClimateInterface : public UInterface
+{
+    GENERATED_BODY()
+};
+
+class DATETIMESYSTEM_API IDateTimeSystemClimateInterface
+{
+    GENERATED_BODY()
+
+public:
+    /** Add interface function declarations here */
+    UFUNCTION(BlueprintNativeEvent)
+    UClimateComponent *GetDateTimeSystem();
+    virtual UClimateComponent *GetDateTimeSystem_Implementation();
 };

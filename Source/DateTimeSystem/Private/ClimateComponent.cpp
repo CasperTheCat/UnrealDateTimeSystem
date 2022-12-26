@@ -12,6 +12,14 @@ void UClimateComponent::ClimateSetup()
     RegisterAllComponentTickFunctions(true);
     HasBoundToDate = true;
     DefaultClimateUpdateFrequency = 30;
+    TemperatureChangeSpeed = 0.001;
+    FogChangeSpeed = 0.001;
+    DTSTimeScale = 1.f;
+    SunHasRisen = false;
+    SunHasSet = false;
+
+    SunPositionBelowHorizonThreshold = 0.087155f;
+    SunPositionAboveHorizonThreshold = 0.0435775f;
 }
 
 void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDateTimeSystemInvalidationTypes::Frame)
@@ -30,6 +38,23 @@ void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDate
         CachedAnalyticalMonthlyLowTemp.Valid = false;
         CachedAnalyticalDewPoint.Valid = false;
         CachedNextDewPoint.Valid = false;
+    }
+}
+
+void UClimateComponent::UpdateLocalTimePassthrough(FDateTimeSystemStruct &NewTime)
+{
+    FDateTimeSystemStruct Local{};
+
+    // Check again, for consistency
+    if (DateTimeSystem && IsValid(DateTimeSystem))
+    {
+        // Update Local Time. We need it for a few things
+        DateTimeSystem->GetTodaysDateTZ(Local, TimezoneInfo);
+    }
+
+    if (UpdateLocalTime.IsBound())
+    {
+        UpdateLocalTime.Broadcast(Local);
     }
 }
 
@@ -78,18 +103,45 @@ float UClimateComponent::ModulateTemperature_Implementation(float Temperature, f
     if (DateTimeSystem)
     {
 
-        auto SunVector = DateTimeSystem->GetSunVector(ReferenceLatitude, ReferenceLongitude);
+        auto SunVector = DateTimeSystem->GetSunVector(RadLatitude, RadLongitude);
 
-        if (FVector::DotProduct(SunVector, FVector::UpVector) > 0)
+        auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
+        auto Multi = FMath::Sin(PI * FracDay);
+        return FMath::Lerp(LowTemperature, HighTemperature, Multi);
+
+        // Using a proportional control
+        auto SunPower = FVector::DotProduct(SunVector, FVector::UpVector);
+
+        auto ClampedValues = FMath::Clamp(SunPower + 0.5, 0.f, 1.f);
+        auto SunTarget = FMath::Lerp(LowTemperature, HighTemperature, ClampedValues);// SunPower * 0.5 + 0.5);
+        return SunTarget;
+
+        auto SunError = (SunTarget - Temperature);
+
+        if (FMath::Abs(SunError) > TemperatureCatchupThreshold)
         {
-            // Sun is above the horizon
-            // We want to start Lerping to high temperature slowly
-            return FMath::FInterpTo(Temperature, HighTemperature, SecondsSinceUpdate, TemperatureChangeSpeed);
+            //
+            GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red,
+                                             FString("Catching up to analytic.") + FString::SanitizeFloat(SunError));
+            return SunTarget;
         }
-        else
-        {
-            return FMath::FInterpTo(Temperature, LowTemperature, SecondsSinceUpdate, TemperatureChangeSpeed);
-        }
+
+        return Temperature + SunError * TemperatureChangeSpeed * SecondsSinceUpdate * DTSTimeScale;
+       
+
+        //if (FVector::DotProduct(SunVector, FVector::UpVector) > 0)
+        //{
+        //    // Sun is above the horizon
+        //    // We want to start Lerping to high temperature slowly
+        //    return FMath::FInterpTo(Temperature, HighTemperature, SecondsSinceUpdate, TemperatureChangeSpeed);
+        //    //auto SunError = HighTemperature - Temperature;
+        //    //return Temperature + (SunError * SunPower * TemperatureChangeSpeed);
+        //}
+        //else
+        //{
+        //    return FMath::FInterpTo(Temperature, LowTemperature, SecondsSinceUpdate, TemperatureChangeSpeed);
+        //   
+        //}
 
         // auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
         // auto Multi = FMath::Sin(PI * FracDay);
@@ -273,15 +325,64 @@ float UClimateComponent::GetCurrentFeltTemperatureForLocation(float WindVelocity
     return ModulateTemperatureByLocation(GetCurrentFeltTemperature(WindVelocity), Location);
 }
 
-float UClimateComponent::GetCloudLevel()
+float UClimateComponent::GetCurrentDewPointForLocation(FVector Location)
 {
-    auto CloudHeightMetres = (CurrentTemperature - CurrentDewPoint) * (1000 / 6.5f);
-
-    return CloudHeightMetres * 100;
+    // Lapse the dew point
+    auto AltitudeAboveSeaLevel = Location.Z - SeaLevel;
+    return CurrentDewPoint - (AltitudeAboveSeaLevel * 0.000018);
 }
 
-float UClimateComponent::GetFogLevel()
+float UClimateComponent::GetRelativeHumidityForLocation(FVector Location)
 {
+    auto GetLocalDewPoint = GetCurrentDewPointForLocation(Location);
+
+
+    auto LogRH = (GetLocalDewPoint * 18.678f) / (257.14f + GetLocalDewPoint) -
+                 (CurrentTemperature * 18.678f) / (257.14f + CurrentTemperature);
+
+    // RH
+    return FMath::Exp(LogRH);
+}
+
+float UClimateComponent::GetCloudLevel()
+{
+    // Previously used 6.5C as our lapse rate
+    // This is incorrect
+    // Dry adiabatic lapse is 9.8, and dew point lapse is around 1.8 (1.6-1.9)
+    // This gives us 8 as our lapse
+    auto CloudHeightMetres = FMath::Abs(CurrentTemperature - CurrentDewPoint) * (1000 / 6.5f);
+
+    return (CloudHeightMetres * 100);
+}
+
+float UClimateComponent::GetFogLevel(float DeltaTime, float Scale)
+{
+    // Fog is strange
+    // Fog forms when Delta(Td, T) is less than 2.5C
+
+    auto Delta = FMath::Abs(CurrentTemperature - CurrentDewPoint);
+    auto TargetFogLevel = 0.f;
+
+    auto TargetMultiplier = FMath::Clamp((Delta - 2.f) * 2, 0.f, 1.f);
+
+    if (Delta < 2.5f)
+    {
+        // Okay, so we have fog. But what's the height?
+        // Let's go with linear temperature's below 4C
+        // where 1C is 1m
+        // The issue is that obviously -35 doesn't translate
+        // To 31m of fog. It's probably too cold for it
+
+        TargetFogLevel = 4 - CurrentTemperature;
+    }
+
+     TargetFogLevel = (4 - CurrentTemperature) * (1 - TargetMultiplier);
+
+    auto TFL = (TargetFogLevel - CurrentFog) * FogChangeSpeed * DeltaTime * DTSTimeScale;
+    CurrentFog = CurrentFog + TFL;
+
+    return FMath::Abs(TargetFogLevel) * Scale * 100 + SeaLevel;
+
     checkNoEntry();
     auto CL = -GetCloudLevel();
     return ModulateFogByRainfall(CL, 0, 0);
@@ -289,8 +390,38 @@ float UClimateComponent::GetFogLevel()
 
 float UClimateComponent::GetHeatIndex()
 {
-    auto T = CurrentTemperature;
-    auto R = CurrentRelativeHumidity;
+    auto HeatIndex = GetHeatIndexForLocation(FVector(0,0,SeaLevel));
+    //auto T = CurrentTemperature;
+    //auto R = CurrentRelativeHumidity;
+    //auto TT = T * T;
+    //auto RR = R * R;
+
+    //// Constants
+    //auto C1 = -8.78469475556f;
+    //auto C2 = 1.61139411f;
+    //auto C3 = 2.33854883889f;
+    //auto C4 = -0.14611605f;
+    //auto C5 = -0.012308084f;
+    //auto C6 = -0.0164248277778f;
+    //auto C7 = 2.211732e-3f;
+    //auto C8 = 7.2546e-4f;
+    //auto C9 = -3.582e-6f;
+
+    //auto HeatIndex = C1 + C2 * T + C3 * R + C4 * T * R + C5 * TT + C6 * RR + C7 * TT * R + C8 * T * RR + C9 * TT * RR;
+
+    // We want to mute HI when temp is under 25C
+    // We can do this rolling off
+    auto HeatIndexDelta = HeatIndex - CurrentTemperature;
+
+    return FMath::Lerp(0, HeatIndexDelta, FMath::Clamp(CurrentTemperature - 25, 0, 1));
+}
+
+float UClimateComponent::GetHeatIndexForLocation(FVector Location)
+{
+    //auto RelativeMSL(Location.Z - SeaLevel);
+    auto T = GetCurrentTemperatureForLocation(Location);
+//    auto R = CurrentRelativeHumidity;
+    auto R = GetRelativeHumidityForLocation(Location);
     auto TT = T * T;
     auto RR = R * R;
 
@@ -307,11 +438,13 @@ float UClimateComponent::GetHeatIndex()
 
     auto HeatIndex = C1 + C2 * T + C3 * R + C4 * T * R + C5 * TT + C6 * RR + C7 * TT * R + C8 * T * RR + C9 * TT * RR;
 
-    // We want to mute HI when temp is under 25C
-    // We can do this rolling off
-    auto HeatIndexDelta = HeatIndex - CurrentTemperature;
+    return HeatIndex;
 
-    return FMath::Lerp(0, HeatIndexDelta, FMath::Clamp(CurrentTemperature - 25, 0, 1));
+    //// We want to mute HI when temp is under 25C
+    //// We can do this rolling off
+    //auto HeatIndexDelta = HeatIndex - CurrentTemperature;
+
+    //return FMath::Lerp(0, HeatIndexDelta, FMath::Clamp(CurrentTemperature - 25, 0, 1));
 }
 
 float UClimateComponent::GetWindChillFromVector(FVector WindVector)
@@ -349,27 +482,48 @@ void UClimateComponent::InternalTick(float DeltaTime)
         // By default, it's just an O(1) lookup after UpdateCurrentTemp
         // But if Modulate is customised, it may not be cached, so this would
         // incur an unneeded penalty
-        if (SunriseCallback.IsBound() || SunsetCallback.IsBound())
+        if (SunriseCallback.IsBound() || SunsetCallback.IsBound() || TwilightCallback.IsBound())
         {
             // Okay, set want to check things
-            auto SunVector = DateTimeSystem->GetSunVector(ReferenceLatitude, ReferenceLongitude);
+            auto SunVector = DateTimeSystem->GetSunVector(RadLatitude, RadLongitude);
+            //auto SunZenith = -SunVector.ToOrientationRotator().Pitch;
 
             // Sunrise is 5deg under the horizon
-            if (FVector::DotProduct(SunVector, FVector::UpVector) > -0.087155f)
+            // UPDATE: replaced -0.087155f with 0.01f
+            float VectorDot = FVector::DotProduct(SunVector, FVector::UpVector);
+            //GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, SunVector.ToOrientationRotator().ToString());
+            //GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red, FString::SanitizeFloat(SunZenith));
+            //GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Green, SunVector.ToString());
+            //GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Green, FString::SanitizeFloat(VectorDot));
+            auto SunIsAboveHorizonThreshold = VectorDot > SunPositionAboveHorizonThreshold;
+            auto SunIsBelowHorizonThreshold = VectorDot < -SunPositionBelowHorizonThreshold;
+
+            if (SunIsAboveHorizonThreshold)
             {
                 if (SunriseCallback.IsBound() && !SunHasRisen)
                 {
                     SunriseCallback.Broadcast();
                 }
                 SunHasRisen = true;
+                SunHasSet = false;
             }
-            else
+            else if (SunIsBelowHorizonThreshold)
             {
-                if (SunsetCallback.IsBound() && SunHasRisen)
+                if (SunsetCallback.IsBound() && !SunHasSet)
                 {
                     SunsetCallback.Broadcast();
                 }
                 SunHasRisen = false;
+                SunHasSet = true;
+            }
+            else
+            {
+                if (TwilightCallback.IsBound() && (SunHasSet || SunHasRisen))
+                {
+                    TwilightCallback.Broadcast();
+                }
+                SunHasRisen = false;
+                SunHasSet = false;
             }
         }
 
@@ -390,8 +544,10 @@ void UClimateComponent::InternalTick(float DeltaTime)
 
 void UClimateComponent::InternalBegin()
 {
-    PercentileLatitude = FMath::DegreesToRadians(ReferenceLatitude) * INV_PI * 2;
-    PercentileLongitude = FMath::DegreesToRadians(ReferenceLongitude) * INV_PI;
+    RadLatitude = FMath::DegreesToRadians(ReferenceLatitude);
+    RadLongitude = FMath::DegreesToRadians(ReferenceLongitude);
+    PercentileLatitude = RadLatitude * INV_PI * 2;
+    PercentileLongitude = RadLongitude * INV_PI;
 
     OneOverUpdateFrequency = 1 / DefaultClimateUpdateFrequency;
 
@@ -433,6 +589,12 @@ void UClimateComponent::InternalBegin()
         DateTimeSystem->GetYesterdaysDateTZ(Yesterday, TimezoneInfo);
         CachedPriorDewPoint.Value = GetDailyDewPoint(Yesterday);
         CachedPriorDewPoint.Valid = true;
+
+        DTSTimeScale = DateTimeSystem->TimeScale;
+
+
+        // If someone is listening to the update, we pass it through
+       // DateTimeSystem->TimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
     }
 }
 
