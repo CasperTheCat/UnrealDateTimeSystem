@@ -201,6 +201,7 @@ private:
     void ClimateSetup();
     void Invalidate(EDateTimeSystemInvalidationTypes Type);
 
+    UFUNCTION()
     void UpdateLocalTimePassthrough(FDateTimeSystemStruct& NewTime);
 
 private:
@@ -237,6 +238,9 @@ public:
      */
     UFUNCTION(BlueprintCallable)
     FDateTimeSystemStruct GetLocalTime();
+
+    UFUNCTION(BlueprintCallable)
+    void BindToDateTimeSystem();
 
     UFUNCTION(BlueprintCallable)
     float GetMonthlyHighTemperature(int MonthIndex);

@@ -402,10 +402,14 @@ public:
     void AddDateStruct(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     UFUNCTION(BlueprintCallable)
-    void AdvancedToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+    void AdvanceToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     UFUNCTION(BlueprintCallable)
-    bool AdvancedToClockTime(int Hour, int Minute, int Second, bool Safety = true);
+    bool AdvanceToClockTime(int Hour, int Minute, int Second, bool Safety = true);
+
+    // Misc
+    UFUNCTION(BlueprintCallable)
+    float ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSystemStruct &Date1, UPARAM(ref) FDateTimeSystemStruct &Date2);
 
     friend class UClimateComponent;
 };

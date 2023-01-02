@@ -64,6 +64,15 @@ FDateTimeSystemStruct UClimateComponent::GetLocalTime()
     return LocalTime;
 }
 
+void UClimateComponent::BindToDateTimeSystem()
+{
+    if (DateTimeSystem && IsValid(DateTimeSystem) && UpdateLocalTime.IsBound())
+    {
+        // If someone is listening to the update, we pass it through
+        DateTimeSystem->TimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
+    }
+}
+
 float UClimateComponent::GetMonthlyHighTemperature(int MonthIndex)
 {
     if (MonthIndex < ClimateBook.Num())
@@ -592,9 +601,11 @@ void UClimateComponent::InternalBegin()
 
         DTSTimeScale = DateTimeSystem->TimeScale;
 
-
-        // If someone is listening to the update, we pass it through
-       // DateTimeSystem->TimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
+        if (DateTimeSystem && IsValid(DateTimeSystem) && UpdateLocalTime.IsBound())
+        {
+            // If someone is listening to the update, we pass it through
+            DateTimeSystem->TimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
+        }
     }
 }
 

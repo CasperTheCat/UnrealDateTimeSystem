@@ -329,14 +329,14 @@ FDateTimeSystemStruct UDateTimeSystemComponent::GetUTCDateTime()
     return InternalDate;
 }
 
-void UDateTimeSystemComponent::AdvancedToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
+void UDateTimeSystemComponent::AdvanceToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
 {
     // Technically, we want to compute the delta of Internal to DateStruct, then add it
     auto Delta = DateStruct - InternalDate;
     AddDateStruct(Delta);
 }
 
-bool UDateTimeSystemComponent::AdvancedToClockTime(int Hour, int Minute, int Second, bool Safety)
+bool UDateTimeSystemComponent::AdvanceToClockTime(int Hour, int Minute, int Second, bool Safety)
 {
     // Struct to adding
     FDateTimeSystemStruct Local{};
@@ -371,6 +371,64 @@ bool UDateTimeSystemComponent::AdvancedToClockTime(int Hour, int Minute, int Sec
     }
 }
 
+float UDateTimeSystemComponent::ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSystemStruct &Date1,
+                                                         UPARAM(ref) FDateTimeSystemStruct &Date2)
+{
+    // Date2 is reference date?
+    auto Delta = Date2 - Date1;
+
+    // The delta needs conversion. AddDateStruct already does this
+    // We'll copy and modify rather than creating a function since we need
+    // Different stuff
+
+    auto DeltaDays = FMath::Abs(Delta.Day);
+    auto DeltaMonths = FMath::Abs(Delta.Month);
+    auto DeltaYears = FMath::Abs(Delta.Year);
+
+    // Compute the advancement of months
+    for (int32 i = 0; i < Delta.Month; ++i)
+    {
+        auto CurrentMonthDays = GetDaysInMonth((Date2.Month + i) % GetMonthsInYear(Date2.Year));
+        auto MonthDays = GetDaysInMonth((Date2.Month + i + 1) % GetMonthsInYear(Date2.Year));
+
+        auto ShortSkip = (Date2.Day + 1) - MonthDays;
+
+        if (ShortSkip > 0)
+        {
+            CurrentMonthDays -= ShortSkip;
+        }
+
+        DeltaDays += CurrentMonthDays;
+    }
+
+    // Compute the advancement of year
+    for (int32 i = 0; i < Delta.Year; ++i)
+    {
+        auto CurrentYearDays = GetLengthOfCalendarYear(InternalDate.Year + i);
+        auto CurrentYearLeap = DoesYearLeap(InternalDate.Year + i);
+        auto NextYearLeap = DoesYearLeap(InternalDate.Year + i + 1);
+
+        // Hardcoded FebLeap hack
+        if (InternalDate.Month > 1 && CurrentYearLeap)
+        {
+            // GetLengthOfCalendar will be +1 for the day that's already been counted
+            --CurrentYearDays;
+        }
+        else if (InternalDate.Month > 1 && NextYearLeap)
+        {
+            // Current year will report one short
+            ++CurrentYearDays;
+        }
+
+        DeltaDays += CurrentYearDays;
+    }
+
+    auto FractionalYear = GetFractionalCalendarYear(Delta);
+    auto FractionalMonth = GetFractionalMonth(Delta);
+
+    return DeltaYears + FractionalYear;
+}
+
 void UDateTimeSystemComponent::AddDateStruct(FDateTimeSystemStruct &DateStruct)
 {
     // DayIndex must be maintained
@@ -392,7 +450,7 @@ void UDateTimeSystemComponent::AddDateStruct(FDateTimeSystemStruct &DateStruct)
         DeltaDayIndex += CurrentMonthDays;
     }
 
-    // Compute the advancement of months
+    // Compute the advancement of year
     for (int32 i = 0; i < DateStruct.Year; ++i)
     {
         auto CurrentYearDays = GetLengthOfCalendarYear(InternalDate.Year + i);
