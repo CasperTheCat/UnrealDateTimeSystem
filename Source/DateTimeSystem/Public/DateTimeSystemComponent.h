@@ -153,8 +153,8 @@ struct FDateTimeSystemTimezoneStruct
     float HoursDeltaFromMeridian;
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, UPARAM(ref) FDateTimeSystemStruct &, NewDate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, UPARAM(ref) FDateTimeSystemStruct &, NewDate,
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, FDateTimeSystemStruct, NewDate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, FDateTimeSystemStruct, NewDate,
                                              FGameplayTagContainer, Attribute);
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))

@@ -41,7 +41,7 @@ void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDate
     }
 }
 
-void UClimateComponent::UpdateLocalTimePassthrough(FDateTimeSystemStruct &NewTime)
+void UClimateComponent::UpdateLocalTimePassthrough(FDateTimeSystemStruct NewTime)
 {
     FDateTimeSystemStruct Local{};
 
@@ -230,7 +230,7 @@ void UClimateComponent::UpdateCurrentClimate(float DeltaTime)
     }
 }
 
-void UClimateComponent::InternalDateChanged(FDateTimeSystemStruct &DateStruct)
+void UClimateComponent::InternalDateChanged(FDateTimeSystemStruct DateStruct)
 {
     // Handle what was once done on InternalTick
     Invalidate(EDateTimeSystemInvalidationTypes::Day);

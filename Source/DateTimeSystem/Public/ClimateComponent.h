@@ -202,7 +202,7 @@ private:
     void Invalidate(EDateTimeSystemInvalidationTypes Type);
 
     UFUNCTION()
-    void UpdateLocalTimePassthrough(FDateTimeSystemStruct& NewTime);
+    void UpdateLocalTimePassthrough(FDateTimeSystemStruct NewTime);
 
 private:
     float GetAnalyticalHighForDate(FDateTimeSystemStruct &DateStruct);
@@ -218,7 +218,7 @@ private:
     void UpdateCurrentClimate(float DeltaTime);
 
     UFUNCTION()
-    void InternalDateChanged(FDateTimeSystemStruct &DateStruct);
+    void InternalDateChanged(FDateTimeSystemStruct DateStruct);
 
     UDateTimeSystemComponent *FindComponent();
 
