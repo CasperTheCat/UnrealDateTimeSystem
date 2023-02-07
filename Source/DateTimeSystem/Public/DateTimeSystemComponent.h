@@ -154,8 +154,8 @@ struct FDateTimeSystemTimezoneStruct
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, FDateTimeSystemStruct, NewDate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, FDateTimeSystemStruct, NewDate,
-                                             FGameplayTagContainer, Attribute);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, FDateTimeSystemStruct, NewDate, FGameplayTagContainer,
+                                             Attribute);
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class DATETIMESYSTEM_API UDateTimeSystemComponent : public UActorComponent
@@ -409,7 +409,30 @@ public:
 
     // Misc
     UFUNCTION(BlueprintCallable)
-    float ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSystemStruct &Date1, UPARAM(ref) FDateTimeSystemStruct &Date2);
+    float ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To);
+
+    UFUNCTION(BlueprintCallable)
+    float ComputeDeltaBetweenDatesYears(UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To);
+
+    UFUNCTION(BlueprintCallable)
+    float ComputeDeltaBetweenDatesMonths(UPARAM(ref) FDateTimeSystemStruct &From,
+                                         UPARAM(ref) FDateTimeSystemStruct &To);
+
+    UFUNCTION(BlueprintCallable)
+    float ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To);
+
+    double DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
+                                            UPARAM(ref) FDateTimeSystemStruct &To);
+
+    TTuple<float, float, float> ComputeDeltaBetweenDatesInternal(UPARAM(ref) FDateTimeSystemStruct &Date1,
+                                                                 UPARAM(ref) FDateTimeSystemStruct &Date2,
+                                                                 FDateTimeSystemStruct &Result);
+
+    UFUNCTION(BlueprintCallable)
+    float GetTimeScale()
+    {
+        return TimeScale;
+    }
 
     friend class UClimateComponent;
 };

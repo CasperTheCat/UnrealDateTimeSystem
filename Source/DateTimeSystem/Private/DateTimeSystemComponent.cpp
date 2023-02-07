@@ -374,19 +374,73 @@ bool UDateTimeSystemComponent::AdvanceToClockTime(int Hour, int Minute, int Seco
 float UDateTimeSystemComponent::ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSystemStruct &Date1,
                                                          UPARAM(ref) FDateTimeSystemStruct &Date2)
 {
+    return ComputeDeltaBetweenDatesYears(Date1, Date2);
+}
+
+float UDateTimeSystemComponent::ComputeDeltaBetweenDatesYears(UPARAM(ref) FDateTimeSystemStruct &Date1,
+                                                              UPARAM(ref) FDateTimeSystemStruct &Date2)
+{
+    FDateTimeSystemStruct Delta{};
+    auto TupleResult = ComputeDeltaBetweenDatesInternal(Date1, Date2, Delta);
+
+    auto DeltaYears = TupleResult.Get<0>();
+
+    auto FractionalYear = GetFractionalCalendarYear(Delta);
+    auto FractionalMonth = GetFractionalMonth(Delta);
+
+    return DeltaYears + FractionalYear;
+}
+
+float UDateTimeSystemComponent::ComputeDeltaBetweenDatesMonths(UPARAM(ref) FDateTimeSystemStruct &Date1,
+                                                               UPARAM(ref) FDateTimeSystemStruct &Date2)
+{
+    FDateTimeSystemStruct Delta{};
+    auto TupleResult = ComputeDeltaBetweenDatesInternal(Date1, Date2, Delta);
+
+    auto DeltaMonths = TupleResult.Get<1>();
+
+    auto FractionalMonth = GetFractionalMonth(Delta);
+
+    return DeltaMonths + FractionalMonth;
+}
+
+float UDateTimeSystemComponent::ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSystemStruct &Date1,
+                                                             UPARAM(ref) FDateTimeSystemStruct &Date2)
+{
+    FDateTimeSystemStruct Delta{};
+    auto TupleResult = ComputeDeltaBetweenDatesInternal(Date1, Date2, Delta);
+
+    auto DeltaDays = TupleResult.Get<2>();
+
+    auto FractionalDay = GetFractionalDay(Delta);
+
+    return DeltaDays + FractionalDay;
+}
+
+double UDateTimeSystemComponent::DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &Date1,
+                                                                  UPARAM(ref) FDateTimeSystemStruct &Date2)
+{
+    double Days = ComputeDeltaBetweenDatesDays(Date1, Date2);
+
+    return Days * LengthOfDay;
+}
+
+TTuple<float, float, float> UDateTimeSystemComponent::ComputeDeltaBetweenDatesInternal(
+    UPARAM(ref) FDateTimeSystemStruct &Date1, UPARAM(ref) FDateTimeSystemStruct &Date2, FDateTimeSystemStruct &Result)
+{
     // Date2 is reference date?
-    auto Delta = Date2 - Date1;
+    Result = Date2 - Date1;
 
     // The delta needs conversion. AddDateStruct already does this
     // We'll copy and modify rather than creating a function since we need
     // Different stuff
 
-    auto DeltaDays = FMath::Abs(Delta.Day);
-    auto DeltaMonths = FMath::Abs(Delta.Month);
-    auto DeltaYears = FMath::Abs(Delta.Year);
+    auto DeltaDays = FMath::Abs(Result.Day);
+    auto DeltaMonths = FMath::Abs(Result.Month);
+    auto DeltaYears = FMath::Abs(Result.Year);
 
     // Compute the advancement of months
-    for (int32 i = 0; i < Delta.Month; ++i)
+    for (int32 i = 0; i < Result.Month; ++i)
     {
         auto CurrentMonthDays = GetDaysInMonth((Date2.Month + i) % GetMonthsInYear(Date2.Year));
         auto MonthDays = GetDaysInMonth((Date2.Month + i + 1) % GetMonthsInYear(Date2.Year));
@@ -402,7 +456,7 @@ float UDateTimeSystemComponent::ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSy
     }
 
     // Compute the advancement of year
-    for (int32 i = 0; i < Delta.Year; ++i)
+    for (int32 i = 0; i < Result.Year; ++i)
     {
         auto CurrentYearDays = GetLengthOfCalendarYear(InternalDate.Year + i);
         auto CurrentYearLeap = DoesYearLeap(InternalDate.Year + i);
@@ -423,10 +477,7 @@ float UDateTimeSystemComponent::ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSy
         DeltaDays += CurrentYearDays;
     }
 
-    auto FractionalYear = GetFractionalCalendarYear(Delta);
-    auto FractionalMonth = GetFractionalMonth(Delta);
-
-    return DeltaYears + FractionalYear;
+    return TTuple<float, float, float>(DeltaYears, DeltaMonths, DeltaDays);
 }
 
 void UDateTimeSystemComponent::AddDateStruct(FDateTimeSystemStruct &DateStruct)
