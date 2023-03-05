@@ -297,14 +297,14 @@ FVector UDateTimeSystemComponent::GetMoonVector_Implementation(float Latitude, f
     return FVector(SX, SY, SZ);
 }
 
-FName UDateTimeSystemComponent::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
+FText UDateTimeSystemComponent::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
 {
     if (DateStruct.Month < YearBook.Num())
     {
         return YearBook[DateStruct.Month]->MonthName;
     }
 
-    return FName();
+    return FText::FromString("Missing Month Name");
 }
 
 void UDateTimeSystemComponent::SetUTCDateTime(FDateTimeSystemStruct &DateStruct, bool SkipInitialisation)

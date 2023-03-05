@@ -14,6 +14,11 @@ DECLARE_STATS_GROUP(TEXT("DateTimeSystem"), STATGROUP_ACIDateTimeSys, STATCAT_Ad
 // Forward Decl
 class UClimateComponent;
 
+
+/**
+ * @brief Date Time Cache Invalidation Types
+ * 
+ */
 enum class EDateTimeSystemInvalidationTypes : uint8
 {
     Frame,
@@ -24,24 +29,57 @@ enum class EDateTimeSystemInvalidationTypes : uint8
     TOTAL_INVALIDATION_TYPES
 };
 
+/**
+ * @brief Cache Float
+ * 
+ * Includes Validity
+ * Packing does nothing on this type
+ */
+USTRUCT(BlueprintType, Blueprintable)
 struct FDateTimeSystemPackedCacheFloat
 {
+    GENERATED_BODY()
+
     bool Valid;
     float Value;
 };
 
+/**
+ * @brief Cache Vector
+ * 
+ * Includes Validity
+ * Packing does nothing on this type
+ */
+USTRUCT(BlueprintType, Blueprintable)
 struct FDateTimeSystemPackedCacheVector
 {
+    GENERATED_BODY()
+
     bool Valid;
     FVector Value;
 };
 
+
+/**
+ * @brief Cache Integer
+ * 
+ * Includes Validity
+ */
+USTRUCT(BlueprintType, Blueprintable)
 struct FDateTimeSystemPackedCacheInt
 {
+    GENERATED_BODY()
+
     int32 Valid : 1;
     int32 Value : 31;
 };
 
+
+/**
+ * @brief Date Time Struct
+ * 
+ * Stores time in UTC
+ */
 USTRUCT(BlueprintType, Blueprintable)
 struct FDateTimeSystemStruct
 {
@@ -144,6 +182,12 @@ FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemStruct &Row)
     return DateHash;
 }
 
+/**
+ * @brief Timezone Struct
+ *
+ * Does not handle Daylight Saving
+ * Dumb, raw offset to hours 
+ */
 USTRUCT(BlueprintType, Blueprintable)
 struct FDateTimeSystemTimezoneStruct
 {
@@ -153,10 +197,16 @@ struct FDateTimeSystemTimezoneStruct
     float HoursDeltaFromMeridian;
 };
 
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, FDateTimeSystemStruct, NewDate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, FDateTimeSystemStruct, NewDate, FGameplayTagContainer,
                                              Attribute);
 
+/**
+ * @brief DateTimeSystem
+ *
+ * Subclasses UActorComponent so it can be placed in more locations 
+ */
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class DATETIMESYSTEM_API UDateTimeSystemComponent : public UActorComponent
 {
@@ -180,11 +230,13 @@ private:
     UPROPERTY(EditDefaultsOnly)
     float ReferenceLatitude;
 
+    UPROPERTY()
     float PercentLatitude;
 
     UPROPERTY(EditDefaultsOnly)
     float ReferenceLongitude;
 
+    UPROPERTY()
     float PercentLongitude;
 
     UPROPERTY(EditDefaultsOnly)
@@ -193,6 +245,7 @@ private:
     UPROPERTY(EditDefaultsOnly)
     float PlanetRadius;
 
+    UPROPERTY()
     double InvPlanetRadius;
 
     UPROPERTY(EditDefaultsOnly)
@@ -230,14 +283,29 @@ private:
     TArray<FDateTimeSystemYearbookRow *> YearBook;
 
     // Set when Yearbook is populated
+    UPROPERTY()
     int LengthOfCalendarYearInDays;
 
+    // Caches
+    UPROPERTY(Transient)
     FDateTimeSystemPackedCacheFloat CachedSolarFractionalYear;
+
+    UPROPERTY(Transient)
     FDateTimeSystemPackedCacheFloat CachedSolarDeclinationAngle;
+
+    UPROPERTY(Transient)
     FDateTimeSystemPackedCacheFloat CachedSolarTimeCorrection;
+
+    UPROPERTY(Transient)
     FDateTimeSystemPackedCacheFloat CachedSolarDaysOfYear;
+
+    UPROPERTY(Transient)
     FDateTimeSystemPackedCacheInt CachedDoesLeap;
+
+    UPROPERTY(Transient)
     TMap<uint32, FVector> CachedSunVectors;
+
+    UPROPERTY(Transient)
     TMap<uint32, FVector> CachedMoonVectors;
 
 public:
@@ -295,6 +363,7 @@ public:
     UDateTimeSystemComponent();
     UDateTimeSystemComponent(UDateTimeSystemComponent &Other);
     UDateTimeSystemComponent(const FObjectInitializer &ObjectInitializer);
+
     virtual void TickComponent(float DeltaTime, enum ELevelTick TickType,
                                FActorComponentTickFunction *ThisTickFunction) override;
 
@@ -368,20 +437,46 @@ public:
     UFUNCTION(BlueprintCallable)
     float GetFractionalCalendarYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
+
+    /**
+     * @brief Internal Tick
+     * 
+     * This function is used if the component cannot tick itself.
+     * Such as, for example, when placed on a GameInstance.
+     */
     UFUNCTION(BlueprintCallable)
     void InternalTick(float DeltaTime);
 
+    /**
+     * @brief Internal BeginPlay
+     * 
+     * Called by BeginPlay
+     * Can be called if the component isn't receiving a BeginPlay
+     * Such as when on a GameInstance
+     */
     UFUNCTION(BlueprintCallable)
     void InternalBegin();
 
+    /**
+     * @brief Reinitialise
+     * 
+     * This probably doesn't need to be called unless you know why
+     * Current functions that require reinitialisation already call this
+     */
     UFUNCTION(BlueprintCallable)
     void InternalInitialise();
 
     UFUNCTION(BlueprintCallable)
     FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection);
 
+    /**
+     * @brief Return the FName of the month
+     * 
+     * Remember, FName's are not localised, and this isn't using FText, which is
+     * Using the FName directly in the UI is not advised
+     */
     UFUNCTION(BlueprintCallable)
-    FName GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+    FText GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     // Set the thing, directly
     // Use SkipInitialisation if we are loading a checkpoint
@@ -421,6 +516,7 @@ public:
     UFUNCTION(BlueprintCallable)
     float ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To);
 
+    // Double Precision Delta
     double DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
                                             UPARAM(ref) FDateTimeSystemStruct &To);
 

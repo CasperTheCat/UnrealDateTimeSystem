@@ -158,7 +158,7 @@ public:
 
     // Starts at zero
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    FName MonthName;
+    FText MonthName;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     int NumberOfDays;
@@ -175,7 +175,7 @@ public:
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemYearbookRow &Row)
 {
-    auto MIHash = GetTypeHash(Row.MonthName);
+    auto MIHash = GetTypeHash(Row.MonthName.ToString());
 
     return MIHash;
 }

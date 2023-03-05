@@ -12,22 +12,6 @@
 
 DECLARE_STATS_GROUP(TEXT("ClimateSystem"), STATGROUP_ACIClimateSys, STATCAT_Advanced);
 
-UENUM(BlueprintType)
-enum class FDateTimeClimateTypes : uint8
-{
-    Clear,
-    Overcast,
-    LightRain,
-    HeavyRain,
-    Monsoon,
-    Fog,
-    Snow,
-    Hail,
-    Frost,
-
-    TOTAL_CLIMATE_TYPES
-};
-
 USTRUCT(BlueprintType, Blueprintable)
 struct FDateTimeClimateDataStruct
 {
@@ -134,6 +118,7 @@ public:
     UPROPERTY(BlueprintAssignable)
     FTemperatureChangeDelegate TemperatureChangeCallback;
 
+    // Try to avoid this if you can
     UPROPERTY(BlueprintAssignable)
     FUpdateClimateData UpdateLocalClimateCallback;
 
@@ -152,19 +137,19 @@ public:
     UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
     float CurrentTemperature;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     float TemperatureChangeSpeed;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     float FogChangeSpeed;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
     float CurrentRelativeHumidity;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
     float CurrentDewPoint;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
     float SeaLevel;
 
     UPROPERTY(SaveGame)
@@ -176,31 +161,32 @@ public:
     UPROPERTY()
     float DTSTimeScale;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float TemperatureCatchupThreshold;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
     float SunPositionBelowHorizonThreshold;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
     float SunPositionAboveHorizonThreshold;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float ReferenceLatitude;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float ReferenceLongitude;
 
     UPROPERTY(EditDefaultsOnly)
     float DefaultClimateUpdateFrequency;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     FDateTimeSystemTimezoneStruct TimezoneInfo;
 
 private:
     void ClimateSetup();
     void Invalidate(EDateTimeSystemInvalidationTypes Type);
 
+    // Passthrough Function for LocalTime update
     UFUNCTION()
     void UpdateLocalTimePassthrough(FDateTimeSystemStruct NewTime);
 
