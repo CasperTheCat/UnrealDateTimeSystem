@@ -111,12 +111,6 @@ public:
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     int Year;
 
-    // UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    // float HighTemp;
-
-    // UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    // float LowTemp;
-
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     FGameplayTagContainer CallbackAttributes;
 };
@@ -129,21 +123,6 @@ FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemDateOverrideRow &Row)
 
     auto Hash = HashCombine(YHash, MHash);
     return HashCombine(Hash, DHash);
-
-    return Row.DayIndex;
-
-    auto DIHash = GetTypeHash(Row.DayIndex);
-
-    auto DateHash = HashCombine(HashCombine(DIHash, DHash), HashCombine(MHash, YHash));
-
-    // auto HHash = GetTypeHash(Row.HighTemp);
-    // auto LHash = GetTypeHash(Row.LowTemp);
-
-    // auto TempHash = HashCombine(HHash, LHash);
-
-    // auto CAHash = GetTypeHash(Row.CallbackAttributes);
-
-    return DateHash; // HashCombine(DateHash, TempHash);
 }
 
 USTRUCT(BlueprintType)
@@ -165,12 +144,6 @@ public:
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     bool AffectedByLeap;
-
-    // UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    // float MonthlyHighTemp;
-
-    // UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    // float MonthlyLowTemp;
 };
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemYearbookRow &Row)

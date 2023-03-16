@@ -50,7 +50,11 @@ void UDateTimeSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 void UDateTimeSystemComponent::BeginPlay()
 {
-    // SetComponentTickInterval(1.0 / TicksPerSecond);
+    if (TicksPerSecond > 0)
+    {
+        SetComponentTickInterval(1.0 / TicksPerSecond);
+    }
+
     Super::BeginPlay();
 
     InternalBegin();
@@ -198,7 +202,6 @@ FVector UDateTimeSystemComponent::GetSunVector_Implementation(float Latitude, fl
     float LocalLat = Latitude;
     float LocalLong = Longitude;
     float YearInRads = GetSolarFractionalYear();
-    // float DeclAngle = GetDeclinationAngle(InternalDate); // This is a hack. We can use SolarDecl... for a better one
     float DeclAngle = SolarDeclinationAngle(YearInRads);
 
     // Correct to meridian solar time
@@ -648,25 +651,13 @@ void UDateTimeSystemComponent::Invalidate(
     CachedSunVectors.Empty();
 }
 
-float UDateTimeSystemComponent::GetDeclinationAngle(FDateTimeSystemStruct &DateStruct)
-{
-    auto FracDay = DateStruct.Day + DateStruct.Seconds * InvLengthOfDay;
-
-    FracDay -= SolsticeOffsetInDays;
-
-    auto YearFrac = FracDay / DaysInOrbitalYear;
-
-    return 0.4091052 * FMath::Cos(YearFrac * TWO_PI);
-    // return 23.44 * FMath::Cos(YearFrac * TWO_PI);
-}
-
 bool UDateTimeSystemComponent::HandleDayRollover(FDateTimeSystemStruct &DateStruct)
 {
     // Check how many seconds we have
     if (DateStruct.Seconds >= LengthOfDay * 2 || DateStruct.Seconds < -LengthOfDay)
     {
         // Switch to a mode that enables us to handle multiple days.
-        // This is not merged as it needs testing
+        // This is not merged into the next else if as it needs testing
         auto NumberOfDays = FMath::TruncToInt(FMath::Floor(DateStruct.Seconds / LengthOfDay));
 
         DateStruct.Seconds -= NumberOfDays * LengthOfDay;
@@ -772,7 +763,7 @@ bool UDateTimeSystemComponent::SanitiseDateTime(FDateTimeSystemStruct &DateStruc
     if (DidRolloverDay)
     {
         // Loop externally to the month function
-        // It's cleaner
+        // It's cleaner as we need yearbook for it
         auto DidRolloverMonth = false;
         {
 

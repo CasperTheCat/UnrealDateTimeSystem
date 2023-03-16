@@ -14,10 +14,9 @@ DECLARE_STATS_GROUP(TEXT("DateTimeSystem"), STATGROUP_ACIDateTimeSys, STATCAT_Ad
 // Forward Decl
 class UClimateComponent;
 
-
 /**
  * @brief Date Time Cache Invalidation Types
- * 
+ *
  */
 enum class EDateTimeSystemInvalidationTypes : uint8
 {
@@ -31,7 +30,7 @@ enum class EDateTimeSystemInvalidationTypes : uint8
 
 /**
  * @brief Cache Float
- * 
+ *
  * Includes Validity
  * Packing does nothing on this type
  */
@@ -46,7 +45,7 @@ struct FDateTimeSystemPackedCacheFloat
 
 /**
  * @brief Cache Vector
- * 
+ *
  * Includes Validity
  * Packing does nothing on this type
  */
@@ -59,10 +58,9 @@ struct FDateTimeSystemPackedCacheVector
     FVector Value;
 };
 
-
 /**
  * @brief Cache Integer
- * 
+ *
  * Includes Validity
  */
 USTRUCT(BlueprintType, Blueprintable)
@@ -74,10 +72,9 @@ struct FDateTimeSystemPackedCacheInt
     int32 Value : 31;
 };
 
-
 /**
  * @brief Date Time Struct
- * 
+ *
  * Stores time in UTC
  */
 USTRUCT(BlueprintType, Blueprintable)
@@ -186,7 +183,7 @@ FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemStruct &Row)
  * @brief Timezone Struct
  *
  * Does not handle Daylight Saving
- * Dumb, raw offset to hours 
+ * Dumb, raw offset to hours
  */
 USTRUCT(BlueprintType, Blueprintable)
 struct FDateTimeSystemTimezoneStruct
@@ -197,7 +194,6 @@ struct FDateTimeSystemTimezoneStruct
     float HoursDeltaFromMeridian;
 };
 
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, FDateTimeSystemStruct, NewDate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, FDateTimeSystemStruct, NewDate, FGameplayTagContainer,
                                              Attribute);
@@ -205,7 +201,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, FDateTimeSystem
 /**
  * @brief DateTimeSystem
  *
- * Subclasses UActorComponent so it can be placed in more locations 
+ * Subclasses UActorComponent so it can be placed in more locations
  */
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class DATETIMESYSTEM_API UDateTimeSystemComponent : public UActorComponent
@@ -213,112 +209,233 @@ class DATETIMESYSTEM_API UDateTimeSystemComponent : public UActorComponent
     GENERATED_BODY()
 
 private:
+    /**
+     * @brief Length of a Day in Seconds
+     * This refers to both Solar and Calendar days
+     */
     UPROPERTY(EditDefaultsOnly)
     float LengthOfDay;
 
+    /**
+     * @brief Runtime Reciprocal for day length in seconds
+     *
+     */
+    UPROPERTY()
     double InvLengthOfDay;
 
+    /**
+     * @brief Sets how many times per second this object should tick
+     * Only used if BeginPlay is called by the engine
+     *
+     * Set to Zero (0) to use default
+     */
     UPROPERTY(EditDefaultsOnly)
     float TicksPerSecond;
 
+    /**
+     * @brief Scale the input DeltaTime
+     *
+     */
     UPROPERTY(SaveGame, EditAnywhere)
     float TimeScale;
 
+    /**
+     * @brief Number of days, including any fractional component, in a year
+     * Calendar Years are populated
+     */
     UPROPERTY(EditDefaultsOnly)
     float DaysInOrbitalYear;
 
+    /**
+     * @brief Reference Latitude
+     * All Latitude calculations are based from here
+     *
+     * Useful when using climate components aren't in use
+     */
     UPROPERTY(EditDefaultsOnly)
     float ReferenceLatitude;
 
+    /**
+     * @brief Latitude as a percentage
+     * For ease of use internally
+     */
     UPROPERTY()
     float PercentLatitude;
 
+    /**
+     * @brief Reference Longitude
+     * All Longitude calculations are based from here
+     *
+     * Useful when using climate components aren't in use
+     */
     UPROPERTY(EditDefaultsOnly)
     float ReferenceLongitude;
 
+    /**
+     * @brief Longitude as a percentage
+     * For ease of use internally
+     */
     UPROPERTY()
     float PercentLongitude;
 
-    UPROPERTY(EditDefaultsOnly)
-    float SolsticeOffsetInDays;
-
+    /**
+     * @brief Planet Radius in Kilometres
+     * Used for computing sun and moon location at vector positions
+     */
     UPROPERTY(EditDefaultsOnly)
     float PlanetRadius;
 
+    /**
+     * @brief Runtime Reciprocal for Planet Radius
+     */
     UPROPERTY()
     double InvPlanetRadius;
 
+    /**
+     * @brief Number of Days in a week
+     * Used for rolling over the day-of-week field
+     *
+     */
     UPROPERTY(EditDefaultsOnly)
     int DaysInWeek;
 
+    /**
+     * @brief Yearbook
+     * Uses the FDateTimeSystemYearbookRow row schema
+     */
     UPROPERTY(EditDefaultsOnly)
     UDataTable *YearBookTable;
 
+    /**
+     * @brief Overrides
+     * Uses the FDateTimeSystemDateOverrideRow row schema
+     */
     UPROPERTY(EditDefaultsOnly)
     UDataTable *DateOverridesTable;
 
-    // UTC Time. To avoid conversions
-    UPROPERTY(SaveGame, EditDefaultsOnly)
-    FDateTimeSystemStruct InternalDate;
-
+    /**
+     * @brief Whether set the overriden values when the date matches the current date
+     * or the override dayindex matches the current dayindex
+     *
+     * Defaults to matching the date
+     */
     UPROPERTY(EditDefaultsOnly)
     bool UseDayIndexForOverride;
 
-    // Used
-    // UPROPERTY(SaveGame)
-    // uint32 Day;
-
-    // UPROPERTY(SaveGame)
-    // uint32 Month;
-
-    // UPROPERTY(SaveGame)
-    // uint32 Year;
-
-    // UPROPERTY(SaveGame)
-    // uint32 DayIndex;
-
-    // Create YearBook and DateOverrides + Array to force lifetimes
+    /**
+     * @brief Array holding DateOverrides
+     *
+     */
     TArray<FDateTimeSystemDateOverrideRow *> DOTemps;
+
+    /**
+     * @brief Map from value to DateOverrides
+     * Value is dictated by the UseDayIndexForOverride function
+     *
+     */
     TMap<uint32, FDateTimeSystemDateOverrideRow *> DateOverrides;
+
+    /**
+     * @brief Array holding Yearbook rows
+     *
+     */
     TArray<FDateTimeSystemYearbookRow *> YearBook;
 
-    // Set when Yearbook is populated
+    /**
+     * @brief Length of a year in calendar days
+     *
+     */
     UPROPERTY()
     int LengthOfCalendarYearInDays;
 
     // Caches
+    /**
+     * @brief Cache for Solar Fractional Year
+     *
+     */
     UPROPERTY(Transient)
     FDateTimeSystemPackedCacheFloat CachedSolarFractionalYear;
 
+    /**
+     * @brief Cache for Solar Declination Angle
+     *
+     */
     UPROPERTY(Transient)
     FDateTimeSystemPackedCacheFloat CachedSolarDeclinationAngle;
 
+    /**
+     * @brief Cache for Solar Declination Angle
+     *
+     */
     UPROPERTY(Transient)
     FDateTimeSystemPackedCacheFloat CachedSolarTimeCorrection;
 
+    /**
+     * @brief Cache for Solar Days in Year
+     *
+     */
     UPROPERTY(Transient)
     FDateTimeSystemPackedCacheFloat CachedSolarDaysOfYear;
 
+    /**
+     * @brief Cache for whether this year leaps
+     *
+     */
     UPROPERTY(Transient)
     FDateTimeSystemPackedCacheInt CachedDoesLeap;
 
+    /**
+     * @brief Array of cached Sun Locations
+     *
+     * This makes querying sun position at the same location and time relatively cheap
+     *
+     */
     UPROPERTY(Transient)
     TMap<uint32, FVector> CachedSunVectors;
 
+    /**
+     * @brief Array of cached Moon Locations
+     *
+     * This makes querying moon position at the same location and time relatively cheap
+     *
+     */
     UPROPERTY(Transient)
     TMap<uint32, FVector> CachedMoonVectors;
 
+    /**
+     * @brief Internal Date and Time stored in UTC
+     *
+     */
+    UPROPERTY(SaveGame, EditDefaultsOnly)
+    FDateTimeSystemStruct InternalDate;
+
 public:
-    // Do we *really* want to save this and not just bake it with EditDefaults?
+    /**
+     * @brief When an override occurs, do we want to update the date to the date in the override row?
+     *
+     * Note: This only makes sense when UseDayIndexForOverride is true,
+     * which it is not by default.
+     */
     UPROPERTY(SaveGame, EditAnywhere)
     bool OverridedDatesSetDate;
 
+    /**
+     * @brief Callback when the date changes
+     */
     UPROPERTY(BlueprintAssignable)
     FDateChangeDelegate DateChangeCallback;
 
+    /**
+     * @brief Callback when an override occurs
+     */
     UPROPERTY(BlueprintAssignable)
     FOverridesDelegate DateOverrideCallback;
 
+    /**
+     * @brief Callback when the time changes, which may be frequently
+     *
+     * Also used by Climate Components to trigger their updates
+     */
     UPROPERTY(BlueprintAssignable)
     FDateChangeDelegate TimeUpdate;
 
@@ -360,33 +477,136 @@ private:
     virtual FRotator GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
 
 public:
+    /**
+     * @brief Construct a new UDateTimeSystemComponent object
+     */
     UDateTimeSystemComponent();
     UDateTimeSystemComponent(UDateTimeSystemComponent &Other);
     UDateTimeSystemComponent(const FObjectInitializer &ObjectInitializer);
 
+    /**
+     * @brief Engine tick function. Called when this component is on a tickable actor.
+     * If it isn't, call InternalTick manually.
+     *
+     * @param DeltaTime
+     * @param TickType
+     * @param ThisTickFunction
+     */
     virtual void TickComponent(float DeltaTime, enum ELevelTick TickType,
                                FActorComponentTickFunction *ThisTickFunction) override;
 
+    /**
+     * @brief Engine Begin Function. Called by the engine on a tickable actor.
+     * If it isn't, call InternalBegin manually.
+     */
     virtual void BeginPlay();
 
+    ///// ///// ////////// ///// /////
+    // Date Functions
+    //
+
+    /**
+     * @brief Populate DateStruct with today's date
+     *
+     * @param DateStruct
+     */
     UFUNCTION(BlueprintCallable)
     void GetTodaysDate(FDateTimeSystemStruct &DateStruct);
 
+    /**
+     * @brief Populate DateStruct with today's date including Timezone Offset
+     *
+     * @param DateStruct
+     * @param TimezoneInfo
+     */
     UFUNCTION(BlueprintCallable)
     void GetTodaysDateTZ(FDateTimeSystemStruct &DateStruct, UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo);
 
+    /**
+     * @brief Populate DateStruct with tomorrow's date
+     *
+     * @param DateStruct
+     */
     UFUNCTION(BlueprintCallable)
     void GetTomorrowsDate(FDateTimeSystemStruct &DateStruct);
 
+    /**
+     * @brief Populate DateStruct with tomorrow's date including Timezone Offset
+     *
+     * @param DateStruct
+     * @param TimezoneInfo
+     */
     UFUNCTION(BlueprintCallable)
     void GetTomorrowsDateTZ(FDateTimeSystemStruct &DateStruct, UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo);
 
+    /**
+     * @brief Populate DateStruct with yesterday's date
+     *
+     * @param DateStruct
+     */
     UFUNCTION(BlueprintCallable)
     void GetYesterdaysDate(FDateTimeSystemStruct &DateStruct);
 
+    /**
+     * @brief Populate DateStruct with yesterday's date including Timezone Offset
+     *
+     * @param DateStruct
+     * @param TimezoneInfo
+     */
     UFUNCTION(BlueprintCallable)
     void GetYesterdaysDateTZ(FDateTimeSystemStruct &DateStruct,
                              UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo);
+
+    /**
+     * @brief Set DTS date
+     * Use SkipInitialisation if we are loading a checkpoint
+     *
+     */
+    UFUNCTION(BlueprintCallable)
+    void SetUTCDateTime(FDateTimeSystemStruct &DateStruct, bool SkipInitialisation = false);
+
+    /**
+     * @brief Return a copy of the internal struct
+     * Useful for saving the state
+     *
+     */
+    UFUNCTION(BlueprintCallable)
+    FDateTimeSystemStruct GetUTCDateTime();
+
+    /**
+     * Functions for Adding and Setting time in increments
+     */
+
+    UFUNCTION(BlueprintCallable)
+    void AddDateStruct(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+
+    UFUNCTION(BlueprintCallable)
+    void AdvanceToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+
+    UFUNCTION(BlueprintCallable)
+    bool AdvanceToClockTime(int Hour, int Minute, int Second, bool Safety = true);
+
+    // Misc
+    UFUNCTION(BlueprintCallable)
+    float ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To);
+
+    UFUNCTION(BlueprintCallable)
+    float ComputeDeltaBetweenDatesYears(UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To);
+
+    UFUNCTION(BlueprintCallable)
+    float ComputeDeltaBetweenDatesMonths(UPARAM(ref) FDateTimeSystemStruct &From,
+                                         UPARAM(ref) FDateTimeSystemStruct &To);
+
+    UFUNCTION(BlueprintCallable)
+    float ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To);
+
+    // Double Precision Delta
+    double DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
+                                            UPARAM(ref) FDateTimeSystemStruct &To);
+
+    TTuple<float, float, float> ComputeDeltaBetweenDatesInternal(UPARAM(ref) FDateTimeSystemStruct &Date1,
+                                                                 UPARAM(ref) FDateTimeSystemStruct &Date2,
+                                                                 FDateTimeSystemStruct &Result);
 
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     float GetLatitudeFromLocation(float BaseLatitudePercent, FVector Location);
@@ -437,20 +657,15 @@ public:
     UFUNCTION(BlueprintCallable)
     float GetFractionalCalendarYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
-
     /**
-     * @brief Internal Tick
-     * 
-     * This function is used if the component cannot tick itself.
+     * @brief This function is used if the component cannot tick itself.
      * Such as, for example, when placed on a GameInstance.
      */
     UFUNCTION(BlueprintCallable)
     void InternalTick(float DeltaTime);
 
     /**
-     * @brief Internal BeginPlay
-     * 
-     * Called by BeginPlay
+     * @brief Called by BeginPlay
      * Can be called if the component isn't receiving a BeginPlay
      * Such as when on a GameInstance
      */
@@ -459,7 +674,7 @@ public:
 
     /**
      * @brief Reinitialise
-     * 
+     *
      * This probably doesn't need to be called unless you know why
      * Current functions that require reinitialisation already call this
      */
@@ -471,58 +686,12 @@ public:
 
     /**
      * @brief Return the FName of the month
-     * 
+     *
      * Remember, FName's are not localised, and this isn't using FText, which is
      * Using the FName directly in the UI is not advised
      */
     UFUNCTION(BlueprintCallable)
     FText GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
-
-    // Set the thing, directly
-    // Use SkipInitialisation if we are loading a checkpoint
-    UFUNCTION(BlueprintCallable)
-    void SetUTCDateTime(FDateTimeSystemStruct &DateStruct, bool SkipInitialisation = false);
-
-    // Return a copy of the internal struct
-    // We make a copy to allow us to destroy the object without
-    // risking a lifetime
-    UFUNCTION(BlueprintCallable)
-    FDateTimeSystemStruct GetUTCDateTime();
-
-    /**
-     * Functions for Adding and Setting time in increments
-     */
-
-    UFUNCTION(BlueprintCallable)
-    void AddDateStruct(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
-
-    UFUNCTION(BlueprintCallable)
-    void AdvanceToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
-
-    UFUNCTION(BlueprintCallable)
-    bool AdvanceToClockTime(int Hour, int Minute, int Second, bool Safety = true);
-
-    // Misc
-    UFUNCTION(BlueprintCallable)
-    float ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To);
-
-    UFUNCTION(BlueprintCallable)
-    float ComputeDeltaBetweenDatesYears(UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To);
-
-    UFUNCTION(BlueprintCallable)
-    float ComputeDeltaBetweenDatesMonths(UPARAM(ref) FDateTimeSystemStruct &From,
-                                         UPARAM(ref) FDateTimeSystemStruct &To);
-
-    UFUNCTION(BlueprintCallable)
-    float ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To);
-
-    // Double Precision Delta
-    double DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
-                                            UPARAM(ref) FDateTimeSystemStruct &To);
-
-    TTuple<float, float, float> ComputeDeltaBetweenDatesInternal(UPARAM(ref) FDateTimeSystemStruct &Date1,
-                                                                 UPARAM(ref) FDateTimeSystemStruct &Date2,
-                                                                 FDateTimeSystemStruct &Result);
 
     UFUNCTION(BlueprintCallable)
     float GetTimeScale()
