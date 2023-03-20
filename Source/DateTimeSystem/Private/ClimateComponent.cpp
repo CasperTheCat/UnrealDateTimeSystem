@@ -17,6 +17,7 @@ void UClimateComponent::ClimateSetup()
     DTSTimeScale = 1.f;
     SunHasRisen = false;
     SunHasSet = false;
+    NorthingDirection = FVector::ForwardVector;
 
     SunPositionBelowHorizonThreshold = 0.087155f;
     SunPositionAboveHorizonThreshold = 0.0435775f;
@@ -311,6 +312,16 @@ UDateTimeSystemComponent *UClimateComponent::FindComponent()
     }
 
     return nullptr;
+}
+
+FORCEINLINE FVector UClimateComponent::GetLocationAdjustedForNorthing(FVector Location)
+{
+    if (DateTimeSystem)
+    {
+        return DateTimeSystem->AlignWorldLocationInternalCoordinates(Location, NorthingDirection);
+    }
+
+    return Location;
 }
 
 float UClimateComponent::GetCurrentTemperature()
@@ -621,7 +632,8 @@ FRotator UClimateComponent::GetLocalSunRotation(FVector Location)
 {
     if (DateTimeSystem)
     {
-        return DateTimeSystem->GetLocalisedSunRotation(PercentileLatitude, PercentileLongitude, Location);
+        auto AdjustedLocation = GetLocationAdjustedForNorthing(Location);
+        return DateTimeSystem->GetLocalisedSunRotation(PercentileLatitude, PercentileLongitude, AdjustedLocation);
     }
 
     return FRotator();
@@ -631,7 +643,8 @@ FRotator UClimateComponent::GetLocalMoonRotation(FVector Location)
 {
     if (DateTimeSystem)
     {
-        return DateTimeSystem->GetLocalisedMoonRotation(PercentileLatitude, PercentileLongitude, Location);
+        auto AdjustedLocation = GetLocationAdjustedForNorthing(Location);
+        return DateTimeSystem->GetLocalisedMoonRotation(PercentileLatitude, PercentileLongitude, AdjustedLocation);
     }
 
     return FRotator();

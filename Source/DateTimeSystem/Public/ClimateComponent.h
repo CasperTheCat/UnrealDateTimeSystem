@@ -179,8 +179,22 @@ public:
     UPROPERTY(EditDefaultsOnly)
     float DefaultClimateUpdateFrequency;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+
+    /**
+     * @brief Timezone for this Climate Region
+     * Does not support DST as that's hard
+     */
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     FDateTimeSystemTimezoneStruct TimezoneInfo;
+
+
+    /**
+     * @brief Direction of North Vector
+     * Used to rotate Vectors
+     * TODO: Use this in GetSun and GetMoon functions
+     */
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    FVector NorthingDirection;
 
 private:
     void ClimateSetup();
@@ -207,6 +221,9 @@ private:
     void InternalDateChanged(FDateTimeSystemStruct DateStruct);
 
     UDateTimeSystemComponent *FindComponent();
+
+    FVector GetLocationAdjustedForNorthing(FVector Location);
+
 
 public:
     UClimateComponent();
