@@ -440,48 +440,215 @@ public:
     FDateChangeDelegate TimeUpdate;
 
 private:
+    /**
+     * @brief Called by the constructors, and nothing else
+     *
+     */
     void DateTimeSetup();
+
+    /**
+     * @brief Invalidate the caches based on the Type of Invalidation
+     *
+     * @param Type
+     */
     void Invalidate(EDateTimeSystemInvalidationTypes Type);
 
 private:
+    /**
+     * @brief Get the Hash For Date object
+     *
+     * @param DateStruct
+     * @return uint32
+     */
     uint32 GetHashForDate(FDateTimeSystemStruct *DateStruct);
+
+    /**
+     * @brief Get the Hash For Date object
+     *
+     * @param DateStruct
+     * @return uint32
+     */
     uint32 GetHashForDate(FDateTimeSystemDateOverrideRow *DateStruct);
+
+    /**
+     * @brief Get the Date Override object
+     *
+     * @param DateStruct
+     * @return FDateTimeSystemDateOverrideRow**
+     */
     FDateTimeSystemDateOverrideRow **GetDateOverride(FDateTimeSystemStruct *DateStruct);
 
-    bool HandleDayRollover(FDateTimeSystemStruct &DateStruct);
-    bool HandleMonthRollover(FDateTimeSystemStruct &DateStruct);
-    bool HandleYearRollover(FDateTimeSystemStruct &DateStruct);
-
-    int GetLengthOfCalendarYear(int Year);
-
+    /**
+     * @brief Get the Julian Day
+     *
+     * @param DateStruct
+     * @return double
+     */
     double GetJulianDay(FDateTimeSystemStruct &DateStruct);
-    // float GetDay(FDateTimeSystemStruct& DateStruct);
 
-    float GetDeclinationAngle(FDateTimeSystemStruct &DateStruct);
-
+    /**
+     * @brief Get the number of days In current month
+     *
+     * @return int
+     */
     int GetDaysInCurrentMonth();
+
+    /**
+     * @brief Get the number of days in the specified month by index
+     *
+     * @param MonthIndex
+     * @return int
+     */
     int GetDaysInMonth(int MonthIndex);
+
+    /**
+     * @brief Get the count of months In a year
+     *
+     * @param YearIndex
+     * @return int
+     */
     int GetMonthsInYear(int YearIndex);
 
-    bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct);
-    bool SanitiseSolarDateTime(FDateTimeSystemStruct &DateStruct);
+    /**
+     * @brief Get the Length Of a Calendar Year
+     *
+     * @param Year
+     * @return int
+     */
+    int GetLengthOfCalendarYear(int Year);
 
+    /**
+     * @brief Get the Solar Fractional Day
+     *
+     * @return float
+     */
     float GetSolarFractionalDay();
+
+    /**
+     * @brief Get the Solar Fractional Year
+     *
+     * @return float
+     */
     float GetSolarFractionalYear();
+
+    /**
+     * @brief Get EQ Time
+     *
+     * @param YearInRadians
+     * @return float
+     */
     float SolarTimeCorrection(float YearInRadians);
+
+    /**
+     * @brief Get Solar Declination Angle
+     *
+     * @param YearInRadians
+     * @return float
+     */
     float SolarDeclinationAngle(float YearInRadians);
 
+    /**
+     * @brief Does the Year Leap?
+     *
+     * @param Year
+     * @return true
+     * @return false
+     */
     bool InternalDoesLeap(int Year);
 
+    /**
+     * @brief Get the Localised Sun Rotation
+     * Base Percents are the percent of a rotation around the globe
+     * Location is player location from the base. This requires globe radius
+     *
+     * @param BaseLatitudePercent
+     * @param BaseLongitudePercent
+     * @param Location
+     * @return FRotator
+     */
     virtual FRotator GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
+
+    /**
+     * @brief Get the Localised Moon Rotation
+     * Base Percents are the percent of a rotation around the globe
+     * Location is player location from the base. This requires globe radius
+     *
+     * @param BaseLatitudePercent
+     * @param BaseLongitudePercent
+     * @param Location
+     * @return FRotator
+     */
     virtual FRotator GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
+
+    ///// ///// ////////// ///// /////
+    // Rollover Handlers
+    //
+
+    /**
+     * @brief Roll over the days
+     * Return true if the day rolled
+     *
+     * @param DateStruct
+     * @return true
+     * @return false
+     */
+    bool HandleDayRollover(FDateTimeSystemStruct &DateStruct);
+
+    /**
+     * @brief Roll over the months
+     * Return true if the month rolled
+     *
+     * @param DateStruct
+     * @return true
+     * @return false
+     */
+    bool HandleMonthRollover(FDateTimeSystemStruct &DateStruct);
+
+    /**
+     * @brief Roll over the years
+     * Return true if the year rolled
+     *
+     * @param DateStruct
+     * @return true
+     * @return false
+     */
+    bool HandleYearRollover(FDateTimeSystemStruct &DateStruct);
+
+    /**
+     * @brief Perform all rollovers
+     * Return true if anything fired
+     * -- The day would need updated
+     *
+     * @param DateStruct
+     * @return true
+     * @return false
+     */
+    bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct);
+
+    /**
+     * @brief Perform solar day rollover
+     * Return true if anything the day updated
+     *
+     * @param DateStruct
+     * @return true
+     * @return false
+     */
+    bool SanitiseSolarDateTime(FDateTimeSystemStruct &DateStruct);
 
 public:
     /**
      * @brief Construct a new UDateTimeSystemComponent object
      */
     UDateTimeSystemComponent();
+
+    /**
+     * @brief Construct a new UDateTimeSystemComponent object
+     */
     UDateTimeSystemComponent(UDateTimeSystemComponent &Other);
+
+    /**
+     * @brief Construct a new UDateTimeSystemComponent object
+     */
     UDateTimeSystemComponent(const FObjectInitializer &ObjectInitializer);
 
     /**
@@ -577,83 +744,293 @@ public:
      * Functions for Adding and Setting time in increments
      */
 
+    /**
+     * @brief Add the DateStruct to current time
+     *
+     * @param DateStruct
+     */
     UFUNCTION(BlueprintCallable)
     void AddDateStruct(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
+    /**
+     * @brief Advance to the timestamp specified in the DateStruct
+     *
+     * @param DateStruct
+     */
     UFUNCTION(BlueprintCallable)
     void AdvanceToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
+    /**
+     * @brief Advance to the timestamp specified in params
+     * Returns true, unless the Safety failed due to the timestep being
+     * less than 30 minutes
+     *
+     * @param Hour
+     * @param Minute
+     * @param Second
+     * @param Safety
+     * @return true
+     * @return false
+     */
     UFUNCTION(BlueprintCallable)
     bool AdvanceToClockTime(int Hour, int Minute, int Second, bool Safety = true);
 
-    // Misc
+    /**
+     * @brief Compute Delta Between Dates in Fractional Years
+     * Calls ComputeDeltaBetweenDatesYears
+     *
+     * @param From
+     * @param To
+     * @return float
+     */
     UFUNCTION(BlueprintCallable)
     float ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To);
 
+    /**
+     * @brief Compute Delta Between Dates in Fractional Years
+     *
+     * @param From
+     * @param To
+     * @return float
+     */
     UFUNCTION(BlueprintCallable)
     float ComputeDeltaBetweenDatesYears(UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To);
 
+    /**
+     * @brief Compute Delta Between Dates in Fractional Months
+     *
+     * @param From
+     * @param To
+     * @return float
+     */
     UFUNCTION(BlueprintCallable)
     float ComputeDeltaBetweenDatesMonths(UPARAM(ref) FDateTimeSystemStruct &From,
                                          UPARAM(ref) FDateTimeSystemStruct &To);
 
+    /**
+     * @brief Compute Delta Between Dates in Fractional Days
+     *
+     * @param From
+     * @param To
+     * @return float
+     */
     UFUNCTION(BlueprintCallable)
     float ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To);
 
-    // Double Precision Delta
+    /**
+     * @brief Compute Delta Between Dates in Seconds
+     * Not BP callable due to precision issues
+     *
+     * @param From
+     * @param To
+     * @return double
+     */
     double DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
                                             UPARAM(ref) FDateTimeSystemStruct &To);
 
+    /**
+     * @brief Compute Delta Between Dates Internal
+     *
+     * @param From
+     * @param To
+     * @param OUT: Return the delta struct
+     * @return TTuple<float, float, float>
+     */
     TTuple<float, float, float> ComputeDeltaBetweenDatesInternal(UPARAM(ref) FDateTimeSystemStruct &Date1,
                                                                  UPARAM(ref) FDateTimeSystemStruct &Date2,
                                                                  FDateTimeSystemStruct &Result);
 
+    /**
+     * @brief Get the Latitude From Location
+     *
+     * @param BaseLatitudePercent
+     * @param Location
+     * @return float
+     */
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     float GetLatitudeFromLocation(float BaseLatitudePercent, FVector Location);
+
+    /**
+     * @brief Native Implementation of GetLatitudeFromLocation
+     *
+     * @param BaseLatitudePercent
+     * @param Location
+     * @return float
+     */
     virtual float GetLatitudeFromLocation_Implementation(float BaseLatitudePercent, FVector Location);
 
+    /**
+     * @brief Get the Longitude From Location
+     *
+     * @param BaseLatitudePercent
+     * @param BaseLongitudePercent
+     * @param Location
+     * @return float
+     */
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     float GetLongitudeFromLocation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
+
+    /**
+     * @brief Native Implementation of GetLongitudeFromLocation
+     *
+     * @param BaseLatitudePercent
+     * @param BaseLongitudePercent
+     * @param Location
+     * @return float
+     */
     virtual float GetLongitudeFromLocation_Implementation(float BaseLatitudePercent, float BaseLongitudePercent,
                                                           FVector Location);
 
+    /**
+     * @brief Does the Given Year Leap?
+     *
+     * @param Year
+     * @return true
+     * @return false
+     */
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     bool DoesYearLeap(int Year);
+
+    /**
+     * @brief Native Implementation of DoesYearLeap
+     *
+     * @param Year
+     * @return true
+     * @return false
+     */
     virtual bool DoesYearLeap_Implementation(int Year);
 
+    /**
+     * @brief Get the Sun Rotation For WorldLocation
+     *
+     * @param Location
+     * @return FRotator
+     */
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     FRotator GetSunRotationForLocation(FVector Location);
+
+    /**
+     * @brief Native Implementation for GetSunRotationForLocation
+     *
+     * @param Location
+     * @return FRotator
+     */
     virtual FRotator GetSunRotationForLocation_Implementation(FVector Location);
 
+    /**
+     * @brief Get the Sun Rotation
+     *
+     * @return FRotator
+     */
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     FRotator GetSunRotation();
+
+    /**
+     * @brief Native Implementation for GetSunRotation
+     *
+     * @return FRotator
+     */
     virtual FRotator GetSunRotation_Implementation();
 
+    /**
+     * @brief Get the Sun Vector
+     *
+     * @return FVector
+     */
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     FVector GetSunVector(float Latitude, float Longitude);
+
+    /**
+     * @brief Native Implementation for GetSunVector
+     *
+     * @return FVector
+     */
     virtual FVector GetSunVector_Implementation(float Latitude, float Longitude);
 
+    /**
+     * @brief Get the Moon Rotation For WorldLocation
+     *
+     * @param Location
+     * @return FRotator
+     */
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     FRotator GetMoonRotationForLocation(FVector Location);
+
+    /**
+     * @brief Native Implementation for GetMoonRotationForLocation
+     *
+     * @param Location
+     * @return FRotator
+     */
     virtual FRotator GetMoonRotationForLocation_Implementation(FVector Location);
 
+    /**
+     * @brief Get the Moon Rotation
+     *
+     * @return FRotator
+     */
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     FRotator GetMoonRotation();
+
+    /**
+     * @brief Native Implementation for GetMoonRotation
+     *
+     * @return FRotator
+     */
     virtual FRotator GetMoonRotation_Implementation();
 
+    /**
+     * @brief Get the Moon Vector
+     *
+     * @return FVector
+     */
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
     FVector GetMoonVector(float Latitude, float Longitude);
+
+    /**
+     * @brief Native Implementation for GetMoonVector
+     *
+     * @return FVector
+     */
     virtual FVector GetMoonVector_Implementation(float Latitude, float Longitude);
 
+    ///// ///// ////////// ///// /////
+    // Getters
+    //
+
+    /**
+     * @brief Get the Fractional Days in DateStruct
+     *
+     * @param DateStruct
+     * @return float
+     */
     UFUNCTION(BlueprintCallable)
     float GetFractionalDay(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
+    /**
+     * @brief Get the Fractional Month in DateStruct
+     *
+     * @param DateStruct
+     * @return float
+     */
     UFUNCTION(BlueprintCallable)
     float GetFractionalMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
+    /**
+     * @brief Get the Fractional Orbital Year in DateStruct
+     *
+     * @param DateStruct
+     * @return float
+     */
     UFUNCTION(BlueprintCallable)
     float GetFractionalOrbitalYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
+    /**
+     * @brief Get the Fractional Calendar Days in DateStruct
+     *
+     * @param DateStruct
+     * @return float
+     */
     UFUNCTION(BlueprintCallable)
     float GetFractionalCalendarYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
@@ -681,6 +1058,15 @@ public:
     UFUNCTION(BlueprintCallable)
     void InternalInitialise();
 
+    /**
+     * @brief Align the World Position to Date System Coordinate
+     * By default, X is North.
+     * If you wish to rotate this, pass the new north as a normalised vector
+     *
+     * @param WorldLocation
+     * @param NorthingDirection
+     * @return FVector
+     */
     UFUNCTION(BlueprintCallable)
     FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection);
 
@@ -693,6 +1079,11 @@ public:
     UFUNCTION(BlueprintCallable)
     FText GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
+    /**
+     * @brief Get the Time Scale
+     *
+     * @return float
+     */
     UFUNCTION(BlueprintCallable)
     float GetTimeScale()
     {

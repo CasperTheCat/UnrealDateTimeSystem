@@ -167,6 +167,21 @@ float UDateTimeSystemComponent::GetLongitudeFromLocation_Implementation(float Ba
 
 bool UDateTimeSystemComponent::DoesYearLeap_Implementation(int Year)
 {
+    if (Year % 4 == 0)
+    {
+        if (Year % 100 != 0)
+        {
+            if (Year % 400 == 0)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+    
     return false;
 }
 
