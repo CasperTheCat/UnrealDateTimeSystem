@@ -194,6 +194,7 @@ struct FDateTimeSystemTimezoneStruct
     float HoursDeltaFromMeridian;
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCleanDateChangeDelegate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, FDateTimeSystemStruct, NewDate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, FDateTimeSystemStruct, NewDate, FGameplayTagContainer,
                                              Attribute);
@@ -345,7 +346,7 @@ private:
      * @brief Length of a year in calendar days
      *
      */
-    UPROPERTY()
+    UPROPERTY(Transient)
     int LengthOfCalendarYearInDays;
 
     // Caches
@@ -433,11 +434,17 @@ public:
 
     /**
      * @brief Callback when the time changes, which may be frequently
+     */
+    UPROPERTY(BlueprintAssignable)
+    FDateChangeDelegate TimeUpdate;
+
+    /**
+     * @brief Callback when the time changes, which may be frequently
      *
      * Also used by Climate Components to trigger their updates
      */
     UPROPERTY(BlueprintAssignable)
-    FDateChangeDelegate TimeUpdate;
+    FCleanDateChangeDelegate CleanTimeUpdate;
 
 private:
     /**

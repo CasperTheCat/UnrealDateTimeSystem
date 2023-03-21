@@ -181,7 +181,7 @@ bool UDateTimeSystemComponent::DoesYearLeap_Implementation(int Year)
 
         return true;
     }
-    
+
     return false;
 }
 
@@ -960,6 +960,11 @@ void UDateTimeSystemComponent::InternalTick(float DeltaTime)
     if (TimeUpdate.IsBound())
     {
         TimeUpdate.Broadcast(InternalDate);
+    }
+
+    if (CleanTimeUpdate.IsBound())
+    {
+        CleanTimeUpdate.Broadcast();
     }
 }
 

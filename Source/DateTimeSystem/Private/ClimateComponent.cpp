@@ -42,7 +42,7 @@ void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDate
     }
 }
 
-void UClimateComponent::UpdateLocalTimePassthrough(FDateTimeSystemStruct NewTime)
+void UClimateComponent::UpdateLocalTimePassthrough()
 {
     FDateTimeSystemStruct Local{};
 
@@ -57,6 +57,11 @@ void UClimateComponent::UpdateLocalTimePassthrough(FDateTimeSystemStruct NewTime
     {
         UpdateLocalTime.Broadcast(Local);
     }
+
+    if (LocalTimeUpdateSignal.IsBound())
+    {
+        LocalTimeUpdateSignal.Broadcast();
+    }
 }
 
 FDateTimeSystemStruct UClimateComponent::GetLocalTime()
@@ -67,10 +72,10 @@ FDateTimeSystemStruct UClimateComponent::GetLocalTime()
 
 void UClimateComponent::BindToDateTimeSystem()
 {
-    if (DateTimeSystem && IsValid(DateTimeSystem) && UpdateLocalTime.IsBound())
+    if (DateTimeSystem && IsValid(DateTimeSystem) && (UpdateLocalTime.IsBound() || LocalTimeUpdateSignal.IsBound()))
     {
         // If someone is listening to the update, we pass it through
-        DateTimeSystem->TimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
+        DateTimeSystem->CleanTimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
     }
 }
 
@@ -611,10 +616,10 @@ void UClimateComponent::InternalBegin()
 
         DTSTimeScale = DateTimeSystem->TimeScale;
 
-        if (DateTimeSystem && IsValid(DateTimeSystem) && UpdateLocalTime.IsBound())
+        if (DateTimeSystem && IsValid(DateTimeSystem) && (UpdateLocalTime.IsBound() || LocalTimeUpdateSignal.IsBound()))
         {
             // If someone is listening to the update, we pass it through
-            DateTimeSystem->TimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
+            DateTimeSystem->CleanTimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
         }
     }
 }
@@ -893,6 +898,7 @@ void UClimateComponent::BeginPlay()
     {
         SetComponentTickInterval(1.0 / TicksPerSecond);
     }
+
     Super::BeginPlay();
 
     InternalBegin();
