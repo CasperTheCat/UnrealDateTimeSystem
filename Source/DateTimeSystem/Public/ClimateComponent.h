@@ -179,14 +179,14 @@ private:
      * @brief Boolean Flag for sun being above the horizon
      *
      */
-    UPROPERTY(SaveGame, BlueprintReadOnly)
+    UPROPERTY(SaveGame)
     bool SunHasRisen;
 
     /**
      * @brief Boolean Flag for sun being below the horizon
      *
      */
-    UPROPERTY(SaveGame, BlueprintReadOnly)
+    UPROPERTY(SaveGame)
     bool SunHasSet;
 
     /**
@@ -581,6 +581,26 @@ public:
      */
     UFUNCTION(BlueprintCallable)
     void BindToDateTimeSystem();
+
+    /**
+     * @brief Return whether the sun has risen
+     *
+     */
+    UFUNCTION(BlueprintCallable)
+    bool GetHasSunRisen()
+    {
+        return SunHasRisen;
+    }
+
+    /**
+     * @brief Return whether the sun has set
+     *
+     */
+    UFUNCTION(BlueprintCallable)
+    bool GetHasSunSet()
+    {
+        return SunHasSet;
+    }
 
     /**
      * @brief Get the Monthly High Temperature
