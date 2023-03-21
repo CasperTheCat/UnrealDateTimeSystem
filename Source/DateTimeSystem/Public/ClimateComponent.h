@@ -59,8 +59,6 @@ public:
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FTemperatureChangeDelegate, float, NewTemperature);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateClimateData, FDateTimeClimateDataStruct, ClimateData);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDTSUpdateTime, FDateTimeSystemStruct, NewDate);
-// DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateClimateData, UPARAM(ref) FDateTimeClimateDataStruct&,
-// ClimateData);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FLocalDateTimeEvent);
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))

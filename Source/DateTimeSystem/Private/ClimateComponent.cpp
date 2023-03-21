@@ -186,6 +186,8 @@ FDateTimeClimateDataStruct UClimateComponent::GetUpdatedClimateData_Implementati
     Returnable.HeatOffset = GetHeatIndex();
     Returnable.Wind = WindVector;
     Returnable.ChillOffset = GetWindChillFromVector(WindVector);
+
+    // TODO: Implement Frost, Rain, and Wetness
     Returnable.Frost = 0.f;
     Returnable.Rain = FMath::Sin(float(LocalTime.StoredSolarSeconds * (1.f / 86400.f) * 3.14)) * 0.5 + 0.5;
     Returnable.Wetness = FMath::Cos(float(LocalTime.StoredSolarSeconds * (1.f / 86400.f) * 6.14)) * 0.5 + 0.5;
