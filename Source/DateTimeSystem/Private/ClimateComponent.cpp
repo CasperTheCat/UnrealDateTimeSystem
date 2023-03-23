@@ -39,6 +39,9 @@ void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDate
         CachedAnalyticalMonthlyLowTemp.Valid = false;
         CachedAnalyticalDewPoint.Valid = false;
         CachedNextDewPoint.Valid = false;
+        CachedPriorDewPoint.Valid = false;
+        CachedPriorRainfall.Valid = false;
+        CachedNextRainfall.Valid = false;
     }
 }
 
@@ -47,7 +50,7 @@ void UClimateComponent::UpdateLocalTimePassthrough()
     FDateTimeSystemStruct Local{};
 
     // Check again, for consistency
-    if (DateTimeSystem && IsValid(DateTimeSystem))
+    if (IsValid(DateTimeSystem))
     {
         // Update Local Time. We need it for a few things
         DateTimeSystem->GetTodaysDateTZ(Local, TimezoneInfo);
@@ -72,7 +75,7 @@ FDateTimeSystemStruct UClimateComponent::GetLocalTime()
 
 void UClimateComponent::BindToDateTimeSystem()
 {
-    if (DateTimeSystem && IsValid(DateTimeSystem) && (UpdateLocalTime.IsBound() || LocalTimeUpdateSignal.IsBound()))
+    if (IsValid(DateTimeSystem) && (UpdateLocalTime.IsBound() || LocalTimeUpdateSignal.IsBound()))
     {
         // If someone is listening to the update, we pass it through
         DateTimeSystem->CleanTimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
@@ -115,7 +118,7 @@ float UClimateComponent::ModulateTemperature_Implementation(float Temperature, f
                                                             float LowTemperature, float HighTemperature)
 {
     // Get the sun vector. We want to suppress the temperature when it's below the horizon
-    if (DateTimeSystem)
+    if (IsValid(DateTimeSystem))
     {
 
         auto SunVector = DateTimeSystem->GetSunVector(RadLatitude, RadLongitude);
@@ -171,6 +174,42 @@ float UClimateComponent::ModulateFogByRainfall_Implementation(float FogHeight, f
     return FogHeight;
 }
 
+float UClimateComponent::GetRainLevel_Implementation()
+{
+    // We might want to cache?
+    if (IsValid(DateTimeSystem))
+    {
+        // For Blending, are we blending forward, or backward?
+        auto FracBin = LocalTime.GetFractionalBin(DateTimeSystem->LengthOfDay, NumberOfRainSlotsPerDay);
+        auto Offset = DateTimeSystem->LengthOfDay / NumberOfRainSlotsPerDay;
+
+        if (FracBin < 0.5)
+        {
+            Offset *= -1;
+        }
+
+        // Copy the object
+        FDateTimeSystemStruct OffsetTime = LocalTime;
+        OffsetTime.Seconds += Offset;
+        DateTimeSystem->SanitiseDateTime(OffsetTime);
+
+        // Get Hash of the hour
+        double BinHash = LocalTime.GetBinHash(DateTimeSystem->LengthOfDay, NumberOfRainSlotsPerDay);
+        float Probability = BinHash / UINT32_MAX;
+
+        double OffsetHash = OffsetTime.GetBinHash(DateTimeSystem->LengthOfDay, NumberOfRainSlotsPerDay);
+        float OffsetProb = OffsetHash / UINT32_MAX;
+
+        Probability = FMath::Lerp(Probability, OffsetProb, FMath::Abs(FracBin - 0.5));
+
+        if (Probability > GetCurrentRainfallProbability())
+        {
+            CurrentRainLevel = GetCurrentRainfallLevel();
+        }
+    }
+    return 0.0f;
+}
+
 float UClimateComponent::ModulateTemperatureByLocation(float Temperature, FVector Location)
 {
     auto AltitudeAboveSeaLevel = Location.Z - SeaLevel;
@@ -200,7 +239,7 @@ void UClimateComponent::UpdateCurrentTemperature(float DeltaTime)
 {
     // Okay. Our Current Temp is going to be dumb.
     // Which low are we using? The first or last?
-    if (DateTimeSystem)
+    if (IsValid(DateTimeSystem))
     {
         auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
 
@@ -218,7 +257,7 @@ void UClimateComponent::UpdateCurrentTemperature(float DeltaTime)
 
 void UClimateComponent::UpdateCurrentClimate(float DeltaTime)
 {
-    if (DateTimeSystem)
+    if (IsValid(DateTimeSystem))
     {
         // Rel. Humidity
         auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
@@ -323,7 +362,7 @@ UDateTimeSystemComponent *UClimateComponent::FindComponent()
 
 FORCEINLINE FVector UClimateComponent::GetLocationAdjustedForNorthing(FVector Location)
 {
-    if (DateTimeSystem)
+    if (IsValid(DateTimeSystem))
     {
         return DateTimeSystem->AlignWorldLocationInternalCoordinates(Location, NorthingDirection);
     }
@@ -406,11 +445,11 @@ float UClimateComponent::GetFogLevel(float DeltaTime, float Scale)
     auto TFL = (TargetFogLevel - CurrentFog) * FogChangeSpeed * DeltaTime * DTSTimeScale;
     CurrentFog = CurrentFog + TFL;
 
-    return FMath::Abs(TargetFogLevel) * Scale * 100 + SeaLevel;
+    auto CL = FMath::Abs(TargetFogLevel) * Scale * 100 + SeaLevel;
 
-    checkNoEntry();
-    auto CL = -GetCloudLevel();
-    return ModulateFogByRainfall(CL, 0, 0);
+    // checkNoEntry();
+    // auto CL = -GetCloudLevel();
+    return ModulateFogByRainfall(CL, DeltaTime, GetRainLevel());
 }
 
 float UClimateComponent::GetHeatIndex()
@@ -496,7 +535,7 @@ void UClimateComponent::InternalTick(float DeltaTime)
 {
     Invalidate(EDateTimeSystemInvalidationTypes::Frame);
 
-    if (DateTimeSystem)
+    if (IsValid(DateTimeSystem))
     {
         // Update Local Time. We need it for a few things
         DateTimeSystem->GetTodaysDateTZ(LocalTime, TimezoneInfo);
@@ -596,7 +635,7 @@ void UClimateComponent::InternalBegin()
     // Try to Find DateTime
     DateTimeSystem = FindComponent();
 
-    if (DateTimeSystem && IsValid(DateTimeSystem))
+    if (IsValid(DateTimeSystem))
     {
         if (!HasBoundToDate)
         {
@@ -618,7 +657,7 @@ void UClimateComponent::InternalBegin()
 
         DTSTimeScale = DateTimeSystem->TimeScale;
 
-        if (DateTimeSystem && IsValid(DateTimeSystem) && (UpdateLocalTime.IsBound() || LocalTimeUpdateSignal.IsBound()))
+        if (IsValid(DateTimeSystem) && (UpdateLocalTime.IsBound() || LocalTimeUpdateSignal.IsBound()))
         {
             // If someone is listening to the update, we pass it through
             DateTimeSystem->CleanTimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
@@ -637,7 +676,7 @@ void UClimateComponent::SetClimateUpdateFrequency(float Frequency)
 
 FRotator UClimateComponent::GetLocalSunRotation(FVector Location)
 {
-    if (DateTimeSystem)
+    if (IsValid(DateTimeSystem))
     {
         auto AdjustedLocation = GetLocationAdjustedForNorthing(Location);
         return DateTimeSystem->GetLocalisedSunRotation(PercentileLatitude, PercentileLongitude, AdjustedLocation);
@@ -648,7 +687,7 @@ FRotator UClimateComponent::GetLocalSunRotation(FVector Location)
 
 FRotator UClimateComponent::GetLocalMoonRotation(FVector Location)
 {
-    if (DateTimeSystem)
+    if (IsValid(DateTimeSystem))
     {
         auto AdjustedLocation = GetLocationAdjustedForNorthing(Location);
         return DateTimeSystem->GetLocalisedMoonRotation(PercentileLatitude, PercentileLongitude, AdjustedLocation);
@@ -694,7 +733,8 @@ float UClimateComponent::GetAnalyticalHighForDate(FDateTimeSystemStruct &DateStr
                 auto OtherValue = ClimateBook[OtherIndex]->MonthlyHighTemp;
 
                 // High is lerp frac
-                CachedAnalyticalMonthlyHighTemp.Value = FMath::Lerp(OtherValue, CurrentMonthHigh, BlendFrac);
+                // BUG!
+                CachedAnalyticalMonthlyHighTemp.Value = FMath::Lerp(CurrentMonthHigh, OtherValue, BlendFrac);
             }
             CachedAnalyticalMonthlyHighTemp.Valid = true;
             return CachedAnalyticalMonthlyHighTemp.Value;
@@ -736,7 +776,7 @@ float UClimateComponent::GetAnalyticalLowForDate(FDateTimeSystemStruct &DateStru
                 auto OtherValue = ClimateBook[OtherIndex]->MonthlyLowTemp;
 
                 // High is lerp frac
-                CachedAnalyticalMonthlyLowTemp.Value = FMath::Lerp(OtherValue, CurrentMonthLow, BlendFrac);
+                CachedAnalyticalMonthlyLowTemp.Value = FMath::Lerp(CurrentMonthLow, OtherValue, BlendFrac);
             }
             CachedAnalyticalMonthlyLowTemp.Valid = true;
             return CachedAnalyticalMonthlyLowTemp.Value;
@@ -777,7 +817,7 @@ float UClimateComponent::GetAnalyticalDewPointForDate(FDateTimeSystemStruct &Dat
                 auto OtherValue = ClimateBook[OtherIndex]->DewPoint;
 
                 // High is lerp frac
-                CachedAnalyticalDewPoint.Value = FMath::Lerp(OtherValue, CurrentRH, BlendFrac);
+                CachedAnalyticalDewPoint.Value = FMath::Lerp(CurrentRH, OtherValue, BlendFrac);
             }
             CachedAnalyticalDewPoint.Valid = true;
             return CachedAnalyticalDewPoint.Value;

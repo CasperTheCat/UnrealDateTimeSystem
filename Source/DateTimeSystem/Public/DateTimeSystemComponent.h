@@ -113,6 +113,32 @@ public:
         return Seconds / 60;
     }
 
+    uint32 GetBinHash(float LengthOfDay, int NumberOfBinsPerDay = 24)
+    {
+        auto YH = GetTypeHash(Year);
+        auto MH = GetTypeHash(Month);
+        auto DH = GetTypeHash(Day);
+
+        auto HourBin = FMath::TruncToInt32(Seconds / (LengthOfDay / NumberOfBinsPerDay));
+        auto HH = GetTypeHash(HourBin);
+
+        auto YMH = HashCombine(YH, MH);
+        auto DHH = HashCombine(DH, HH);
+        auto YMDHH = HashCombine(YMH, DHH);
+
+        return YMDHH;
+    }
+
+    int32 GetHourBin(float LengthOfDay, int NumberOfBinsPerDay = 24)
+    {
+        return FMath::TruncToInt32(Seconds / (LengthOfDay / NumberOfBinsPerDay));
+    }
+
+    float GetFractionalBin(float LengthOfDay, int NumberOfBinsPerDay = 24)
+    {
+        return FMath::Frac(Seconds / (LengthOfDay / NumberOfBinsPerDay));
+    }
+
     void SetFromRow(FDateTimeSystemDateOverrideRow *Row)
     {
         Seconds = 0;

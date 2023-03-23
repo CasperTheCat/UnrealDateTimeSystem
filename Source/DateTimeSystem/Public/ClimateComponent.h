@@ -223,6 +223,20 @@ private:
     FDateTimeSystemPackedCacheFloat CachedNextDewPoint;
 
     /**
+     * @brief Cached Prior rainfall
+     *
+     */
+    UPROPERTY(Transient)
+    FDateTimeSystemPackedCacheFloat CachedPriorRainfall;
+
+    /**
+     * @brief Cached next rainfall
+     *
+     */
+    UPROPERTY(Transient)
+    FDateTimeSystemPackedCacheFloat CachedNextRainfall;
+
+    /**
      * @brief Cached analytic dew point
      *
      */
@@ -321,6 +335,10 @@ public:
      */
     UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
     float CurrentDewPoint;
+
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    int NumberOfRainSlotsPerDay;
+    float CurrentRainLevel;
 
     /**
      * @brief Computed Fog Level
@@ -885,6 +903,21 @@ public:
      * @return float
      */
     virtual float ModulateFogByRainfall_Implementation(float FogHeight, float SecondsSinceUpdate, float RainLevel);
+
+    /**
+     * @brief Get the Rain Level
+     *
+     * @return float
+     */
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    float GetRainLevel();
+
+    /**
+     * @brief Native Implementation of GetRainLevel
+     *
+     * @return float
+     */
+    virtual float GetRainLevel_Implementation();
 
     /**
      * @brief Modulate Temperature by Location
