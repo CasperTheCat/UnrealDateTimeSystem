@@ -38,6 +38,9 @@ public:
     float DewPoint;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    float RainfallProbability;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
     float DailyRainfall;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
@@ -74,7 +77,10 @@ public:
     float DewPoint;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    float Rainfall;
+    float RainfallProbability;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    float DailyAverageRainfall;
 };
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemClimateMonthlyRow &Row)

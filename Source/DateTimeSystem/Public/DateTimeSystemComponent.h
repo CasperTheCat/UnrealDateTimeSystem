@@ -190,6 +190,18 @@ public:
         Us -= Other;
         return Us;
     }
+
+    uint32 GetHash()
+    {
+        auto SHash = GetTypeHash(Seconds);
+        auto DHash = GetTypeHash(Day);
+        auto MHash = GetTypeHash(Month);
+        auto YHash = GetTypeHash(Year);
+
+        auto DateHash = HashCombine(HashCombine(SHash, DHash), HashCombine(MHash, YHash));
+
+        return DateHash;
+    }
 };
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemStruct &Row)
@@ -1072,7 +1084,7 @@ public:
      * Such as, for example, when placed on a GameInstance.
      */
     UFUNCTION(BlueprintCallable)
-    void InternalTick(float DeltaTime);
+    void InternalTick(float DeltaTime, bool NonContiguous = false);
 
     /**
      * @brief Called by BeginPlay

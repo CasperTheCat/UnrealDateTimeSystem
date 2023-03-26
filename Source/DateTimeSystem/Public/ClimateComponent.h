@@ -74,6 +74,11 @@ private:
     UPROPERTY(EditDefaultsOnly)
     float TicksPerSecond;
 
+    /**/
+    UPROPERTY(EditDefaultsOnly)
+    float CatchupThresholdInSeconds;
+
+
     /**
      * @brief Climate Data Table
      * Uses FDateTimeSystemClimateMonthlyRow
@@ -260,11 +265,46 @@ private:
     FDateTimeSystemPackedCacheFloat CachedAnalyticalMonthlyLowTemp;
 
     /**
+     * @brief Cached Probability of Precipitation
+     *
+     */
+    UPROPERTY(Transient)
+    TMap<uint32, float> CachedProbability;
+
+    /**
+     * @brief Cached Analytic Probability of Precipitation
+     *
+     */
+    UPROPERTY(Transient)
+    TMap<uint32, float> CachedAnalyticProbability;
+
+    /**
+     * @brief Cached Probability of Precipitation
+     *
+     */
+    UPROPERTY(Transient)
+    TMap<uint32, float> CachedRainfallLevels;
+
+    /**
+     * @brief Cached Analytic Probability of Precipitation
+     *
+     */
+    UPROPERTY(Transient)
+    TMap<uint32, float> CachedAnalyticRainfallLevel;
+
+    /**
      * @brief Local Time Post Update
      *
      */
     UPROPERTY(Transient)
     FDateTimeSystemStruct LocalTime;
+
+    /**
+     * @brief Local Time Post Update
+     *
+     */
+    UPROPERTY(Transient)
+    FDateTimeSystemStruct PriorLocalTime;
 
 public:
     /**
@@ -324,6 +364,13 @@ public:
     float CurrentTemperature;
 
     /**
+     * @brief Computed Rainfall
+     *
+     */
+    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
+    float CurrentRainfall;
+
+    /**
      * @brief Computed Humidity
      *
      */
@@ -338,7 +385,9 @@ public:
 
     UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     int NumberOfRainSlotsPerDay;
-    float CurrentRainLevel;
+
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    float CurrentPrecipitationLevel;
 
     /**
      * @brief Computed Fog Level
@@ -381,14 +430,6 @@ public:
      */
     UPROPERTY(Transient)
     float DTSTimeScale;
-
-    /**
-     * @brief At what temperature do we skip to the new temperature due to us falling behind
-     * Useful for non-contiguous time where blending would cause strange discontinuities
-     *
-     */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float TemperatureCatchupThreshold;
 
     /**
      * @brief At what angle below the horizon, in radians, does sunset callback trigger
@@ -503,6 +544,38 @@ private:
     float GetDailyLow(FDateTimeSystemStruct &DateStruct);
 
     /**
+     * @brief Get the precipitation probability for DateStruct
+     *
+     * @param DateStruct
+     * @return float
+     */
+    float GetPrecipitationThreshold(FDateTimeSystemStruct &DateStruct);
+
+    /**
+     * @brief Get the Analytical precipitation probability For DateStruct
+     *
+     * @param DateStruct
+     * @return float
+     */
+    float GetAnalyticalPrecipitationThresholdDate(FDateTimeSystemStruct &DateStruct);
+
+    /**
+     * @brief Get the precipitation probability for DateStruct
+     *
+     * @param DateStruct
+     * @return float
+     */
+    float GetRainfallAmount(FDateTimeSystemStruct &DateStruct);
+
+    /**
+     * @brief Get the Analytical precipitation probability For DateStruct
+     *
+     * @param DateStruct
+     * @return float
+     */
+    float GetAnalyticalPrecipitationAmountDate(FDateTimeSystemStruct &DateStruct);
+
+    /**
      * @brief Get the Daily Dew Point for DateStruct
      *
      * @param DateStruct
@@ -515,14 +588,21 @@ private:
      *
      * @param DeltaTime
      */
-    void UpdateCurrentTemperature(float DeltaTime);
+    void UpdateCurrentTemperature(float DeltaTime, bool NonContiguous);
+
+    /**
+     * @brief Update the current Temperature
+     *
+     * @param DeltaTime
+     */
+    void UpdateCurrentRainfall(float DeltaTime, bool NonContiguous);
 
     /**
      * @brief Update the Current Climate
      *
      * @param DeltaTime
      */
-    void UpdateCurrentClimate(float DeltaTime);
+    void UpdateCurrentClimate(float DeltaTime, bool NonContiguous);
 
     /**
      * @brief Called by DTS via callback
@@ -643,6 +723,15 @@ public:
      */
     UFUNCTION(BlueprintCallable)
     float GetCurrentTemperature();
+
+    /**
+     * @brief Get the Current Temperature
+     *
+     * @return float
+     */
+    UFUNCTION(BlueprintCallable)
+    float GetCurrentRainfall();
+    
 
     /**
      * @brief Get the Current Temperature For Location
@@ -882,6 +971,30 @@ public:
      */
     virtual float ModulateTemperature_Implementation(float Temperature, float SecondsSinceUpdate, float LowTemperature,
                                                      float HighTemperature);
+
+    /**
+     * @brief Called to modulate the temps over the day
+     *
+     * @param Temperature
+     * @param SecondsSinceUpdate
+     * @param LowTemperature
+     * @param HighTemperature
+     * @return float
+     */
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    float ModulateRainfall(float CurrentRainfallLevel, float SecondsSinceUpdate, float TargetRainfall);
+
+    /**
+     * @brief Native Implementation of ModulateRainfall
+     *
+     * @param Temperature
+     * @param SecondsSinceUpdate
+     * @param LowTemperature
+     * @param HighTemperature
+     * @return float
+     */
+    virtual float ModulateRainfall_Implementation(float CurrentRainfallLevel, float SecondsSinceUpdate,
+                                                  float TargetRainfall);
 
     /**
      * @brief Modulate Fog by the current amount of precipitation

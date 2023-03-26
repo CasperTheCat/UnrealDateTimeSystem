@@ -22,6 +22,11 @@ float HelperMod(double X, double Y)
     return Result;
 }
 
+int IntHelperMod(int X, int Y)
+{
+    return ((X %= Y) < 0) ? X + Y : X;
+}
+
 UDateTimeSystemComponent::UDateTimeSystemComponent()
 {
     DateTimeSetup();
@@ -338,7 +343,7 @@ void UDateTimeSystemComponent::SetUTCDateTime(FDateTimeSystemStruct &DateStruct,
         // Reinit
         InternalInitialise();
 
-        InternalTick(0);
+        InternalTick(0, true);
     }
 }
 
@@ -555,7 +560,7 @@ void UDateTimeSystemComponent::AddDateStruct(FDateTimeSystemStruct &DateStruct)
     // Reinit
     InternalInitialise();
 
-    InternalTick(0);
+    InternalTick(0, true);
 }
 
 float UDateTimeSystemComponent::GetFractionalDay(FDateTimeSystemStruct &DateStruct)
@@ -644,6 +649,8 @@ void UDateTimeSystemComponent::DateTimeSetup()
 void UDateTimeSystemComponent::Invalidate(
     EDateTimeSystemInvalidationTypes Type = EDateTimeSystemInvalidationTypes::Frame)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("Invalidate"), STAT_ACIInternalTick, STATGROUP_ACIDateTimeSys);
+
     if (Type >= EDateTimeSystemInvalidationTypes::Year)
     {
         CachedDoesLeap.Valid = false;
@@ -706,7 +713,8 @@ bool UDateTimeSystemComponent::HandleDayRollover(FDateTimeSystemStruct &DateStru
 
 bool UDateTimeSystemComponent::HandleMonthRollover(FDateTimeSystemStruct &DateStruct)
 {
-    auto DaysInMonth = GetDaysInMonth(DateStruct.Month);
+    auto SafeMonth = IntHelperMod(DateStruct.Month, GetMonthsInYear(DateStruct.Year));
+    auto DaysInMonth = GetDaysInMonth(SafeMonth);
 
     if (DateStruct.Day > DaysInMonth)
     {
@@ -754,7 +762,7 @@ int UDateTimeSystemComponent::GetDaysInCurrentMonth()
 
 int UDateTimeSystemComponent::GetDaysInMonth(int MonthIndex)
 {
-    if (MonthIndex < YearBook.Num())
+    if (MonthIndex >= 0 && MonthIndex < YearBook.Num())
     {
         return YearBook[MonthIndex]->NumberOfDays;
     }
@@ -905,7 +913,7 @@ FRotator UDateTimeSystemComponent::GetLocalisedMoonRotation(float BaseLatitudePe
     return Flip.ToOrientationRotator();
 }
 
-void UDateTimeSystemComponent::InternalTick(float DeltaTime)
+void UDateTimeSystemComponent::InternalTick(float DeltaTime, bool NonContiguous)
 {
     // Invalidate Caches
     Invalidate(EDateTimeSystemInvalidationTypes::Frame);
@@ -918,12 +926,21 @@ void UDateTimeSystemComponent::InternalTick(float DeltaTime)
     auto DidRoll = SanitiseDateTime(InternalDate);
     SanitiseSolarDateTime(InternalDate);
 
-    if (DidRoll)
+    if (DidRoll || NonContiguous)
     {
         // Invalidate Daily Caches
         // CachedAnalyticalMonthlyHighTemp.Valid = false;
         // CachedAnalyticalMonthlyLowTemp.Valid = false;
-        Invalidate(EDateTimeSystemInvalidationTypes::Day);
+        if (NonContiguous)
+        {
+            // We actually don't know how far we skipped, so invalidate everything
+            Invalidate(EDateTimeSystemInvalidationTypes::Year);
+        }
+        else
+        {
+            Invalidate(EDateTimeSystemInvalidationTypes::Day);
+        }
+        
 
         // Check Override
         auto Row = GetDateOverride(&InternalDate);

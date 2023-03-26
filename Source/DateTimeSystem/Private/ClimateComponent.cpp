@@ -7,6 +7,7 @@
 void UClimateComponent::ClimateSetup()
 {
     TicksPerSecond = 0;
+    CatchupThresholdInSeconds = 30;
     // PrimaryComponentTick.bCanEverTick = true;
     bWantsInitializeComponent = true;
     RegisterAllComponentTickFunctions(true);
@@ -21,6 +22,8 @@ void UClimateComponent::ClimateSetup()
 
     SunPositionBelowHorizonThreshold = 0.087155f;
     SunPositionAboveHorizonThreshold = 0.0435775f;
+
+    NumberOfRainSlotsPerDay = 24;
 }
 
 void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDateTimeSystemInvalidationTypes::Frame)
@@ -43,6 +46,11 @@ void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDate
         CachedPriorRainfall.Valid = false;
         CachedNextRainfall.Valid = false;
     }
+
+    CachedProbability.Empty();
+    CachedAnalyticProbability.Empty();
+    CachedRainfallLevels.Empty();
+    CachedAnalyticRainfallLevel.Empty();
 }
 
 void UClimateComponent::UpdateLocalTimePassthrough()
@@ -127,45 +135,33 @@ float UClimateComponent::ModulateTemperature_Implementation(float Temperature, f
         auto Multi = FMath::Sin(PI * FracDay);
         return FMath::Lerp(LowTemperature, HighTemperature, Multi);
 
-        // Using a proportional control
-        auto SunPower = FVector::DotProduct(SunVector, FVector::UpVector);
+        //// Using a proportional control
+        //auto SunPower = FVector::DotProduct(SunVector, FVector::UpVector);
 
-        auto ClampedValues = FMath::Clamp(SunPower + 0.5, 0.f, 1.f);
-        auto SunTarget = FMath::Lerp(LowTemperature, HighTemperature, ClampedValues); // SunPower * 0.5 + 0.5);
-        return SunTarget;
+        //auto ClampedValues = FMath::Clamp(SunPower + 0.5, 0.f, 1.f);
+        //auto SunTarget = FMath::Lerp(LowTemperature, HighTemperature, ClampedValues); // SunPower * 0.5 + 0.5);
+        //return SunTarget;
 
-        auto SunError = (SunTarget - Temperature);
+        //auto SunError = (SunTarget - Temperature);
 
-        if (FMath::Abs(SunError) > TemperatureCatchupThreshold)
-        {
-            //
-            GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red,
-                                             FString("Catching up to analytic.") + FString::SanitizeFloat(SunError));
-            return SunTarget;
-        }
-
-        return Temperature + SunError * TemperatureChangeSpeed * SecondsSinceUpdate * DTSTimeScale;
-
-        // if (FVector::DotProduct(SunVector, FVector::UpVector) > 0)
+        //if (FMath::Abs(SunError) > TemperatureCatchupThreshold)
         //{
-        //     // Sun is above the horizon
-        //     // We want to start Lerping to high temperature slowly
-        //     return FMath::FInterpTo(Temperature, HighTemperature, SecondsSinceUpdate, TemperatureChangeSpeed);
-        //     //auto SunError = HighTemperature - Temperature;
-        //     //return Temperature + (SunError * SunPower * TemperatureChangeSpeed);
-        // }
-        // else
-        //{
-        //     return FMath::FInterpTo(Temperature, LowTemperature, SecondsSinceUpdate, TemperatureChangeSpeed);
-        //
-        // }
+        //    //
+        //    GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Red,
+        //                                     FString("Catching up to analytic.") + FString::SanitizeFloat(SunError));
+        //    return SunTarget;
+        //}
 
-        // auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
-        // auto Multi = FMath::Sin(PI * FracDay);
-        // return FMath::Lerp(LowTemperature, HighTemperature, Multi);
+        //return Temperature + SunError * TemperatureChangeSpeed * SecondsSinceUpdate * DTSTimeScale;
     }
 
     return 0.f;
+}
+
+float UClimateComponent::ModulateRainfall_Implementation(float CurrentRainfallLevel, float SecondsSinceUpdate,
+                                                         float TargetRainfall)
+{
+    return FMath::FInterpTo(CurrentRainfallLevel, TargetRainfall, SecondsSinceUpdate, 0.005);
 }
 
 float UClimateComponent::ModulateFogByRainfall_Implementation(float FogHeight, float SecondsSinceUpdate,
@@ -177,7 +173,7 @@ float UClimateComponent::ModulateFogByRainfall_Implementation(float FogHeight, f
 float UClimateComponent::GetRainLevel_Implementation()
 {
     // We might want to cache?
-    if (IsValid(DateTimeSystem))
+    if (IsValid(DateTimeSystem) && NumberOfRainSlotsPerDay > 0)
     {
         // For Blending, are we blending forward, or backward?
         auto FracBin = LocalTime.GetFractionalBin(DateTimeSystem->LengthOfDay, NumberOfRainSlotsPerDay);
@@ -202,9 +198,12 @@ float UClimateComponent::GetRainLevel_Implementation()
 
         Probability = FMath::Lerp(Probability, OffsetProb, FMath::Abs(FracBin - 0.5));
 
-        if (Probability > GetCurrentRainfallProbability())
+        // If Below, we want to rain down
+        if (Probability < GetPrecipitationThreshold(LocalTime))
         {
-            CurrentRainLevel = GetCurrentRainfallLevel();
+            CurrentPrecipitationLevel = GetRainfallAmount(LocalTime);
+            //auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
+            return CurrentPrecipitationLevel;
         }
     }
     return 0.0f;
@@ -225,17 +224,20 @@ FDateTimeClimateDataStruct UClimateComponent::GetUpdatedClimateData_Implementati
     Returnable.HeatOffset = GetHeatIndex();
     Returnable.Wind = WindVector;
     Returnable.ChillOffset = GetWindChillFromVector(WindVector);
+    Returnable.Rain = GetCurrentRainfall();
 
-    // TODO: Implement Frost, Rain, and Wetness
+    // TODO: Implement Frost, and Wetness
     Returnable.Frost = 0.f;
-    Returnable.Rain = FMath::Sin(float(LocalTime.StoredSolarSeconds * (1.f / 86400.f) * 3.14)) * 0.5 + 0.5;
-    Returnable.Wetness = FMath::Cos(float(LocalTime.StoredSolarSeconds * (1.f / 86400.f) * 6.14)) * 0.5 + 0.5;
+
+    // This needs to lerp between 0 and 1 depending on rainfall level and duration
+    // New vars, but do it on Rainfall
+    Returnable.Wetness = FMath::Min(GetCurrentRainfall() * 0.1f, 1.f);
 
     //
     return Returnable;
 }
 
-void UClimateComponent::UpdateCurrentTemperature(float DeltaTime)
+void UClimateComponent::UpdateCurrentTemperature(float DeltaTime, bool NonContiguous)
 {
     // Okay. Our Current Temp is going to be dumb.
     // Which low are we using? The first or last?
@@ -255,7 +257,28 @@ void UClimateComponent::UpdateCurrentTemperature(float DeltaTime)
     }
 }
 
-void UClimateComponent::UpdateCurrentClimate(float DeltaTime)
+void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguous)
+{
+    // Okay. Our Current Temp is going to be dumb.
+    // Which low are we using? The first or last?
+    if (IsValid(DateTimeSystem))
+    {
+        // TargetRainfallValue
+
+        auto TargetRainfall = GetRainLevel();
+
+        if (NonContiguous)
+        {
+            CurrentRainfall = TargetRainfall;
+        }
+        else
+        {
+            CurrentRainfall = ModulateRainfall(CurrentRainfall, DeltaTime, TargetRainfall);
+        }     
+    }
+}
+
+void UClimateComponent::UpdateCurrentClimate(float DeltaTime, bool NonContiguous)
 {
     if (IsValid(DateTimeSystem))
     {
@@ -373,6 +396,11 @@ FORCEINLINE FVector UClimateComponent::GetLocationAdjustedForNorthing(FVector Lo
 float UClimateComponent::GetCurrentTemperature()
 {
     return CurrentTemperature;
+}
+
+float UClimateComponent::GetCurrentRainfall()
+{
+    return CurrentRainfall;
 }
 
 float UClimateComponent::GetCurrentTemperatureForLocation(FVector Location)
@@ -538,10 +566,21 @@ void UClimateComponent::InternalTick(float DeltaTime)
     if (IsValid(DateTimeSystem))
     {
         // Update Local Time. We need it for a few things
+        PriorLocalTime = LocalTime;
         DateTimeSystem->GetTodaysDateTZ(LocalTime, TimezoneInfo);
 
-        UpdateCurrentTemperature(DeltaTime);
-        UpdateCurrentClimate(DeltaTime);
+        // Check for the delta
+        auto Delta = FMath::Abs(LocalTime.Seconds - PriorLocalTime.Seconds);
+        auto NonContiguous = Delta > CatchupThresholdInSeconds;
+
+        if (NonContiguous)
+        {
+            DeltaTime += CatchupThresholdInSeconds;
+        }
+
+        UpdateCurrentTemperature(DeltaTime, NonContiguous);
+        UpdateCurrentClimate(DeltaTime, NonContiguous);
+        UpdateCurrentRainfall(DeltaTime, NonContiguous);
 
         // Guard against calling this.
         // By default, it's just an O(1) lookup after UpdateCurrentTemp
@@ -794,7 +833,7 @@ float UClimateComponent::GetAnalyticalDewPointForDate(FDateTimeSystemStruct &Dat
     }
     else
     {
-        if (DateStruct.Month < ClimateBook.Num() && DateTimeSystem)
+        if (DateStruct.Month < ClimateBook.Num() && IsValid(DateTimeSystem))
         {
             // Which do we need. We need the fractional month value
             auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
@@ -887,6 +926,155 @@ float UClimateComponent::GetDailyLow(FDateTimeSystemStruct &DateStruct)
     }
 
     return CachedNextLowTemp.Value;
+}
+
+float UClimateComponent::GetPrecipitationThreshold(FDateTimeSystemStruct &DateStruct)
+{
+    auto PrecipHash = DateStruct.GetHash();
+
+    auto Cache = CachedProbability.Find(PrecipHash);
+    if (Cache)
+    {
+        return *Cache;
+    }
+
+    // Compute the threshold for today's rainfall
+    auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
+    if (Row)
+    {
+        auto asPtr = *Row;
+        if (asPtr)
+        {
+            CachedProbability.Add(PrecipHash, asPtr->RainfallProbability);
+            return asPtr->RainfallProbability;
+        }
+    }
+    else
+    {
+        auto AnalyticPrecip = GetAnalyticalPrecipitationThresholdDate(DateStruct);
+        CachedProbability.Add(PrecipHash, AnalyticPrecip);
+        return AnalyticPrecip;
+    }
+
+    return 0.0f;
+}
+
+float UClimateComponent::GetAnalyticalPrecipitationThresholdDate(FDateTimeSystemStruct &DateStruct)
+{
+    // We have two things to do here. Return the cache, if it's valid
+    auto PrecipHash = DateStruct.GetHash();
+
+    auto Cache = CachedProbability.Find(PrecipHash);
+    if (Cache)
+    {
+        return *Cache;
+    }
+    else
+    {
+        if (DateStruct.Month < ClimateBook.Num() && IsValid(DateTimeSystem))
+        {
+            // Which do we need. We need the fractional month value
+            auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
+            auto CurrentProbability = ClimateBook[DateStruct.Month]->RainfallProbability;
+            auto BlendFrac = FMath::Abs(MonthFrac - 0.5);
+            int OtherIndex = 0;
+
+            if (MonthFrac > 0.5)
+            {
+                // Future Month
+                OtherIndex = (DateStruct.Month + 1) % ClimateBook.Num();
+            }
+            else
+            {
+                // Past Month
+                OtherIndex = (ClimateBook.Num() + (DateStruct.Month - 1)) % ClimateBook.Num();
+
+            }
+
+            auto OtherValue = ClimateBook[OtherIndex]->RainfallProbability;
+            auto PrecipThresh = FMath::Lerp(CurrentProbability, OtherValue, BlendFrac);
+
+            CachedProbability.Add(PrecipHash, PrecipThresh);
+
+            return PrecipThresh;
+        }
+    }
+
+    return 0.0f;
+}
+
+float UClimateComponent::GetRainfallAmount(FDateTimeSystemStruct &DateStruct)
+{
+    auto RainfallHash = DateStruct.GetHash();
+
+    auto Cache = CachedRainfallLevels.Find(RainfallHash);
+    if (Cache)
+    {
+        return *Cache;
+    }
+
+    // Compute the threshold for today's rainfall
+    auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
+    if (Row)
+    {
+        auto asPtr = *Row;
+        if (asPtr)
+        {
+            CachedRainfallLevels.Add(RainfallHash, asPtr->DailyRainfall * (1 / asPtr->RainfallProbability));
+            return asPtr->DailyRainfall * (1 / asPtr->RainfallProbability);
+        }
+    }
+    else
+    {
+        auto Cacheable = GetAnalyticalPrecipitationAmountDate(DateStruct);
+        CachedRainfallLevels.Add(RainfallHash, Cacheable);
+        return Cacheable;
+    }
+
+    return 0.0f;
+}
+
+float UClimateComponent::GetAnalyticalPrecipitationAmountDate(FDateTimeSystemStruct &DateStruct)
+{
+    auto RainfallHash = DateStruct.GetHash();
+
+    auto Cache = CachedAnalyticRainfallLevel.Find(RainfallHash);
+    if (Cache)
+    {
+        return *Cache;
+    }
+    else
+    {
+        if (DateStruct.Month < ClimateBook.Num() && IsValid(DateTimeSystem))
+        {
+            // Which do we need. We need the fractional month value
+            auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
+            auto CurrentProbability =
+                ClimateBook[DateStruct.Month]->DailyAverageRainfall * (1 / ClimateBook[DateStruct.Month]->RainfallProbability);
+            auto BlendFrac = FMath::Abs(MonthFrac - 0.5);
+            int OtherIndex = 0;
+
+            if (MonthFrac > 0.5)
+            {
+                // Future Month
+                OtherIndex = (DateStruct.Month + 1) % ClimateBook.Num();
+            }
+            else
+            {
+                // Past Month
+                OtherIndex = (ClimateBook.Num() + (DateStruct.Month - 1)) % ClimateBook.Num();
+            }
+
+            auto OtherValue = ClimateBook[OtherIndex]->DailyAverageRainfall * (1 / ClimateBook[OtherIndex]->RainfallProbability);
+            auto ResultingPrecip = FMath::Lerp(CurrentProbability, OtherValue, BlendFrac);
+
+            CachedAnalyticRainfallLevel.Add(RainfallHash, ResultingPrecip);
+
+            return ResultingPrecip;
+        }
+    }
+
+    return 0.0f;
 }
 
 float UClimateComponent::GetDailyDewPoint(FDateTimeSystemStruct &DateStruct)
