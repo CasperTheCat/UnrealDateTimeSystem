@@ -78,6 +78,29 @@ private:
     UPROPERTY(EditDefaultsOnly)
     float CatchupThresholdInSeconds;
 
+    UPROPERTY(EditDefaultsOnly)
+    float CatchupWetnessDownblendSpeed;
+
+    UPROPERTY(EditDefaultsOnly)
+    float CatchupWetnessUpblendSpeed;
+
+    UPROPERTY(EditDefaultsOnly)
+    float WetnessEvaporationRate;
+
+    UPROPERTY(EditDefaultsOnly)
+    float WetnessDepositionRate;
+
+    UPROPERTY(EditDefaultsOnly)
+    float WetnessEvaporationRateBase;
+
+    UPROPERTY(EditDefaultsOnly)
+    bool UseSunPositionForEvaporation;
+
+    UPROPERTY(EditDefaultsOnly)
+    float RainfallBlendIncreaseSpeed;
+
+    UPROPERTY(EditDefaultsOnly)
+    float RainfallBlendDecreaseSpeed;
 
     /**
      * @brief Climate Data Table
@@ -369,6 +392,13 @@ public:
      */
     UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
     float CurrentRainfall;
+
+    /**
+     * @brief Computed Rainfall
+     *
+     */
+    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
+    float CurrentWetness;
 
     /**
      * @brief Computed Humidity
@@ -725,13 +755,20 @@ public:
     float GetCurrentTemperature();
 
     /**
-     * @brief Get the Current Temperature
+     * @brief Get the Current Rainfall
      *
      * @return float
      */
     UFUNCTION(BlueprintCallable)
     float GetCurrentRainfall();
-    
+
+    /**
+     * @brief Get the Current Wetness
+     *
+     * @return float
+     */
+    UFUNCTION(BlueprintCallable)
+    float GetCurrentWetness();
 
     /**
      * @brief Get the Current Temperature For Location
