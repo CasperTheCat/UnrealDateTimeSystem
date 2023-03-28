@@ -649,7 +649,7 @@ void UDateTimeSystemComponent::DateTimeSetup()
 void UDateTimeSystemComponent::Invalidate(
     EDateTimeSystemInvalidationTypes Type = EDateTimeSystemInvalidationTypes::Frame)
 {
-    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("Invalidate"), STAT_ACIInternalTick, STATGROUP_ACIDateTimeSys);
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("Invalidate"), STAT_ACIInvalidate, STATGROUP_ACIDateTimeSys);
 
     if (Type >= EDateTimeSystemInvalidationTypes::Year)
     {
@@ -940,7 +940,6 @@ void UDateTimeSystemComponent::InternalTick(float DeltaTime, bool NonContiguous)
         {
             Invalidate(EDateTimeSystemInvalidationTypes::Day);
         }
-        
 
         // Check Override
         auto Row = GetDateOverride(&InternalDate);

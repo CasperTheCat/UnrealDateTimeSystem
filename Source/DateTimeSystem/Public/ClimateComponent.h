@@ -164,7 +164,7 @@ private:
      *
      */
     UPROPERTY(EditDefaultsOnly)
-    UDataTable *ClimateTable;
+    TObjectPtr<UDataTable> ClimateTable;
 
     /**
      * @brief Climate Override Table
@@ -172,7 +172,7 @@ private:
      *
      */
     UPROPERTY(EditDefaultsOnly)
-    UDataTable *ClimateOverridesTable;
+    TObjectPtr<UDataTable> ClimateOverridesTable;
 
     /**
      * @brief Climate Data Override Array
@@ -198,7 +198,7 @@ private:
      *
      */
     UPROPERTY(Transient)
-    UDateTimeSystemComponent *DateTimeSystem;
+    TObjectPtr<UDateTimeSystemComponent> DateTimeSystem;
 
     /**
      * @brief Previous High Temp for blending
@@ -708,7 +708,7 @@ private:
      * @brief Find DTS
      *
      */
-    UDateTimeSystemComponent *FindComponent();
+    TObjectPtr<UDateTimeSystemComponent> FindComponent();
 
     /**
      * @brief Internal function for adjusting Location Northing Vector

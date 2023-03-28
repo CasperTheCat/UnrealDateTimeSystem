@@ -343,14 +343,14 @@ private:
      * Uses the FDateTimeSystemYearbookRow row schema
      */
     UPROPERTY(EditDefaultsOnly)
-    UDataTable *YearBookTable;
+    TObjectPtr<UDataTable> YearBookTable;
 
     /**
      * @brief Overrides
      * Uses the FDateTimeSystemDateOverrideRow row schema
      */
     UPROPERTY(EditDefaultsOnly)
-    UDataTable *DateOverridesTable;
+    TObjectPtr<UDataTable> DateOverridesTable;
 
     /**
      * @brief Whether set the overriden values when the date matches the current date

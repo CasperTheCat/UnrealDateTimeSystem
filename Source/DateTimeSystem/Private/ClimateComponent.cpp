@@ -40,6 +40,8 @@ void UClimateComponent::ClimateSetup()
 
 void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDateTimeSystemInvalidationTypes::Frame)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("Invalidate"), STAT_ACICSInvalidate, STATGROUP_ACIClimateSys);
+
     if (Type >= EDateTimeSystemInvalidationTypes::Month)
     {
     }
@@ -67,6 +69,8 @@ void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDate
 
 void UClimateComponent::UpdateLocalTimePassthrough()
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("UpdateLocalTimePassthrough"), STAT_ACICSUpdateLocalTimePassthrough,
+                                STATGROUP_ACIClimateSys);
     FDateTimeSystemStruct Local{};
 
     // Check again, for consistency
@@ -196,6 +200,8 @@ float UClimateComponent::ModulateFogByRainfall_Implementation(float FogHeight, f
 
 float UClimateComponent::GetRainLevel_Implementation()
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetRainLevel"), STAT_ACICSGetRainLevel, STATGROUP_ACIClimateSys);
+
     // We might want to cache?
     if (IsValid(DateTimeSystem) && NumberOfRainSlotsPerDay > 0)
     {
@@ -264,7 +270,9 @@ FDateTimeClimateDataStruct UClimateComponent::GetUpdatedClimateData_Implementati
 
 void UClimateComponent::UpdateCurrentTemperature(float DeltaTime, bool NonContiguous)
 {
-    // Okay. Our Current Temp is going to be dumb.
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("UpdateCurrentTemperature"), STAT_ACICSUpdateCurrentTemperature,
+                                STATGROUP_ACIClimateSys);
+
     // Which low are we using? The first or last?
     if (IsValid(DateTimeSystem))
     {
@@ -284,7 +292,9 @@ void UClimateComponent::UpdateCurrentTemperature(float DeltaTime, bool NonContig
 
 void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguous)
 {
-    // Okay. Our Current Temp is going to be dumb.
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("UpdateCurrentRainfall"), STAT_ACICSUpdateCurrentRainfall,
+                                STATGROUP_ACIClimateSys);
+
     // Which low are we using? The first or last?
     if (IsValid(DateTimeSystem))
     {
@@ -390,8 +400,7 @@ void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguou
             // Puddling Overflow
             // Evaporate
             {
-                auto EvaporationCoeff =
-                    FMath::Lerp(PuddleEvaporationRateBase, PuddleEvaporationRate, SunPositionBlend);
+                auto EvaporationCoeff = FMath::Lerp(PuddleEvaporationRateBase, PuddleEvaporationRate, SunPositionBlend);
 
                 CurrentSittingWater -= EvaporationCoeff * 0.01f * DeltaTimeInMinutes * CurrentSittingWater;
 
@@ -408,6 +417,7 @@ void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguou
 
 void UClimateComponent::UpdateCurrentClimate(float DeltaTime, bool NonContiguous)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("UpdateCurrentClimate"), STAT_ACICSUpdateCurrentClimate, STATGROUP_ACIClimateSys);
     if (IsValid(DateTimeSystem))
     {
         // Rel. Humidity
@@ -429,6 +439,7 @@ void UClimateComponent::UpdateCurrentClimate(float DeltaTime, bool NonContiguous
 
 void UClimateComponent::InternalDateChanged(FDateTimeSystemStruct DateStruct)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("InternalDateChanged"), STAT_ACICSInternalDateChanged, STATGROUP_ACIClimateSys);
     // Handle what was once done on InternalTick
     Invalidate(EDateTimeSystemInvalidationTypes::Day);
 
@@ -478,7 +489,7 @@ void UClimateComponent::InternalDateChanged(FDateTimeSystemStruct DateStruct)
     DateChanged(DateStruct);
 }
 
-UDateTimeSystemComponent *UClimateComponent::FindComponent()
+TObjectPtr<UDateTimeSystemComponent> UClimateComponent::FindComponent()
 {
     auto World = GetWorld();
     if (World)
@@ -654,6 +665,8 @@ float UClimateComponent::GetHeatIndex()
 
 float UClimateComponent::GetHeatIndexForLocation(FVector Location)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetHeatIndexForLocation"), STAT_ACICSGetHeatIndexForLocation,
+                                STATGROUP_ACIClimateSys);
     // auto RelativeMSL(Location.Z - SeaLevel);
     auto T = GetCurrentTemperatureForLocation(Location);
     //    auto R = CurrentRelativeHumidity;
@@ -704,6 +717,8 @@ float UClimateComponent::GetWindChillFromVelocity(float WindVelocity)
 
 void UClimateComponent::InternalTick(float DeltaTime)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("InternalTick"), STAT_ACICSInternalTick, STATGROUP_ACIClimateSys);
+
     Invalidate(EDateTimeSystemInvalidationTypes::Frame);
 
     if (IsValid(DateTimeSystem))
@@ -784,6 +799,8 @@ void UClimateComponent::InternalTick(float DeltaTime)
 
 void UClimateComponent::InternalBegin()
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("InternalBegin"), STAT_ACICSInternalBegin, STATGROUP_ACIClimateSys);
+
     RadLatitude = FMath::DegreesToRadians(ReferenceLatitude);
     RadLongitude = FMath::DegreesToRadians(ReferenceLongitude);
     PercentileLatitude = RadLatitude * INV_PI * 2;
@@ -877,6 +894,9 @@ void UClimateComponent::DateChanged_Implementation(FDateTimeSystemStruct &DateSt
 
 float UClimateComponent::GetAnalyticalHighForDate(FDateTimeSystemStruct &DateStruct)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetAnalyticalHighForDate"), STAT_ACICSGetAnalyticalHighForDate,
+                                STATGROUP_ACIClimateSys);
+
     // We have two things to do here. Return the cache, if it's valid
     if (CachedAnalyticalMonthlyHighTemp.Valid)
     {
@@ -920,6 +940,9 @@ float UClimateComponent::GetAnalyticalHighForDate(FDateTimeSystemStruct &DateStr
 
 float UClimateComponent::GetAnalyticalLowForDate(FDateTimeSystemStruct &DateStruct)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetAnalyticalLowForDate"), STAT_ACICSGetAnalyticalLowForDate,
+                                STATGROUP_ACIClimateSys);
+
     // We have two things to do here. Return the cache, if it's valid
     if (CachedAnalyticalMonthlyLowTemp.Valid)
     {
@@ -962,6 +985,9 @@ float UClimateComponent::GetAnalyticalLowForDate(FDateTimeSystemStruct &DateStru
 
 float UClimateComponent::GetAnalyticalDewPointForDate(FDateTimeSystemStruct &DateStruct)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetAnalyticalDewPointForDate"), STAT_ACICSGetAnalyticalDewPointForDate,
+                                STATGROUP_ACIClimateSys);
+
     // We have two things to do here. Return the cache, if it's valid
     if (CachedAnalyticalDewPoint.Valid)
     {
@@ -1003,6 +1029,8 @@ float UClimateComponent::GetAnalyticalDewPointForDate(FDateTimeSystemStruct &Dat
 
 float UClimateComponent::GetDailyHigh(FDateTimeSystemStruct &DateStruct)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetDailyHigh"), STAT_ACICSGetDailyHigh, STATGROUP_ACIClimateSys);
+
     if (CachedHighTemp.Valid)
     {
         return CachedHighTemp.Value;
@@ -1034,6 +1062,8 @@ float UClimateComponent::GetDailyHigh(FDateTimeSystemStruct &DateStruct)
 
 float UClimateComponent::GetDailyLow(FDateTimeSystemStruct &DateStruct)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetDailyLow"), STAT_ACICSGetDailyLow, STATGROUP_ACIClimateSys);
+
     // Okay. We need to work out which Low we actually want
 
     if (CachedNextLowTemp.Valid)
@@ -1066,6 +1096,9 @@ float UClimateComponent::GetDailyLow(FDateTimeSystemStruct &DateStruct)
 
 float UClimateComponent::GetPrecipitationThreshold(FDateTimeSystemStruct &DateStruct)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetPrecipitationThreshold"), STAT_ACICSGetPrecipitationThreshold,
+                                STATGROUP_ACIClimateSys);
+
     auto PrecipHash = DateStruct.GetHash();
 
     auto Cache = CachedProbability.Find(PrecipHash);
@@ -1097,6 +1130,9 @@ float UClimateComponent::GetPrecipitationThreshold(FDateTimeSystemStruct &DateSt
 
 float UClimateComponent::GetAnalyticalPrecipitationThresholdDate(FDateTimeSystemStruct &DateStruct)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetAnalyticalPrecipitationThresholdDate"),
+                                STAT_ACICSGetAnalyticalPrecipitationThresholdDate, STATGROUP_ACIClimateSys);
+
     // We have two things to do here. Return the cache, if it's valid
     auto PrecipHash = DateStruct.GetHash();
 
@@ -1140,6 +1176,8 @@ float UClimateComponent::GetAnalyticalPrecipitationThresholdDate(FDateTimeSystem
 
 float UClimateComponent::GetRainfallAmount(FDateTimeSystemStruct &DateStruct)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetRainfallAmount"), STAT_ACICSGetRainfallAmount, STATGROUP_ACIClimateSys);
+
     auto RainfallHash = DateStruct.GetHash();
 
     auto Cache = CachedRainfallLevels.Find(RainfallHash);
@@ -1171,6 +1209,9 @@ float UClimateComponent::GetRainfallAmount(FDateTimeSystemStruct &DateStruct)
 
 float UClimateComponent::GetAnalyticalPrecipitationAmountDate(FDateTimeSystemStruct &DateStruct)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetAnalyticalPrecipitationAmountDate"),
+                                STAT_ACICSGetAnalyticalPrecipitationAmountDate, STATGROUP_ACIClimateSys);
+
     auto RainfallHash = DateStruct.GetHash();
 
     auto Cache = CachedAnalyticRainfallLevel.Find(RainfallHash);
@@ -1215,6 +1256,8 @@ float UClimateComponent::GetAnalyticalPrecipitationAmountDate(FDateTimeSystemStr
 
 float UClimateComponent::GetDailyDewPoint(FDateTimeSystemStruct &DateStruct)
 {
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetDailyDewPoint"), STAT_ACICSGetDailyDewPoint, STATGROUP_ACIClimateSys);
+
     // Okay. We need to work out which Low we actually want
 
     if (CachedNextDewPoint.Valid)
