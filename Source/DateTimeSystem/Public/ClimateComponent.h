@@ -102,6 +102,15 @@ private:
     UPROPERTY(EditDefaultsOnly)
     float RainfallBlendDecreaseSpeed;
 
+    UPROPERTY(EditDefaultsOnly)
+    float RainfallWetnessOverflowPuddlingScale;
+
+    UPROPERTY(EditDefaultsOnly)
+    float PuddleEvaporationRate;
+
+    UPROPERTY(EditDefaultsOnly)
+    float PuddleEvaporationRateBase;
+
     /**
      * @brief Climate Data Table
      * Uses FDateTimeSystemClimateMonthlyRow
@@ -394,11 +403,18 @@ public:
     float CurrentRainfall;
 
     /**
-     * @brief Computed Rainfall
+     * @brief Computed Wetness
      *
      */
     UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
     float CurrentWetness;
+
+    /**
+     * @brief Computed Sitting Water
+     *
+     */
+    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
+    float CurrentSittingWater;
 
     /**
      * @brief Computed Humidity
@@ -769,6 +785,18 @@ public:
      */
     UFUNCTION(BlueprintCallable)
     float GetCurrentWetness();
+
+    /**
+     * @brief Get the Current Sitting Overflow
+     *
+     * @return float
+     */
+    UFUNCTION(BlueprintCallable)
+    float GetCurrentSittingWater();
+
+    // TODO: DELETE
+    UFUNCTION(BlueprintCallable)
+    float DebugGetUnclampedWetness();
 
     /**
      * @brief Get the Current Temperature For Location

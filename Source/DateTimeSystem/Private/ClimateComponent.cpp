@@ -32,6 +32,10 @@ void UClimateComponent::ClimateSetup()
     WetnessEvaporationRateBase = 0.01;
     RainfallBlendIncreaseSpeed = 0.04;
     RainfallBlendDecreaseSpeed = 0.12;
+
+    RainfallWetnessOverflowPuddlingScale = 1.f;
+    PuddleEvaporationRate = 5;
+    PuddleEvaporationRateBase = 0.01;
 }
 
 void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDateTimeSystemInvalidationTypes::Frame)
@@ -246,6 +250,7 @@ FDateTimeClimateDataStruct UClimateComponent::GetUpdatedClimateData_Implementati
     Returnable.ChillOffset = GetWindChillFromVector(WindVector);
     Returnable.Rain = GetCurrentRainfall();
     Returnable.Wetness = GetCurrentWetness();
+    Returnable.Puddles = GetCurrentSittingWater();
 
     // TODO: Implement Frost, and Wetness
     Returnable.Frost = 0.f;
@@ -336,13 +341,17 @@ void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguou
         }
         else
         {
+            // Rainfall
             CurrentRainfall = ModulateRainfall(CurrentRainfall, DeltaTime, TargetRainfall);
 
             // Handle Live Wetness
             auto WetnessProxy = CurrentWetness;
             auto DeltaTimeInMinutes = DeltaTime * 0.01666666666666666666666666666667f;
 
-            // EvaporationCoeff -> Tied to SunPosition
+            // SunPositionBlend
+            auto SunPositionBlend = 0.f;
+
+            // Tied to SunPosition and reused
             // Measured in Percent Per Minute
             if (UseSunPositionForEvaporation)
             {
@@ -350,9 +359,7 @@ void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguou
                 auto SunVector = DateTimeSystem->GetSunVector(RadLatitude, RadLongitude);
                 float VectorDot = FVector::DotProduct(SunVector, FVector::UpVector);
 
-                auto EvaporationCoeff = FMath::Max(WetnessEvaporationRateBase, VectorDot * WetnessEvaporationRate);
-
-                WetnessProxy -= EvaporationCoeff * DeltaTimeInMinutes * WetnessProxy;
+                SunPositionBlend = FMath::Max(0, VectorDot);
             }
             else
             {
@@ -360,19 +367,41 @@ void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguou
                 auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
                 auto InvertedBlend = FMath::Abs((FracDay * 2.f) - 1.f);
 
-                auto EvaporationCoeff = FMath::Lerp(WetnessEvaporationRate, WetnessEvaporationRateBase, InvertedBlend);
+                SunPositionBlend = 1 - InvertedBlend;
+            }
+
+            // Wetness
+            {
+                auto EvaporationCoeff =
+                    FMath::Lerp(WetnessEvaporationRateBase, WetnessEvaporationRate, SunPositionBlend);
 
                 WetnessProxy -= EvaporationCoeff * DeltaTimeInMinutes * WetnessProxy;
+                WetnessProxy += CurrentRainfall * WetnessDepositionRate * DeltaTimeInMinutes;
+
+                if (WetnessProxy < KINDA_SMALL_NUMBER)
+                {
+                    WetnessProxy = 0.f;
+                }
             }
 
-            WetnessProxy += CurrentRainfall * WetnessDepositionRate * DeltaTimeInMinutes;
+            // Clamp Wetness
+            CurrentWetness = FMath::Min(1.f, WetnessProxy);
 
-            if (WetnessProxy < KINDA_SMALL_NUMBER)
+            // Puddling Overflow
+            // Evaporate
             {
-                WetnessProxy = 0.f;
-            }
+                auto EvaporationCoeff =
+                    FMath::Lerp(PuddleEvaporationRateBase, PuddleEvaporationRate, SunPositionBlend);
 
-            CurrentWetness = WetnessProxy;
+                CurrentSittingWater -= EvaporationCoeff * DeltaTimeInMinutes * CurrentSittingWater;
+
+                CurrentSittingWater += FMath::Max(0.f, WetnessProxy - 1.f) * RainfallWetnessOverflowPuddlingScale;
+
+                if (CurrentSittingWater < KINDA_SMALL_NUMBER)
+                {
+                    CurrentSittingWater = 0.f;
+                }
+            }
         }
     }
 }
@@ -505,6 +534,16 @@ float UClimateComponent::GetCurrentRainfall()
 float UClimateComponent::GetCurrentWetness()
 {
     return FMath::Min(1, CurrentWetness);
+}
+
+float UClimateComponent::GetCurrentSittingWater()
+{
+    return CurrentSittingWater;
+}
+
+float UClimateComponent::DebugGetUnclampedWetness()
+{
+    return CurrentWetness + CurrentSittingWater;
 }
 
 float UClimateComponent::GetCurrentTemperatureForLocation(FVector Location)
