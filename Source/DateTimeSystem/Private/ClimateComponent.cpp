@@ -27,15 +27,15 @@ void UClimateComponent::ClimateSetup()
     UseSunPositionForEvaporation = false;
     CatchupWetnessDownblendSpeed = 5;
     CatchupWetnessUpblendSpeed = 15;
-    WetnessEvaporationRate = 10;
+    WetnessEvaporationRate = 35;
     WetnessDepositionRate = 0.2;
-    WetnessEvaporationRateBase = 0.01;
+    WetnessEvaporationRateBase = 2;
     RainfallBlendIncreaseSpeed = 0.04;
     RainfallBlendDecreaseSpeed = 0.12;
 
-    RainfallWetnessOverflowPuddlingScale = 1.f;
-    PuddleEvaporationRate = 5;
-    PuddleEvaporationRateBase = 0.01;
+    RainfallWetnessOverflowPuddlingScale = 0.02f;
+    PuddleEvaporationRate = 12.5;
+    PuddleEvaporationRateBase = 2;
 }
 
 void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDateTimeSystemInvalidationTypes::Frame)
@@ -375,7 +375,7 @@ void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguou
                 auto EvaporationCoeff =
                     FMath::Lerp(WetnessEvaporationRateBase, WetnessEvaporationRate, SunPositionBlend);
 
-                WetnessProxy -= EvaporationCoeff * DeltaTimeInMinutes * WetnessProxy;
+                WetnessProxy -= EvaporationCoeff * 0.01f * DeltaTimeInMinutes * WetnessProxy;
                 WetnessProxy += CurrentRainfall * WetnessDepositionRate * DeltaTimeInMinutes;
 
                 if (WetnessProxy < KINDA_SMALL_NUMBER)
@@ -393,7 +393,7 @@ void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguou
                 auto EvaporationCoeff =
                     FMath::Lerp(PuddleEvaporationRateBase, PuddleEvaporationRate, SunPositionBlend);
 
-                CurrentSittingWater -= EvaporationCoeff * DeltaTimeInMinutes * CurrentSittingWater;
+                CurrentSittingWater -= EvaporationCoeff * 0.01f * DeltaTimeInMinutes * CurrentSittingWater;
 
                 CurrentSittingWater += FMath::Max(0.f, WetnessProxy - 1.f) * RainfallWetnessOverflowPuddlingScale;
 

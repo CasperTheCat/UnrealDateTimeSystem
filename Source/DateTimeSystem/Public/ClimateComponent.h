@@ -74,40 +74,87 @@ private:
     UPROPERTY(EditDefaultsOnly)
     float TicksPerSecond;
 
-    /**/
+    /**
+     * @brief Threshold at which to use a non-contiguous time update
+     */
     UPROPERTY(EditDefaultsOnly)
     float CatchupThresholdInSeconds;
 
+    /**
+     * @brief How fast should Wetness catch up to the target when stopping raining
+     * Only used by non-contiguous updates
+     *
+     */
     UPROPERTY(EditDefaultsOnly)
     float CatchupWetnessDownblendSpeed;
 
+    /**
+     * @brief How fast should Wetness catch up to the target when starting raining
+     * Only used by non-contiguous updates
+     *
+     */
     UPROPERTY(EditDefaultsOnly)
     float CatchupWetnessUpblendSpeed;
 
+    /**
+     * @brief Percentage of current Wetness that should evaporate over the next minute
+     *
+     */
     UPROPERTY(EditDefaultsOnly)
     float WetnessEvaporationRate;
 
     UPROPERTY(EditDefaultsOnly)
     float WetnessDepositionRate;
 
+    /**
+     * @brief Base percentage of current Wetness that should evaporate over the next minute
+     * Used when the sun is set or at night local time depending on UseSunPositionForEvaporation
+     *
+     */
     UPROPERTY(EditDefaultsOnly)
     float WetnessEvaporationRateBase;
 
+    /**
+     * @brief Whether to use the sun's position for evaporation
+     * Fallback is a linear interpolate over the day, which removes seasonality
+     *
+     */
     UPROPERTY(EditDefaultsOnly)
     bool UseSunPositionForEvaporation;
 
+    /**
+     * @brief Speed that rainfall lerps up to target in live update
+     *
+     */
     UPROPERTY(EditDefaultsOnly)
     float RainfallBlendIncreaseSpeed;
 
+    /**
+     * @brief Speed that rainfall lerps down to target in live update
+     *
+     */
     UPROPERTY(EditDefaultsOnly)
     float RainfallBlendDecreaseSpeed;
 
+    /**
+     * @brief Fraction of the Wetness that spills over into puddles over 1.f
+     *
+     */
     UPROPERTY(EditDefaultsOnly)
     float RainfallWetnessOverflowPuddlingScale;
 
+    /**
+     * @brief Percentage of current puddles that should evaporate over the next minute
+     *
+     */
     UPROPERTY(EditDefaultsOnly)
     float PuddleEvaporationRate;
 
+    /**
+     * @brief Base percentage of current puddles that should evaporate over the next minute
+     * Used when the sun is set or at night local time depending on UseSunPositionForEvaporation
+     *
+     */
     UPROPERTY(EditDefaultsOnly)
     float PuddleEvaporationRateBase;
 
