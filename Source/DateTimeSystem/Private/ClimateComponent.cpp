@@ -885,7 +885,7 @@ float UClimateComponent::GetAnalyticalHighForDate(FDateTimeSystemStruct &DateStr
     else
     {
         // We need
-        if (DateStruct.Month < ClimateBook.Num() && DateTimeSystem)
+        if (DateStruct.Month < ClimateBook.Num() && IsValid(DateTimeSystem))
         {
             // Which do we need. We need the fractional month value
             auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
@@ -928,7 +928,7 @@ float UClimateComponent::GetAnalyticalLowForDate(FDateTimeSystemStruct &DateStru
     else
     {
         // We need
-        if (DateStruct.Month < ClimateBook.Num() && DateTimeSystem)
+        if (DateStruct.Month < ClimateBook.Num() && IsValid(DateTimeSystem))
         {
             // Which do we need. We need the fractional month value
             auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
