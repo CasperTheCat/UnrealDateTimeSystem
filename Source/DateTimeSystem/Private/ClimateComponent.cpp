@@ -36,6 +36,7 @@ void UClimateComponent::ClimateSetup()
     RainfallWetnessOverflowPuddlingScale = 0.02f;
     PuddleEvaporationRate = 12.5;
     PuddleEvaporationRateBase = 2;
+    PuddleLimit = 6.5f;
 }
 
 void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDateTimeSystemInvalidationTypes::Frame)
@@ -405,6 +406,8 @@ void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguou
                 CurrentSittingWater -= EvaporationCoeff * 0.01f * DeltaTimeInMinutes * CurrentSittingWater;
 
                 CurrentSittingWater += FMath::Max(0.f, WetnessProxy - 1.f) * RainfallWetnessOverflowPuddlingScale;
+
+                CurrentSittingWater = FMath::Min(PuddleLimit, CurrentSittingWater);
 
                 if (CurrentSittingWater < KINDA_SMALL_NUMBER)
                 {

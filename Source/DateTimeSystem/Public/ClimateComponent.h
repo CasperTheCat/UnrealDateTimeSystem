@@ -103,6 +103,10 @@ private:
     UPROPERTY(EditDefaultsOnly)
     float WetnessEvaporationRate;
 
+    /**
+     * @brief Rate at which rainfall creates wetness
+     *
+     */
     UPROPERTY(EditDefaultsOnly)
     float WetnessDepositionRate;
 
@@ -157,6 +161,13 @@ private:
      */
     UPROPERTY(EditDefaultsOnly)
     float PuddleEvaporationRateBase;
+
+    /**
+     * @brief Upper Limit to stored water
+     *
+     */
+    UPROPERTY(EditDefaultsOnly)
+    float PuddleLimit;
 
     /**
      * @brief Climate Data Table
