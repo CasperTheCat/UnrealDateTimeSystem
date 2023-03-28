@@ -39,6 +39,6 @@ class DATETIMESYSTEM_API IDateTimeSystemClimateInterface
 public:
     /** Add interface function declarations here */
     UFUNCTION(BlueprintNativeEvent)
-    UClimateComponent *GetDateTimeSystem();
-    virtual UClimateComponent *GetDateTimeSystem_Implementation();
+    UClimateComponent *GetClimateComponent();
+    virtual UClimateComponent *GetClimateComponent_Implementation();
 };

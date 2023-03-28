@@ -7,7 +7,7 @@ UDateTimeSystemComponent *IDateTimeSystemInterface::GetDateTimeSystem_Implementa
     return nullptr;
 }
 
-UClimateComponent *IDateTimeSystemClimateInterface::GetDateTimeSystem_Implementation()
+UClimateComponent *IDateTimeSystemClimateInterface::GetClimateComponent_Implementation()
 {
     return nullptr;
 }
