@@ -41,7 +41,7 @@ public:
     float RainfallProbability;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    float DailyRainfall;
+    float HourlyRainfall;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     FGameplayTagContainer MiscData;
@@ -80,7 +80,7 @@ public:
     float RainfallProbability;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    float DailyAverageRainfall;
+    float HourlyAverageRainfall;
 };
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemClimateMonthlyRow &Row)

@@ -1196,8 +1196,8 @@ float UClimateComponent::GetRainfallAmount(FDateTimeSystemStruct &DateStruct)
         auto asPtr = *Row;
         if (asPtr)
         {
-            CachedRainfallLevels.Add(RainfallHash, asPtr->DailyRainfall * (1 / asPtr->RainfallProbability));
-            return asPtr->DailyRainfall * (1 / asPtr->RainfallProbability);
+            CachedRainfallLevels.Add(RainfallHash, asPtr->HourlyRainfall * (1 / asPtr->RainfallProbability));
+            return asPtr->HourlyRainfall * (1 / asPtr->RainfallProbability);
         }
     }
     else
@@ -1228,7 +1228,7 @@ float UClimateComponent::GetAnalyticalPrecipitationAmountDate(FDateTimeSystemStr
         {
             // Which do we need. We need the fractional month value
             auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
-            auto CurrentProbability = ClimateBook[DateStruct.Month]->DailyAverageRainfall *
+            auto CurrentProbability = ClimateBook[DateStruct.Month]->HourlyAverageRainfall *
                                       (1 / ClimateBook[DateStruct.Month]->RainfallProbability);
             auto BlendFrac = FMath::Abs(MonthFrac - 0.5);
             int OtherIndex = 0;
@@ -1245,7 +1245,7 @@ float UClimateComponent::GetAnalyticalPrecipitationAmountDate(FDateTimeSystemStr
             }
 
             auto OtherValue =
-                ClimateBook[OtherIndex]->DailyAverageRainfall * (1 / ClimateBook[OtherIndex]->RainfallProbability);
+                ClimateBook[OtherIndex]->HourlyAverageRainfall * (1 / ClimateBook[OtherIndex]->RainfallProbability);
             auto ResultingPrecip = FMath::Lerp(CurrentProbability, OtherValue, BlendFrac);
 
             CachedAnalyticRainfallLevel.Add(RainfallHash, ResultingPrecip);
