@@ -641,7 +641,8 @@ void UDateTimeSystemComponent::DateTimeSetup()
     TimeScale = 300;
     DaysInOrbitalYear = 365.25;
     LengthOfDay = 60 * 60 * 24;
-    // PrimaryComponentTick.bCanEverTick = true;
+    PlanetRadius = 6360;
+    PrimaryComponentTick.bCanEverTick = true;
     bWantsInitializeComponent = true;
     RegisterAllComponentTickFunctions(true);
 }
@@ -671,6 +672,11 @@ void UDateTimeSystemComponent::Invalidate(
 
     // Clear all sun vectors
     CachedSunVectors.Empty();
+
+    if(InvalidationCallback.IsBound())
+    {
+        InvalidationCallback.Broadcast(Type);
+    }
 }
 
 bool UDateTimeSystemComponent::HandleDayRollover(FDateTimeSystemStruct &DateStruct)

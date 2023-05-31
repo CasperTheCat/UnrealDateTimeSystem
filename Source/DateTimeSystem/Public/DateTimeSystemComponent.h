@@ -18,6 +18,7 @@ class UClimateComponent;
  * @brief Date Time Cache Invalidation Types
  *
  */
+UENUM(BlueprintType)
 enum class EDateTimeSystemInvalidationTypes : uint8
 {
     Frame,
@@ -25,7 +26,7 @@ enum class EDateTimeSystemInvalidationTypes : uint8
     Month,
     Year,
 
-    TOTAL_INVALIDATION_TYPES
+    TOTAL_INVALIDATION_TYPES UMETA(Hidden)
 };
 
 /**
@@ -228,7 +229,7 @@ struct FDateTimeSystemTimezoneStruct
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
     float HoursDeltaFromMeridian;
 };
 
@@ -236,13 +237,15 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCleanDateChangeDelegate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, FDateTimeSystemStruct, NewDate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, FDateTimeSystemStruct, NewDate, FGameplayTagContainer,
                                              Attribute);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInvalidationDelegate, EDateTimeSystemInvalidationTypes, InvalidationType);
 
 /**
  * @brief DateTimeSystem
  *
  * Subclasses UActorComponent so it can be placed in more locations
  */
-UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
+UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent),
+       DisplayName = "Date Time System")
 class DATETIMESYSTEM_API UDateTimeSystemComponent : public UActorComponent
 {
     GENERATED_BODY()
@@ -254,6 +257,13 @@ private:
      */
     UPROPERTY(EditDefaultsOnly)
     float LengthOfDay;
+
+    /**
+     * @brief Length of a Day in Seconds
+     * This refers to both Solar and Calendar days
+     */
+    UPROPERTY(EditDefaultsOnly)
+    bool CanEverTick;
 
     /**
      * @brief Runtime Reciprocal for day length in seconds
@@ -475,6 +485,13 @@ public:
      */
     UPROPERTY(BlueprintAssignable)
     FDateChangeDelegate TimeUpdate;
+
+    /**
+     * @brief Callback when the time changes, which may be frequently
+     */
+    UPROPERTY(BlueprintAssignable)
+    FInvalidationDelegate InvalidationCallback;
+    
 
     /**
      * @brief Callback when the time changes, which may be frequently

@@ -61,7 +61,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateClimateData, FDateTimeClimate
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDTSUpdateTime, FDateTimeSystemStruct, NewDate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FLocalDateTimeEvent);
 
-UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
+UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent),
+       DisplayName = "DTS Climate Subsystem")
 class DATETIMESYSTEM_API UClimateComponent : public UActorComponent
 {
     GENERATED_BODY()
@@ -410,6 +411,13 @@ public:
      */
     UPROPERTY(BlueprintAssignable)
     FUpdateClimateData UpdateLocalClimateCallback;
+
+    /**
+     * @brief Temperature Change Callback
+     * Try to avoid this call if you can
+     */
+    UPROPERTY(BlueprintAssignable)
+    FInvalidationDelegate InvalidationCallback;
 
     /**
      * @brief DateTime Update Callback

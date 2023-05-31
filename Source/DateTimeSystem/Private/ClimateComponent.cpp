@@ -8,7 +8,7 @@ void UClimateComponent::ClimateSetup()
 {
     TicksPerSecond = 0;
     CatchupThresholdInSeconds = 30;
-    // PrimaryComponentTick.bCanEverTick = true;
+    PrimaryComponentTick.bCanEverTick = true;
     bWantsInitializeComponent = true;
     RegisterAllComponentTickFunctions(true);
     HasBoundToDate = true;
@@ -66,6 +66,11 @@ void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDate
     CachedAnalyticProbability.Empty();
     CachedRainfallLevels.Empty();
     CachedAnalyticRainfallLevel.Empty();
+
+    if (InvalidationCallback.IsBound())
+    {
+        InvalidationCallback.Broadcast(Type);
+    }
 }
 
 void UClimateComponent::UpdateLocalTimePassthrough()
@@ -500,6 +505,12 @@ TObjectPtr<UDateTimeSystemComponent> UClimateComponent::FindComponent()
         auto GameInst = World->GetGameInstance();
         if (GameInst)
         {
+            // BP Casting Method
+            if (GameInst->GetClass()->ImplementsInterface(UDateTimeSystemInterface::StaticClass()))
+            {
+                return IDateTimeSystemInterface::Execute_GetDateTimeSystem(GameInst);
+            }
+
             // Try to get from here
             auto AsType = Cast<IDateTimeSystemInterface>(GameInst);
             if (AsType)
@@ -513,6 +524,12 @@ TObjectPtr<UDateTimeSystemComponent> UClimateComponent::FindComponent()
         auto GameState = World->GetGameState();
         if (GameState)
         {
+            // BP Casting Method
+            if (GameState->GetClass()->ImplementsInterface(UDateTimeSystemInterface::StaticClass()))
+            {
+                return IDateTimeSystemInterface::Execute_GetDateTimeSystem(GameState);
+            }
+
             auto AsType = Cast<IDateTimeSystemInterface>(GameState);
             if (AsType)
             {
