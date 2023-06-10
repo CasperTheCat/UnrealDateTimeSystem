@@ -1152,5 +1152,14 @@ public:
         return TimeScale;
     }
 
+    /**
+     * @brief Set the Time Scale
+     */
+    UFUNCTION(BlueprintCallable)
+    void SetTimeScale(float NewScale)
+    {
+        TimeScale = NewScale;
+    }
+
     friend class UClimateComponent;
 };
