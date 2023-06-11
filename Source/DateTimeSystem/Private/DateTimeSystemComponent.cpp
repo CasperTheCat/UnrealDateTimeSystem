@@ -454,6 +454,8 @@ TTuple<float, float, float> UDateTimeSystemComponent::ComputeDeltaBetweenDatesIn
     // Date2 is reference date?
     Result = Date2 - Date1;
 
+    SanitiseDateTime(Result);
+
     // The delta needs conversion. AddDateStruct already does this
     // We'll copy and modify rather than creating a function since we need
     // Different stuff
@@ -788,43 +790,34 @@ bool UDateTimeSystemComponent::SanitiseDateTime(FDateTimeSystemStruct &DateStruc
 {
     DECLARE_SCOPE_CYCLE_COUNTER(TEXT("SanitiseDateTime"), STAT_ACISanitiseDateTime, STATGROUP_ACIDateTimeSys);
 
-    auto DidRolloverDay = HandleDayRollover(DateStruct);
-    if (DidRolloverDay)
+    // Year First
+    auto DidRolloverYear = false;
     {
-        // Loop externally to the month function
-        // It's cleaner as we need yearbook for it
-        auto DidRolloverMonth = false;
+        auto ContinueLoop = false;
+        do
         {
-
-            auto ContinueLoop = false;
-            do
-            {
-                ContinueLoop = HandleMonthRollover(DateStruct);
-                DidRolloverMonth = ContinueLoop || DidRolloverMonth;
-            }
-            while (ContinueLoop);
+            ContinueLoop = HandleYearRollover(DateStruct);
+            DidRolloverYear = ContinueLoop || DidRolloverYear;
         }
-
-        // Rollover Month and Year
-        // auto DidRolloverMonth = HandleMonthRollover(DateStruct);
-        if (DidRolloverMonth)
-        {
-            {
-                auto ContinueLoop = false;
-                do
-                {
-                    ContinueLoop = HandleYearRollover(DateStruct);
-                    // auto DidRolloverYear = ContinueLoop;
-                }
-                while (ContinueLoop);
-            }
-        }
-
-        // Now, we want to fire the datechange
-        return true;
+        while (ContinueLoop);
     }
 
-    return false;
+    // Loop externally to the month function
+    // It's cleaner as we need yearbook for it
+    auto DidRolloverMonth = false;
+    {
+        auto ContinueLoop = false;
+        do
+        {
+            ContinueLoop = HandleMonthRollover(DateStruct);
+            DidRolloverMonth = ContinueLoop || DidRolloverMonth;
+        }
+        while (ContinueLoop);
+    }
+
+    auto DidRolloverDay = HandleDayRollover(DateStruct);
+
+    return DidRolloverDay || DidRolloverMonth || DidRolloverYear;
 }
 
 bool UDateTimeSystemComponent::SanitiseSolarDateTime(FDateTimeSystemStruct &DateStruct)
@@ -1033,6 +1026,13 @@ void UDateTimeSystemComponent::InternalBegin()
 
 void UDateTimeSystemComponent::InternalInitialise()
 {
+    // Sanity
+    if (0 == YearBook.Num())
+    {
+        UE_LOG(LogDateTimeSystem, Error, TEXT("Yearbook is not valid"));
+        return;
+    }
+
     double Val = InternalDate.Year * DaysInOrbitalYear;
     double Days = GetFractionalCalendarYear(InternalDate) * DaysInOrbitalYear;
     InternalDate.SolarDays = FMath::TruncToInt(Val) + FMath::TruncToInt(Days);

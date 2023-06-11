@@ -10,6 +10,7 @@
 
 #include "ClimateComponent.generated.h"
 
+DATETIMESYSTEM_API DECLARE_LOG_CATEGORY_EXTERN(LogClimateSystem, Log, All);
 DECLARE_STATS_GROUP(TEXT("ClimateSystem"), STATGROUP_ACIClimateSys, STATCAT_Advanced);
 
 USTRUCT(BlueprintType, Blueprintable)

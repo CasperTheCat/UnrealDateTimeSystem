@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
+DEFINE_LOG_CATEGORY(LogDateTimeSystem);
+DEFINE_LOG_CATEGORY(LogClimateSystem);
 class FDateTimeSystemModule : public IModuleInterface
 {
 public:

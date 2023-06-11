@@ -9,6 +9,7 @@
 
 #include "DateTimeSystemComponent.generated.h"
 
+DATETIMESYSTEM_API DECLARE_LOG_CATEGORY_EXTERN(LogDateTimeSystem, Log, All);
 DECLARE_STATS_GROUP(TEXT("DateTimeSystem"), STATGROUP_ACIDateTimeSys, STATCAT_Advanced);
 
 // Forward Decl
@@ -180,16 +181,39 @@ public:
         return *this;
     }
 
-    friend FDateTimeSystemStruct operator+(FDateTimeSystemStruct Us, const FDateTimeSystemStruct &Other)
+    friend FDateTimeSystemStruct operator+(const FDateTimeSystemStruct &Us, const FDateTimeSystemStruct &Other)
     {
-        Us += Other;
-        return Us;
+        FDateTimeSystemStruct New = Us;
+        New += Other;
+        return New;
     }
 
-    friend FDateTimeSystemStruct operator-(FDateTimeSystemStruct Us, const FDateTimeSystemStruct &Other)
+    friend FDateTimeSystemStruct operator-(const FDateTimeSystemStruct &Us, const FDateTimeSystemStruct &Other)
     {
-        Us -= Other;
-        return Us;
+        FDateTimeSystemStruct New = Us;
+        New -= Other;
+        return New;
+    }
+
+    friend bool operator>(const FDateTimeSystemStruct &lhs,
+                          const FDateTimeSystemStruct &rhs) // friend claim has to be here
+    {
+        if (lhs.Year != rhs.Year)
+        {
+            return lhs.Year > rhs.Year;
+        }
+
+        if (lhs.Month != rhs.Month)
+        {
+            return lhs.Month > rhs.Month;
+        }
+
+        if (lhs.Day != rhs.Day)
+        {
+            return lhs.Day > rhs.Month;
+        }
+
+        return lhs.Seconds > rhs.Seconds;
     }
 
     uint32 GetHash()
