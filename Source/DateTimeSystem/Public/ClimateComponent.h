@@ -73,13 +73,13 @@ private:
      * @brief Tick rate when engine is ticking the component
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float TicksPerSecond;
 
     /**
      * @brief Threshold at which to use a non-contiguous time update
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float CatchupThresholdInSeconds;
 
     /**
@@ -87,7 +87,7 @@ private:
      * Only used by non-contiguous updates
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float CatchupWetnessDownblendSpeed;
 
     /**
@@ -95,21 +95,21 @@ private:
      * Only used by non-contiguous updates
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float CatchupWetnessUpblendSpeed;
 
     /**
      * @brief Percentage of current Wetness that should evaporate over the next minute
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float WetnessEvaporationRate;
 
     /**
      * @brief Rate at which rainfall creates wetness
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float WetnessDepositionRate;
 
     /**
@@ -117,7 +117,7 @@ private:
      * Used when the sun is set or at night local time depending on UseSunPositionForEvaporation
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float WetnessEvaporationRateBase;
 
     /**
@@ -125,35 +125,35 @@ private:
      * Fallback is a linear interpolate over the day, which removes seasonality
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     bool UseSunPositionForEvaporation;
 
     /**
      * @brief Speed that rainfall lerps up to target in live update
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float RainfallBlendIncreaseSpeed;
 
     /**
      * @brief Speed that rainfall lerps down to target in live update
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float RainfallBlendDecreaseSpeed;
 
     /**
      * @brief Fraction of the Wetness that spills over into puddles over 1.f
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float RainfallWetnessOverflowPuddlingScale;
 
     /**
      * @brief Percentage of current puddles that should evaporate over the next minute
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float PuddleEvaporationRate;
 
     /**
@@ -161,14 +161,14 @@ private:
      * Used when the sun is set or at night local time depending on UseSunPositionForEvaporation
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float PuddleEvaporationRateBase;
 
     /**
      * @brief Upper Limit to stored water
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float PuddleLimit;
 
     /**
@@ -176,7 +176,7 @@ private:
      * Uses FDateTimeSystemClimateMonthlyRow
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     TObjectPtr<UDataTable> ClimateTable;
 
     /**
@@ -184,7 +184,7 @@ private:
      * Uses FDateTimeSystemClimateOverrideRow
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     TObjectPtr<UDataTable> ClimateOverridesTable;
 
     /**
@@ -459,41 +459,41 @@ public:
      * @brief Computed Temperature
      *
      */
-    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     float CurrentTemperature;
 
     /**
      * @brief Computed Rainfall
      *
      */
-    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     float CurrentRainfall;
 
     /**
      * @brief Computed Wetness
      *
      */
-    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     float CurrentWetness;
 
     /**
      * @brief Computed Sitting Water
      *
      */
-    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     float CurrentSittingWater;
 
     /**
      * @brief Computed Humidity
      *
      */
-    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     float CurrentRelativeHumidity;
 
     /**
      * @brief Computed Dew Point
      */
-    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     float CurrentDewPoint;
 
     UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
@@ -527,7 +527,7 @@ public:
      * @brief Mean Sea Level
      * Used for offsetting the floor
      */
-    UPROPERTY(SaveGame, EditDefaultsOnly, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     float SeaLevel;
 
     /**
@@ -562,14 +562,14 @@ public:
      * @brief Base Latitude relative to the DTS's reference
      *
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
     float ReferenceLatitude;
 
     /**
      * @brief Base Longitude relative to the DTS's reference
      *
      */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
     float ReferenceLongitude;
 
     /**
@@ -577,7 +577,7 @@ public:
      * Use SetClimateUpdateFrequency to set in gameplay
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float DefaultClimateUpdateFrequency;
 
     /**

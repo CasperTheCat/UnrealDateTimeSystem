@@ -279,14 +279,14 @@ private:
      * @brief Length of a Day in Seconds
      * This refers to both Solar and Calendar days
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float LengthOfDay;
 
     /**
      * @brief Length of a Day in Seconds
      * This refers to both Solar and Calendar days
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     bool CanEverTick;
 
     /**
@@ -302,7 +302,7 @@ private:
      *
      * Set to Zero (0) to use default
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float TicksPerSecond;
 
     /**
@@ -316,7 +316,7 @@ private:
      * @brief Number of days, including any fractional component, in a year
      * Calendar Years are populated
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float DaysInOrbitalYear;
 
     /**
@@ -325,7 +325,7 @@ private:
      *
      * Useful when using climate components aren't in use
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float ReferenceLatitude;
 
     /**
@@ -341,7 +341,7 @@ private:
      *
      * Useful when using climate components aren't in use
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float ReferenceLongitude;
 
     /**
@@ -355,7 +355,7 @@ private:
      * @brief Planet Radius in Kilometres
      * Used for computing sun and moon location at vector positions
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     float PlanetRadius;
 
     /**
@@ -369,21 +369,21 @@ private:
      * Used for rolling over the day-of-week field
      *
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     int DaysInWeek;
 
     /**
      * @brief Yearbook
      * Uses the FDateTimeSystemYearbookRow row schema
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     TObjectPtr<UDataTable> YearBookTable;
 
     /**
      * @brief Overrides
      * Uses the FDateTimeSystemDateOverrideRow row schema
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     TObjectPtr<UDataTable> DateOverridesTable;
 
     /**
@@ -392,7 +392,7 @@ private:
      *
      * Defaults to matching the date
      */
-    UPROPERTY(EditDefaultsOnly)
+    UPROPERTY(EditAnywhere)
     bool UseDayIndexForOverride;
 
     /**
@@ -479,7 +479,7 @@ private:
      * @brief Internal Date and Time stored in UTC
      *
      */
-    UPROPERTY(SaveGame, EditDefaultsOnly)
+    UPROPERTY(SaveGame, EditAnywhere)
     FDateTimeSystemStruct InternalDate;
 
 public:
