@@ -4,13 +4,14 @@
 
 #include "Components/ActorComponent.h"
 #include "CoreMinimal.h"
+#include "DateTimeSystem/Public/DateTimeTypes.h"
 #include "DateTimeSystemComponent.h"
 #include "DateTimeSystemDataRows.h"
 #include "GameplayTagContainer.h"
+#include "Interfaces.h"
 
 #include "ClimateComponent.generated.h"
 
-DATETIMESYSTEM_API DECLARE_LOG_CATEGORY_EXTERN(LogClimateSystem, Log, All);
 DECLARE_STATS_GROUP(TEXT("ClimateSystem"), STATGROUP_ACIClimateSys, STATCAT_Advanced);
 
 USTRUCT(BlueprintType, Blueprintable)
@@ -211,7 +212,7 @@ private:
      *
      */
     UPROPERTY(Transient)
-    TObjectPtr<UDateTimeSystemComponent> DateTimeSystem;
+    TScriptInterface<IDateTimeSystemCommon> DateTimeSystem;
 
     /**
      * @brief Previous High Temp for blending
@@ -728,7 +729,7 @@ private:
      * @brief Find DTS
      *
      */
-    TObjectPtr<UDateTimeSystemComponent> FindComponent();
+    TScriptInterface<IDateTimeSystemCommon> FindComponent();
 
     /**
      * @brief Internal function for adjusting Location Northing Vector

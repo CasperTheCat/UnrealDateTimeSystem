@@ -1,94 +1,46 @@
 // [TEMPLATE_COPYRIGHT]
 
-#include "DateTimeSystemComponent.h"
+#include "DateTimeSubsystem.h"
+#include "DateTimeSystem/Private/DateTimeSystemSettings.h"
 
-UDateTimeSystemComponent::UDateTimeSystemComponent()
+namespace DateTimeCVars
 {
-    DateTimeSetup();
+static float TimeScale = 1.f;
+static FAutoConsoleVariableRef CVarTimeScale(TEXT("DateTimeSystem.TimeScale"), TimeScale,
+                                             TEXT("Multiplier applied to DeltaTime"), ECVF_Default);
+
+static int TickStride = 1;
+static FAutoConsoleVariableRef CVarTickStride(TEXT("DateTimeSystem.TickStride"), TickStride,
+                                              TEXT("Number of frames to stride before passing tick"), ECVF_Default);
+
+static bool CanEverTick = true;
+static FAutoConsoleVariableRef CVarCanEverTick(TEXT("DateTimeSystem.CanEverTick"), CanEverTick,
+                                               TEXT("Can the global Date Time System tick"), ECVF_Default);
+} // namespace DateTimeCVars
+
+UDateTimeSystem::UDateTimeSystem()
+{
 }
 
-UDateTimeSystemComponent::UDateTimeSystemComponent(UDateTimeSystemComponent &Other)
+UDateTimeSystem::UDateTimeSystem(UDateTimeSystem &Other)
 {
-    DateTimeSetup();
 }
 
-UDateTimeSystemComponent::UDateTimeSystemComponent(const FObjectInitializer &ObjectInitializer)
+UDateTimeSystem::UDateTimeSystem(const FObjectInitializer &ObjectInitializer)
 {
-    DateTimeSetup();
 }
 
-void UDateTimeSystemComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-                                             FActorComponentTickFunction *ThisTickFunction)
+UDateTimeSystemCore *UDateTimeSystem::GetCore()
 {
-    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-    if (TimeScale > 0.f)
-    {
-        InternalTick(DeltaTime);
-    }
+    return CoreObject;
 }
 
-void UDateTimeSystemComponent::BeginPlay()
-{
-    if (TicksPerSecond > 0)
-    {
-        SetComponentTickInterval(1.0 / TicksPerSecond);
-    }
-
-    Super::BeginPlay();
-
-    InternalBegin();
-}
-
-bool UDateTimeSystemComponent::IsReady()
+bool UDateTimeSystem::IsReady()
 {
     return IsValid(CoreObject);
 }
 
-void UDateTimeSystemComponent::InternalTick(float DeltaTime, bool NonContiguous)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        // Unguared dereference in shipping build
-        CoreObject->InternalTick(DeltaTime * TimeScale, NonContiguous);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-void UDateTimeSystemComponent::InternalBegin()
-{
-    // Create the Core
-    CoreObject = NewObject<UDateTimeSystemCore>(GetTransientPackage(), CoreClass.Get());
-
-    if (IsValid(CoreObject))
-    {
-        FDateTimeCommonCoreInitializer CoreInitializer{};
-        CoreInitializer.LengthOfDay = LengthOfDay;
-        CoreInitializer.DaysInOrbitalYear = DaysInOrbitalYear;
-        CoreInitializer.YearbookTable = YearBookTable;
-        CoreInitializer.DateOverridesTable = DateOverridesTable;
-        CoreInitializer.UseDayIndexForOverride = UseDayIndexForOverride;
-        CoreInitializer.PlanetRadius = PlanetRadius;
-        CoreInitializer.ReferenceLatitude = ReferenceLatitude;
-        CoreInitializer.ReferenceLongitude = ReferenceLongitude;
-        CoreInitializer.StartDate = InternalDate;
-        CoreInitializer.DaysInWeek = DaysInWeek;
-        CoreInitializer.OverridedDatesSetDate = OverridedDatesSetDate;
-
-        CoreObject->InternalBegin(CoreInitializer);
-    }
-}
-
-void UDateTimeSystemComponent::GetTodaysDate(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
+void UDateTimeSystem::GetTodaysDate(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -107,8 +59,8 @@ void UDateTimeSystemComponent::GetTodaysDate(UPARAM(ref) FDateTimeSystemStruct &
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-void UDateTimeSystemComponent::GetTodaysDateTZ(UPARAM(ref) FDateTimeSystemStruct &DateStruct,
-                                               FDateTimeSystemTimezoneStruct &TimezoneInfo)
+void UDateTimeSystem::GetTodaysDateTZ(UPARAM(ref) FDateTimeSystemStruct &DateStruct,
+                                      FDateTimeSystemTimezoneStruct &TimezoneInfo)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -127,7 +79,7 @@ void UDateTimeSystemComponent::GetTodaysDateTZ(UPARAM(ref) FDateTimeSystemStruct
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-void UDateTimeSystemComponent::GetTomorrowsDate(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
+void UDateTimeSystem::GetTomorrowsDate(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -146,8 +98,8 @@ void UDateTimeSystemComponent::GetTomorrowsDate(UPARAM(ref) FDateTimeSystemStruc
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-void UDateTimeSystemComponent::GetTomorrowsDateTZ(UPARAM(ref) FDateTimeSystemStruct &DateStruct,
-                                                  FDateTimeSystemTimezoneStruct &TimezoneInfo)
+void UDateTimeSystem::GetTomorrowsDateTZ(UPARAM(ref) FDateTimeSystemStruct &DateStruct,
+                                         FDateTimeSystemTimezoneStruct &TimezoneInfo)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -166,7 +118,7 @@ void UDateTimeSystemComponent::GetTomorrowsDateTZ(UPARAM(ref) FDateTimeSystemStr
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-void UDateTimeSystemComponent::GetYesterdaysDate(FDateTimeSystemStruct &DateStruct)
+void UDateTimeSystem::GetYesterdaysDate(FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -185,8 +137,8 @@ void UDateTimeSystemComponent::GetYesterdaysDate(FDateTimeSystemStruct &DateStru
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-void UDateTimeSystemComponent::GetYesterdaysDateTZ(FDateTimeSystemStruct &DateStruct,
-                                                   UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo)
+void UDateTimeSystem::GetYesterdaysDateTZ(FDateTimeSystemStruct &DateStruct,
+                                          UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -205,7 +157,7 @@ void UDateTimeSystemComponent::GetYesterdaysDateTZ(FDateTimeSystemStruct &DateSt
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-FRotator UDateTimeSystemComponent::GetSunRotationForLocation(FVector Location)
+FRotator UDateTimeSystem::GetSunRotationForLocation(FVector Location)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -224,7 +176,7 @@ FRotator UDateTimeSystemComponent::GetSunRotationForLocation(FVector Location)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-FRotator UDateTimeSystemComponent::GetSunRotation()
+FRotator UDateTimeSystem::GetSunRotation()
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -244,7 +196,7 @@ FRotator UDateTimeSystemComponent::GetSunRotation()
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-FVector UDateTimeSystemComponent::GetSunVector(float Latitude, float Longitude)
+FVector UDateTimeSystem::GetSunVector(float Latitude, float Longitude)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -264,7 +216,7 @@ FVector UDateTimeSystemComponent::GetSunVector(float Latitude, float Longitude)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-FRotator UDateTimeSystemComponent::GetMoonRotationForLocation(FVector Location)
+FRotator UDateTimeSystem::GetMoonRotationForLocation(FVector Location)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -284,7 +236,7 @@ FRotator UDateTimeSystemComponent::GetMoonRotationForLocation(FVector Location)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-FRotator UDateTimeSystemComponent::GetMoonRotation()
+FRotator UDateTimeSystem::GetMoonRotation()
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -304,7 +256,7 @@ FRotator UDateTimeSystemComponent::GetMoonRotation()
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-FVector UDateTimeSystemComponent::GetMoonVector(float Latitude, float Longitude)
+FVector UDateTimeSystem::GetMoonVector(float Latitude, float Longitude)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -324,7 +276,7 @@ FVector UDateTimeSystemComponent::GetMoonVector(float Latitude, float Longitude)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-FText UDateTimeSystemComponent::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
+FText UDateTimeSystem::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -344,22 +296,12 @@ FText UDateTimeSystemComponent::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::GetTimeScale()
+float UDateTimeSystem::GetTimeScale()
 {
-    return TimeScale;
+    return DateTimeCVars::TimeScale;
 }
 
-void UDateTimeSystemComponent::SetTimeScale(float NewScale)
-{
-    TimeScale = NewScale;
-}
-
-UDateTimeSystemCore *UDateTimeSystemComponent::GetCore()
-{
-    return CoreObject;
-}
-
-float UDateTimeSystemComponent::GetLengthOfDay()
+float UDateTimeSystem::GetLengthOfDay()
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -379,7 +321,26 @@ float UDateTimeSystemComponent::GetLengthOfDay()
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-void UDateTimeSystemComponent::SetUTCDateTime(FDateTimeSystemStruct &DateStruct, bool SkipInitialisation)
+void UDateTimeSystem::InternalTick(float DeltaTime, bool NonContiguous)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        // Unguared dereference in shipping build
+        CoreObject->InternalTick(DeltaTime * DateTimeCVars::TimeScale, NonContiguous);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+void UDateTimeSystem::SetUTCDateTime(FDateTimeSystemStruct &DateStruct, bool SkipInitialisation)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -397,7 +358,7 @@ void UDateTimeSystemComponent::SetUTCDateTime(FDateTimeSystemStruct &DateStruct,
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-FDateTimeSystemStruct UDateTimeSystemComponent::GetUTCDateTime()
+FDateTimeSystemStruct UDateTimeSystem::GetUTCDateTime()
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -417,7 +378,7 @@ FDateTimeSystemStruct UDateTimeSystemComponent::GetUTCDateTime()
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-void UDateTimeSystemComponent::AdvanceToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
+void UDateTimeSystem::AdvanceToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -435,7 +396,7 @@ void UDateTimeSystemComponent::AdvanceToTime(UPARAM(ref) FDateTimeSystemStruct &
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-bool UDateTimeSystemComponent::AdvanceToClockTime(int Hour, int Minute, int Second, bool Safety)
+bool UDateTimeSystem::AdvanceToClockTime(int Hour, int Minute, int Second, bool Safety)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -455,8 +416,8 @@ bool UDateTimeSystemComponent::AdvanceToClockTime(int Hour, int Minute, int Seco
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSystemStruct &Date1,
-                                                         UPARAM(ref) FDateTimeSystemStruct &Date2)
+float UDateTimeSystem::ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSystemStruct &Date1,
+                                                UPARAM(ref) FDateTimeSystemStruct &Date2)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -476,8 +437,8 @@ float UDateTimeSystemComponent::ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSy
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::ComputeDeltaBetweenDatesYears(UPARAM(ref) FDateTimeSystemStruct &Date1,
-                                                              UPARAM(ref) FDateTimeSystemStruct &Date2)
+float UDateTimeSystem::ComputeDeltaBetweenDatesYears(UPARAM(ref) FDateTimeSystemStruct &Date1,
+                                                     UPARAM(ref) FDateTimeSystemStruct &Date2)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -497,8 +458,8 @@ float UDateTimeSystemComponent::ComputeDeltaBetweenDatesYears(UPARAM(ref) FDateT
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::ComputeDeltaBetweenDatesMonths(UPARAM(ref) FDateTimeSystemStruct &Date1,
-                                                               UPARAM(ref) FDateTimeSystemStruct &Date2)
+float UDateTimeSystem::ComputeDeltaBetweenDatesMonths(UPARAM(ref) FDateTimeSystemStruct &Date1,
+                                                      UPARAM(ref) FDateTimeSystemStruct &Date2)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -518,8 +479,8 @@ float UDateTimeSystemComponent::ComputeDeltaBetweenDatesMonths(UPARAM(ref) FDate
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSystemStruct &Date1,
-                                                             UPARAM(ref) FDateTimeSystemStruct &Date2)
+float UDateTimeSystem::ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSystemStruct &Date1,
+                                                    UPARAM(ref) FDateTimeSystemStruct &Date2)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -539,8 +500,8 @@ float UDateTimeSystemComponent::ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTi
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-double UDateTimeSystemComponent::DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &Date1,
-                                                                  UPARAM(ref) FDateTimeSystemStruct &Date2)
+double UDateTimeSystem::DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &Date1,
+                                                         UPARAM(ref) FDateTimeSystemStruct &Date2)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -560,8 +521,9 @@ double UDateTimeSystemComponent::DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FD
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-TTuple<float, float, float> UDateTimeSystemComponent::ComputeDeltaBetweenDatesInternal(
-    UPARAM(ref) FDateTimeSystemStruct &Date1, UPARAM(ref) FDateTimeSystemStruct &Date2, FDateTimeSystemStruct &Result)
+TTuple<float, float, float> UDateTimeSystem::ComputeDeltaBetweenDatesInternal(UPARAM(ref) FDateTimeSystemStruct &Date1,
+                                                                              UPARAM(ref) FDateTimeSystemStruct &Date2,
+                                                                              FDateTimeSystemStruct &Result)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -581,7 +543,7 @@ TTuple<float, float, float> UDateTimeSystemComponent::ComputeDeltaBetweenDatesIn
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-void UDateTimeSystemComponent::AddDateStruct(FDateTimeSystemStruct &DateStruct)
+void UDateTimeSystem::AddDateStruct(FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -599,7 +561,7 @@ void UDateTimeSystemComponent::AddDateStruct(FDateTimeSystemStruct &DateStruct)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::GetFractionalDay(FDateTimeSystemStruct &DateStruct)
+float UDateTimeSystem::GetFractionalDay(FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -619,7 +581,7 @@ float UDateTimeSystemComponent::GetFractionalDay(FDateTimeSystemStruct &DateStru
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::GetFractionalMonth(FDateTimeSystemStruct &DateStruct)
+float UDateTimeSystem::GetFractionalMonth(FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -639,7 +601,7 @@ float UDateTimeSystemComponent::GetFractionalMonth(FDateTimeSystemStruct &DateSt
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::GetFractionalOrbitalYear(FDateTimeSystemStruct &DateStruct)
+float UDateTimeSystem::GetFractionalOrbitalYear(FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -659,7 +621,7 @@ float UDateTimeSystemComponent::GetFractionalOrbitalYear(FDateTimeSystemStruct &
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::GetFractionalCalendarYear(FDateTimeSystemStruct &DateStruct)
+float UDateTimeSystem::GetFractionalCalendarYear(FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -679,7 +641,7 @@ float UDateTimeSystemComponent::GetFractionalCalendarYear(FDateTimeSystemStruct 
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-int UDateTimeSystemComponent::GetLengthOfCalendarYear(int Year)
+int UDateTimeSystem::GetLengthOfCalendarYear(int Year)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -699,7 +661,7 @@ int UDateTimeSystemComponent::GetLengthOfCalendarYear(int Year)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-double UDateTimeSystemComponent::GetJulianDay(FDateTimeSystemStruct &DateStruct)
+double UDateTimeSystem::GetJulianDay(FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -719,7 +681,7 @@ double UDateTimeSystemComponent::GetJulianDay(FDateTimeSystemStruct &DateStruct)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-bool UDateTimeSystemComponent::HandleDayRollover(FDateTimeSystemStruct &DateStruct)
+bool UDateTimeSystem::HandleDayRollover(FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -739,7 +701,7 @@ bool UDateTimeSystemComponent::HandleDayRollover(FDateTimeSystemStruct &DateStru
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-bool UDateTimeSystemComponent::HandleMonthRollover(FDateTimeSystemStruct &DateStruct)
+bool UDateTimeSystem::HandleMonthRollover(FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -759,7 +721,7 @@ bool UDateTimeSystemComponent::HandleMonthRollover(FDateTimeSystemStruct &DateSt
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-bool UDateTimeSystemComponent::HandleYearRollover(FDateTimeSystemStruct &DateStruct)
+bool UDateTimeSystem::HandleYearRollover(FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -779,7 +741,7 @@ bool UDateTimeSystemComponent::HandleYearRollover(FDateTimeSystemStruct &DateStr
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-int UDateTimeSystemComponent::GetDaysInCurrentMonth()
+int UDateTimeSystem::GetDaysInCurrentMonth()
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -799,7 +761,7 @@ int UDateTimeSystemComponent::GetDaysInCurrentMonth()
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-int UDateTimeSystemComponent::GetDaysInMonth(int MonthIndex)
+int UDateTimeSystem::GetDaysInMonth(int MonthIndex)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -819,7 +781,7 @@ int UDateTimeSystemComponent::GetDaysInMonth(int MonthIndex)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-int UDateTimeSystemComponent::GetMonthsInYear(int YearIndex)
+int UDateTimeSystem::GetMonthsInYear(int YearIndex)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -839,7 +801,7 @@ int UDateTimeSystemComponent::GetMonthsInYear(int YearIndex)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-bool UDateTimeSystemComponent::SanitiseDateTime(FDateTimeSystemStruct &DateStruct)
+bool UDateTimeSystem::SanitiseDateTime(FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -859,7 +821,7 @@ bool UDateTimeSystemComponent::SanitiseDateTime(FDateTimeSystemStruct &DateStruc
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-bool UDateTimeSystemComponent::SanitiseSolarDateTime(FDateTimeSystemStruct &DateStruct)
+bool UDateTimeSystem::SanitiseSolarDateTime(FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -879,7 +841,7 @@ bool UDateTimeSystemComponent::SanitiseSolarDateTime(FDateTimeSystemStruct &Date
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::GetSolarFractionalDay()
+float UDateTimeSystem::GetSolarFractionalDay()
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -899,7 +861,7 @@ float UDateTimeSystemComponent::GetSolarFractionalDay()
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::GetSolarFractionalYear()
+float UDateTimeSystem::GetSolarFractionalYear()
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -919,7 +881,7 @@ float UDateTimeSystemComponent::GetSolarFractionalYear()
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::SolarDeclinationAngle(float YearInRadians)
+float UDateTimeSystem::SolarDeclinationAngle(float YearInRadians)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -939,8 +901,8 @@ float UDateTimeSystemComponent::SolarDeclinationAngle(float YearInRadians)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-FRotator UDateTimeSystemComponent::GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent,
-                                                           FVector Location)
+FRotator UDateTimeSystem::GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent,
+                                                  FVector Location)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -960,8 +922,8 @@ FRotator UDateTimeSystemComponent::GetLocalisedSunRotation(float BaseLatitudePer
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-FRotator UDateTimeSystemComponent::GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent,
-                                                            FVector Location)
+FRotator UDateTimeSystem::GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent,
+                                                   FVector Location)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -981,8 +943,7 @@ FRotator UDateTimeSystemComponent::GetLocalisedMoonRotation(float BaseLatitudePe
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-FVector UDateTimeSystemComponent::AlignWorldLocationInternalCoordinates(FVector WorldLocation,
-                                                                        FVector NorthingDirection)
+FVector UDateTimeSystem::AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -1002,7 +963,7 @@ FVector UDateTimeSystemComponent::AlignWorldLocationInternalCoordinates(FVector 
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::SolarTimeCorrection(float YearInRadians)
+float UDateTimeSystem::SolarTimeCorrection(float YearInRadians)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -1022,22 +983,47 @@ float UDateTimeSystemComponent::SolarTimeCorrection(float YearInRadians)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-void UDateTimeSystemComponent::DateTimeSetup()
+uint32 UDateTimeSystem::GetHashForDate(FDateTimeSystemStruct *DateStruct)
 {
-    PrimaryComponentTick.bCanEverTick = true;
-    bWantsInitializeComponent = true;
-    RegisterAllComponentTickFunctions(true);
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
 
-    LengthOfDay = 86400;
-    DaysInOrbitalYear = 365.25f;
-    PlanetRadius = 6360.f;
-    DaysInWeek = 7;
-    CoreClass = UDateTimeSystemCore::StaticClass();
-    TicksPerSecond = 10.f;
-    TimeScale = 1.f;
+        return CoreObject->GetHashForDate(DateStruct);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return 0;
+#endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-FDateTimeSystemDateOverrideRow **UDateTimeSystemComponent::GetDateOverride(FDateTimeSystemStruct *DateStruct)
+uint32 UDateTimeSystem::GetHashForDate(FDateTimeSystemDateOverrideRow *DateStruct)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->GetHashForDate(DateStruct);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return 0;
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FDateTimeSystemDateOverrideRow **UDateTimeSystem::GetDateOverride(FDateTimeSystemStruct *DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -1055,4 +1041,84 @@ FDateTimeSystemDateOverrideRow **UDateTimeSystemComponent::GetDateOverride(FDate
 
     return nullptr;
 #endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+void UDateTimeSystem::Initialize(FSubsystemCollectionBase &Collection)
+{
+    const UGameInstance *LocalGameInstance = GetGameInstance();
+    check(LocalGameInstance);
+
+    // Create Object
+    const UDateTimeSystemSettings *Settings = GetDefault<UDateTimeSystemSettings>();
+    CoreObject = NewObject<UDateTimeSystemCore>(GetTransientPackage(), Settings->CoreClass.Get());
+
+    if (IsValid(CoreObject))
+    {
+        auto LocalYearBookTableObj = Settings->YearBookTable.TryLoad();
+        auto LocalDateOverridesTableObj = Settings->DateOverridesTable.TryLoad();
+
+        auto LocalYearBookTable = Cast<UDataTable>(LocalYearBookTableObj);
+        auto LocalDateOverridesTable = Cast<UDataTable>(LocalDateOverridesTableObj);
+
+        FDateTimeCommonCoreInitializer CoreInitializer{};
+        CoreInitializer.LengthOfDay = Settings->LengthOfDay;
+        CoreInitializer.DaysInOrbitalYear = Settings->DaysInOrbitalYear;
+        CoreInitializer.YearbookTable = LocalYearBookTable;
+        CoreInitializer.DateOverridesTable = LocalDateOverridesTable;
+        CoreInitializer.UseDayIndexForOverride = Settings->UseDayIndexForOverride;
+        CoreInitializer.PlanetRadius = Settings->PlanetRadius;
+        CoreInitializer.ReferenceLatitude = Settings->ReferenceLatitude;
+        CoreInitializer.ReferenceLongitude = Settings->ReferenceLongitude;
+        CoreInitializer.StartDate = Settings->StartDate;
+        CoreInitializer.DaysInWeek = Settings->DaysInWeek;
+        CoreInitializer.OverridedDatesSetDate = Settings->OverridedDatesSetDate;
+
+        CoreObject->InternalBegin(CoreInitializer);
+    }
+}
+
+void UDateTimeSystem::Deinitialize()
+{
+}
+
+bool UDateTimeSystem::ShouldCreateSubsystem(UObject *Outer) const
+{
+    return true;
+}
+
+void UDateTimeSystem::Tick(float DeltaTime)
+{
+    if (DateTimeCVars::TimeScale > 0.f && DateTimeCVars::CanEverTick)
+    {
+        StoredDeltaTime += DeltaTime;
+        ++CurrentTickIndex;
+
+        // Should Tick?
+        if (CurrentTickIndex > DateTimeCVars::TickStride)
+        {
+            InternalTick(StoredDeltaTime);
+            CurrentTickIndex = 0;
+            StoredDeltaTime = 0.f;
+        }
+    }
+}
+
+ETickableTickType UDateTimeSystem::GetTickableTickType() const
+{
+    return ETickableTickType();
+}
+
+bool UDateTimeSystem::IsTickable() const
+{
+    return !HasAnyFlags(RF_ClassDefaultObject) && DateTimeCVars::CanEverTick;
+}
+
+TStatId UDateTimeSystem::GetStatId() const
+{
+    RETURN_QUICK_DECLARE_CYCLE_STAT(UDateTimeSystem, STATGROUP_Tickables);
+}
+
+UWorld *UDateTimeSystem::GetTickableGameObjectWorld() const
+{
+    return GetGameInstance()->GetWorld();
 }

@@ -4,36 +4,28 @@
 
 #include "Components/ActorComponent.h"
 #include "CoreMinimal.h"
-#include "DateTimeCommonCore.h"
 #include "DateTimeSystemDataRows.h"
 #include "DateTimeTypes.h"
 #include "GameplayTagContainer.h"
 #include "Interfaces.h"
 
-#include "DateTimeSystemComponent.generated.h"
+#include "DateTimeSubsystem.generated.h"
 
-DECLARE_STATS_GROUP(TEXT("DateTimeSystem"), STATGROUP_ACIDateTimeSys, STATCAT_Advanced);
-
-// DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCleanDateChangeDelegate);
-// DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, FDateTimeSystemStruct, NewDate);
-// DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, FDateTimeSystemStruct, NewDate,
-// FGameplayTagContainer,
-//                                              Attribute);
-// DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInvalidationDelegate, EDateTimeSystemInvalidationTypes,
-// InvalidationType);
+// DATETIMESYSTEM_API DECLARE_LOG_CATEGORY_EXTERN(LogDateTimeSystem, Log, All);
+DECLARE_STATS_GROUP(TEXT("DateTimeSubsystem"), STATGROUP_ACIDateTimeSubsys, STATCAT_Advanced);
 
 // Forward Decl
 class UClimateComponent;
 
 /**
- * @brief DateTimeSystemComponent
+ * @brief DateTimeSubsystem
  *
- * Subclasses UActorComponent so it can be placed in more locations
  */
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent),
        DisplayName = "Date Time System")
-class DATETIMESYSTEM_API UDateTimeSystemComponent
-    : public UActorComponent
+class DATETIMESYSTEM_API UDateTimeSystem
+    : public UGameInstanceSubsystem
+    , public FTickableGameObject
     , public IDateTimeSystemCommon
 {
     GENERATED_BODY()
@@ -42,96 +34,20 @@ private:
     UPROPERTY()
     TObjectPtr<UDateTimeSystemCore> CoreObject;
 
-    UPROPERTY(EditAnywhere)
-    TSubclassOf<UDateTimeSystemCore> CoreClass;
-
     /**
-     * @brief Length of a Day in Seconds
-     * This refers to both Solar and Calendar days
-     */
-    UPROPERTY(EditAnywhere)
-    float LengthOfDay;
-
-    /**
-     * @brief Can This Tick?
-     */
-    UPROPERTY(EditAnywhere)
-    bool CanEverTick;
-
-    /**
-     * @brief Time Scale
-     */
-    UPROPERTY(EditAnywhere)
-    float TimeScale;
-
-    /**
-     * @brief Time Scale
-     */
-    UPROPERTY(EditAnywhere)
-    float TicksPerSecond;
-
-    /**
-     * @brief Number of days, including any fractional component, in a year
-     * Calendar Years are populated
-     */
-    UPROPERTY(EditAnywhere)
-    float DaysInOrbitalYear;
-
-    /**
-     * @brief Reference Latitude
-     * All Latitude calculations are based from here
-     *
-     * Useful when using climate components aren't in use
-     */
-    UPROPERTY(EditAnywhere)
-    float ReferenceLatitude;
-
-    /**
-     * @brief Reference Longitude
-     * All Longitude calculations are based from here
-     *
-     * Useful when using climate components aren't in use
-     */
-    UPROPERTY(EditAnywhere)
-    float ReferenceLongitude;
-
-    /**
-     * @brief Planet Radius in Kilometres
-     * Used for computing sun and moon location at vector positions
-     */
-    UPROPERTY(EditAnywhere)
-    float PlanetRadius;
-
-    /**
-     * @brief Number of Days in a week
-     * Used for rolling over the day-of-week field
      *
      */
-    UPROPERTY(EditAnywhere)
-    int DaysInWeek;
+    UPROPERTY()
+    float StoredDeltaTime;
 
     /**
-     * @brief Yearbook
-     * Uses the FDateTimeSystemYearbookRow row schema
-     */
-    UPROPERTY(EditAnywhere)
-    TObjectPtr<UDataTable> YearBookTable;
-
-    /**
-     * @brief Overrides
-     * Uses the FDateTimeSystemDateOverrideRow row schema
-     */
-    UPROPERTY(EditAnywhere)
-    TObjectPtr<UDataTable> DateOverridesTable;
-
-    /**
-     * @brief Whether set the overriden values when the date matches the current date
-     * or the override dayindex matches the current dayindex
+     * @brief Sets how many times per second this object should tick
+     * Only used if BeginPlay is called by the engine
      *
-     * Defaults to matching the date
+     * Set to Zero (0) to use default
      */
-    UPROPERTY(EditAnywhere)
-    bool UseDayIndexForOverride;
+    UPROPERTY()
+    int CurrentTickIndex;
 
     /**
      * @brief Length of a year in calendar days
@@ -140,85 +56,22 @@ private:
     UPROPERTY(Transient)
     int LengthOfCalendarYearInDays;
 
-    /**
-     * @brief Internal Date and Time stored in UTC
-     *
-     */
-    UPROPERTY(SaveGame, EditAnywhere)
-    FDateTimeSystemStruct InternalDate;
-
 public:
     /**
-     * @brief When an override occurs, do we want to update the date to the date in the override row?
+     * @brief Get the Hash For Date object
      *
-     * Note: This only makes sense when UseDayIndexForOverride is true,
-     * which it is not by default.
+     * @param DateStruct
+     * @return uint32
      */
-    UPROPERTY(SaveGame, EditAnywhere)
-    bool OverridedDatesSetDate;
+    uint32 GetHashForDate(FDateTimeSystemStruct *DateStruct);
 
     /**
-     * @brief Callback when the date changes
-     */
-    UPROPERTY(BlueprintAssignable)
-    FDateChangeDelegate DateChangeCallback;
-
-    /**
-     * @brief Callback when an override occurs
-     */
-    UPROPERTY(BlueprintAssignable)
-    FOverridesDelegate DateOverrideCallback;
-
-    /**
-     * @brief Callback when the time changes, which may be frequently
-     */
-    UPROPERTY(BlueprintAssignable)
-    FDateChangeDelegate TimeUpdate;
-
-    /**
-     * @brief Callback when the time changes, which may be frequently
-     */
-    UPROPERTY(BlueprintAssignable)
-    FInvalidationDelegate InvalidationCallback;
-
-    /**
-     * @brief Callback when the time changes, which may be frequently
+     * @brief Get the Hash For Date object
      *
-     * Also used by Climate Components to trigger their updates
+     * @param DateStruct
+     * @return uint32
      */
-    UPROPERTY(BlueprintAssignable)
-    FCleanDateChangeDelegate CleanTimeUpdate;
-
-private:
-    /**
-     * @brief Called by the constructors, and nothing else
-     *
-     */
-    void DateTimeSetup();
-
-    /**
-     * @brief Invalidate the caches based on the Type of Invalidation
-     *
-     * @param Type
-     */
-    void Invalidate(EDateTimeSystemInvalidationTypes Type);
-
-private:
-    ///**
-    // * @brief Get the Hash For Date object
-    // *
-    // * @param DateStruct
-    // * @return uint32
-    // */
-    // uint32 GetHashForDate(FDateTimeSystemStruct *DateStruct);
-
-    ///**
-    // * @brief Get the Hash For Date object
-    // *
-    // * @param DateStruct
-    // * @return uint32
-    // */
-    // uint32 GetHashForDate(FDateTimeSystemDateOverrideRow *DateStruct);
+    uint32 GetHashForDate(FDateTimeSystemDateOverrideRow *DateStruct);
 
     /**
      * @brief Get the Date Override object
@@ -241,7 +94,7 @@ private:
      *
      * @return int
      */
-    virtual int GetDaysInCurrentMonth() override;
+    int GetDaysInCurrentMonth();
 
     /**
      * @brief Get the number of days in the specified month by index
@@ -249,7 +102,7 @@ private:
      * @param MonthIndex
      * @return int
      */
-    virtual int GetDaysInMonth(int MonthIndex) override;
+    int GetDaysInMonth(int MonthIndex);
 
     /**
      * @brief Get the count of months In a year
@@ -257,7 +110,7 @@ private:
      * @param YearIndex
      * @return int
      */
-    virtual int GetMonthsInYear(int YearIndex) override;
+    int GetMonthsInYear(int YearIndex);
 
     /**
      * @brief Get the Length Of a Calendar Year
@@ -265,7 +118,7 @@ private:
      * @param Year
      * @return int
      */
-    virtual int GetLengthOfCalendarYear(int Year) override;
+    int GetLengthOfCalendarYear(int Year);
 
     /**
      * @brief Get the Solar Fractional Day
@@ -316,8 +169,7 @@ private:
      * @param Location
      * @return FRotator
      */
-    virtual FRotator GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent,
-                                             FVector Location) override;
+    virtual FRotator GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
 
     /**
      * @brief Get the Localised Moon Rotation
@@ -329,8 +181,7 @@ private:
      * @param Location
      * @return FRotator
      */
-    virtual FRotator GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent,
-                                              FVector Location) override;
+    virtual FRotator GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
 
     ///// ///// ////////// ///// /////
     // Rollover Handlers
@@ -389,36 +240,38 @@ private:
 
 public:
     /**
-     * @brief Construct a new UDateTimeSystemComponent object
+     * @brief Construct a new UDateTimeSystem object
      */
-    UDateTimeSystemComponent();
+    UDateTimeSystem();
 
     /**
-     * @brief Construct a new UDateTimeSystemComponent object
+     * @brief Construct a new UDateTimeSystem object
      */
-    UDateTimeSystemComponent(UDateTimeSystemComponent &Other);
+    UDateTimeSystem(UDateTimeSystem &Other);
 
     /**
-     * @brief Construct a new UDateTimeSystemComponent object
+     * @brief Construct a new UDateTimeSystem object
      */
-    UDateTimeSystemComponent(const FObjectInitializer &ObjectInitializer);
+    UDateTimeSystem(const FObjectInitializer &ObjectInitializer);
 
-    /**
-     * @brief Engine tick function. Called when this component is on a tickable actor.
-     * If it isn't, call InternalTick manually.
-     *
-     * @param DeltaTime
-     * @param TickType
-     * @param ThisTickFunction
-     */
-    virtual void TickComponent(float DeltaTime, enum ELevelTick TickType,
-                               FActorComponentTickFunction *ThisTickFunction) override;
+    ///**
+    // * @brief Engine tick function. Called when this component is on a tickable actor.
+    // * If it isn't, call InternalTick manually.
+    // *
+    // * @param DeltaTime
+    // * @param TickType
+    // * @param ThisTickFunction
+    // */
+    // virtual void TickComponent(float DeltaTime, enum ELevelTick TickType,
+    //                           FActorComponentTickFunction *ThisTickFunction) override;
 
-    /**
-     * @brief Engine Begin Function. Called by the engine on a tickable actor.
-     * If it isn't, call InternalBegin manually.
-     */
-    virtual void BeginPlay() override;
+    ///**
+    // * @brief Engine Begin Function. Called by the engine on a tickable actor.
+    // * If it isn't, call InternalBegin manually.
+    // */
+    // virtual void BeginPlay();
+
+    virtual UDateTimeSystemCore *GetCore() override;
 
     virtual bool IsReady() override;
 
@@ -593,6 +446,9 @@ public:
      * @param From
      * @param To
      * @param OUT: Return the delta struct
+     *     1. DeltaYears
+     *     2. DeltaMonths
+     *     3. DeltaDays
      * @return TTuple<float, float, float>
      */
     virtual TTuple<float, float, float> ComputeDeltaBetweenDatesInternal(UPARAM(ref) FDateTimeSystemStruct &Date1,
@@ -660,7 +516,7 @@ public:
      * @return float
      */
     UFUNCTION(BlueprintCallable)
-    virtual float GetFractionalDay(UPARAM(ref) FDateTimeSystemStruct &DateStruct) override;
+    float GetFractionalDay(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
      * @brief Get the Fractional Month in DateStruct
@@ -669,7 +525,7 @@ public:
      * @return float
      */
     UFUNCTION(BlueprintCallable)
-    virtual float GetFractionalMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct) override;
+    float GetFractionalMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
      * @brief Get the Fractional Orbital Year in DateStruct
@@ -678,7 +534,7 @@ public:
      * @return float
      */
     UFUNCTION(BlueprintCallable)
-    virtual float GetFractionalOrbitalYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct) override;
+    float GetFractionalOrbitalYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
      * @brief Get the Fractional Calendar Days in DateStruct
@@ -687,22 +543,7 @@ public:
      * @return float
      */
     UFUNCTION(BlueprintCallable)
-    virtual float GetFractionalCalendarYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct) override;
-
-    /**
-     * @brief This function is used if the component cannot tick itself.
-     * Such as, for example, when placed on a GameInstance.
-     */
-    UFUNCTION(BlueprintCallable)
-    virtual void InternalTick(float DeltaTime, bool NonContiguous = false) override;
-
-    /**
-     * @brief Called by BeginPlay
-     * Can be called if the component isn't receiving a BeginPlay
-     * Such as when on a GameInstance
-     */
-    UFUNCTION(BlueprintCallable)
-    void InternalBegin();
+    float GetFractionalCalendarYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
      * @brief Align the World Position to Date System Coordinate
@@ -714,7 +555,7 @@ public:
      * @return FVector
      */
     UFUNCTION(BlueprintCallable)
-    virtual FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection) override;
+    FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection);
 
     /**
      * @brief Return the FName of the month
@@ -723,7 +564,7 @@ public:
      * Using the FName directly in the UI is not advised
      */
     UFUNCTION(BlueprintCallable)
-    virtual FText GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct) override;
+    FText GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
      * @brief Get the Time Scale
@@ -736,13 +577,23 @@ public:
     UFUNCTION(BlueprintCallable)
     virtual float GetLengthOfDay() override;
 
-    /**
-     * @brief Set the Time Scale
-     */
     UFUNCTION(BlueprintCallable)
-    void SetTimeScale(float NewScale);
-
-    virtual UDateTimeSystemCore *GetCore() override;
+    virtual void InternalTick(float DeltaTime, bool NonContiguous = false) override;
 
     friend class UClimateComponent;
+
+public:
+    //~USubsystem interface
+    virtual void Initialize(FSubsystemCollectionBase &Collection) override;
+    virtual void Deinitialize() override;
+    virtual bool ShouldCreateSubsystem(UObject *Outer) const override;
+    //~End of USubsystem interface
+
+    //~FTickableObjectBase interface
+    virtual void Tick(float DeltaTime) override;
+    virtual ETickableTickType GetTickableTickType() const override;
+    virtual bool IsTickable() const override;
+    virtual TStatId GetStatId() const override;
+    virtual UWorld *GetTickableGameObjectWorld() const override;
+    //~End of FTickableObjectBase interface
 };

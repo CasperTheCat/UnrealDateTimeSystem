@@ -1,6 +1,7 @@
 // [TEMPLATE_COPYRIGHT]
 
 #include "ClimateComponent.h"
+#include "DateTimeSubsystem.h"
 #include "GameFramework/GameState.h"
 #include "Interfaces.h"
 
@@ -80,7 +81,7 @@ void UClimateComponent::UpdateLocalTimePassthrough()
     FDateTimeSystemStruct Local{};
 
     // Check again, for consistency
-    if (IsValid(DateTimeSystem))
+    if (DateTimeSystem)
     {
         // Update Local Time. We need it for a few things
         DateTimeSystem->GetTodaysDateTZ(Local, TimezoneInfo);
@@ -105,10 +106,10 @@ FDateTimeSystemStruct UClimateComponent::GetLocalTime()
 
 void UClimateComponent::BindToDateTimeSystem()
 {
-    if (IsValid(DateTimeSystem) && (UpdateLocalTime.IsBound() || LocalTimeUpdateSignal.IsBound()))
+    if (DateTimeSystem && DateTimeSystem->GetCore() && (UpdateLocalTime.IsBound() || LocalTimeUpdateSignal.IsBound()))
     {
         // If someone is listening to the update, we pass it through
-        DateTimeSystem->CleanTimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
+        DateTimeSystem->GetCore()->CleanTimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
     }
 }
 
@@ -148,7 +149,7 @@ float UClimateComponent::ModulateTemperature_Implementation(float Temperature, f
                                                             float LowTemperature, float HighTemperature)
 {
     // Get the sun vector. We want to suppress the temperature when it's below the horizon
-    if (IsValid(DateTimeSystem))
+    if (DateTimeSystem)
     {
 
         auto SunVector = DateTimeSystem->GetSunVector(RadLatitude, RadLongitude);
@@ -209,11 +210,11 @@ float UClimateComponent::GetRainLevel_Implementation()
     DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetRainLevel"), STAT_ACICSGetRainLevel, STATGROUP_ACIClimateSys);
 
     // We might want to cache?
-    if (IsValid(DateTimeSystem) && NumberOfRainSlotsPerDay > 0)
+    if (DateTimeSystem && NumberOfRainSlotsPerDay > 0)
     {
         // For Blending, are we blending forward, or backward?
-        auto FracBin = LocalTime.GetFractionalBin(DateTimeSystem->LengthOfDay, NumberOfRainSlotsPerDay);
-        auto Offset = DateTimeSystem->LengthOfDay / NumberOfRainSlotsPerDay;
+        auto FracBin = LocalTime.GetFractionalBin(DateTimeSystem->GetLengthOfDay(), NumberOfRainSlotsPerDay);
+        auto Offset = DateTimeSystem->GetLengthOfDay() / NumberOfRainSlotsPerDay;
 
         if (FracBin < 0.5)
         {
@@ -226,10 +227,10 @@ float UClimateComponent::GetRainLevel_Implementation()
         DateTimeSystem->SanitiseDateTime(OffsetTime);
 
         // Get Hash of the hour
-        double BinHash = LocalTime.GetBinHash(DateTimeSystem->LengthOfDay, NumberOfRainSlotsPerDay);
+        double BinHash = LocalTime.GetBinHash(DateTimeSystem->GetLengthOfDay(), NumberOfRainSlotsPerDay);
         float Probability = BinHash / UINT32_MAX;
 
-        double OffsetHash = OffsetTime.GetBinHash(DateTimeSystem->LengthOfDay, NumberOfRainSlotsPerDay);
+        double OffsetHash = OffsetTime.GetBinHash(DateTimeSystem->GetLengthOfDay(), NumberOfRainSlotsPerDay);
         float OffsetProb = OffsetHash / UINT32_MAX;
 
         Probability = FMath::Lerp(Probability, OffsetProb, FMath::Abs(FracBin - 0.5));
@@ -280,7 +281,7 @@ void UClimateComponent::UpdateCurrentTemperature(float DeltaTime, bool NonContig
                                 STATGROUP_ACIClimateSys);
 
     // Which low are we using? The first or last?
-    if (IsValid(DateTimeSystem))
+    if (DateTimeSystem)
     {
         auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
 
@@ -302,21 +303,21 @@ void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguou
                                 STATGROUP_ACIClimateSys);
 
     // Which low are we using? The first or last?
-    if (IsValid(DateTimeSystem))
+    if (DateTimeSystem)
     {
         auto TargetRainfall = GetRainLevel();
 
         if (NonContiguous)
         {
-            auto FracBin = LocalTime.GetFractionalBin(DateTimeSystem->LengthOfDay, NumberOfRainSlotsPerDay);
-            auto Offset = DateTimeSystem->LengthOfDay / NumberOfRainSlotsPerDay;
+            auto FracBin = LocalTime.GetFractionalBin(DateTimeSystem->GetLengthOfDay(), NumberOfRainSlotsPerDay);
+            auto Offset = DateTimeSystem->GetLengthOfDay() / NumberOfRainSlotsPerDay;
 
             // If the last bin was rain, we need to care about this!
             FDateTimeSystemStruct PastTime = LocalTime;
             PastTime.Seconds += Offset;
             DateTimeSystem->SanitiseDateTime(PastTime);
 
-            double PastHash = PastTime.GetBinHash(DateTimeSystem->LengthOfDay, NumberOfRainSlotsPerDay);
+            double PastHash = PastTime.GetBinHash(DateTimeSystem->GetLengthOfDay(), NumberOfRainSlotsPerDay);
             float PastProb = PastHash / UINT32_MAX;
 
             auto DidRainLastBin = PastProb < GetPrecipitationThreshold(PastTime);
@@ -426,7 +427,7 @@ void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguou
 void UClimateComponent::UpdateCurrentClimate(float DeltaTime, bool NonContiguous)
 {
     DECLARE_SCOPE_CYCLE_COUNTER(TEXT("UpdateCurrentClimate"), STAT_ACICSUpdateCurrentClimate, STATGROUP_ACIClimateSys);
-    if (IsValid(DateTimeSystem))
+    if (DateTimeSystem)
     {
         // Rel. Humidity
         auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
@@ -497,29 +498,11 @@ void UClimateComponent::InternalDateChanged(FDateTimeSystemStruct DateStruct)
     DateChanged(DateStruct);
 }
 
-TObjectPtr<UDateTimeSystemComponent> UClimateComponent::FindComponent()
+TScriptInterface<IDateTimeSystemCommon> UClimateComponent::FindComponent()
 {
     auto World = GetWorld();
     if (World)
     {
-        auto GameInst = World->GetGameInstance();
-        if (GameInst)
-        {
-            // BP Casting Method
-            if (GameInst->GetClass()->ImplementsInterface(UDateTimeSystemInterface::StaticClass()))
-            {
-                return IDateTimeSystemInterface::Execute_GetDateTimeSystem(GameInst);
-            }
-
-            // Try to get from here
-            auto AsType = Cast<IDateTimeSystemInterface>(GameInst);
-            if (AsType)
-            {
-                //
-                return IDateTimeSystemInterface::Execute_GetDateTimeSystem(GameInst);
-            }
-        }
-
         // If we're here, Instance failed to get the time system.
         auto GameState = World->GetGameState();
         if (GameState)
@@ -527,14 +510,33 @@ TObjectPtr<UDateTimeSystemComponent> UClimateComponent::FindComponent()
             // BP Casting Method
             if (GameState->GetClass()->ImplementsInterface(UDateTimeSystemInterface::StaticClass()))
             {
-                return IDateTimeSystemInterface::Execute_GetDateTimeSystem(GameState);
-            }
+                auto Temp = IDateTimeSystemInterface::Execute_GetDateTimeSystem(GameState);
 
-            auto AsType = Cast<IDateTimeSystemInterface>(GameState);
-            if (AsType)
+                if (IsValid(Temp) && Temp->GetClass()->ImplementsInterface(UDateTimeSystemCommon::StaticClass()))
+                {
+                    return Temp;
+                }
+            }
+        }
+
+        auto GameInst = World->GetGameInstance();
+        if (GameInst)
+        {
+            // BP Casting Method
+            if (GameInst->GetClass()->ImplementsInterface(UDateTimeSystemInterface::StaticClass()))
             {
-                return IDateTimeSystemInterface::Execute_GetDateTimeSystem(GameState);
-                // return AsType->GetDateTimeSystem();
+                auto Temp = IDateTimeSystemInterface::Execute_GetDateTimeSystem(GameInst);
+
+                if (IsValid(Temp) && Temp->GetClass()->ImplementsInterface(UDateTimeSystemCommon::StaticClass()))
+                {
+                    return Temp;
+                }
+            }
+            else
+            {
+                // Use Global
+                auto GlobalInstance = GameInst->GetSubsystem<UDateTimeSystem>();
+                return GlobalInstance;
             }
         }
     }
@@ -544,7 +546,7 @@ TObjectPtr<UDateTimeSystemComponent> UClimateComponent::FindComponent()
 
 FORCEINLINE FVector UClimateComponent::GetLocationAdjustedForNorthing(FVector Location)
 {
-    if (IsValid(DateTimeSystem))
+    if (DateTimeSystem)
     {
         return DateTimeSystem->AlignWorldLocationInternalCoordinates(Location, NorthingDirection);
     }
@@ -741,7 +743,7 @@ void UClimateComponent::InternalTick(float DeltaTime)
 
     Invalidate(EDateTimeSystemInvalidationTypes::Frame);
 
-    if (IsValid(DateTimeSystem))
+    if (DateTimeSystem && DateTimeSystem->IsReady())
     {
         // Update Local Time. We need it for a few things
         PriorLocalTime = LocalTime;
@@ -847,11 +849,11 @@ void UClimateComponent::InternalBegin()
     // Try to Find DateTime
     DateTimeSystem = FindComponent();
 
-    if (IsValid(DateTimeSystem))
+    if (DateTimeSystem && DateTimeSystem->IsReady())
     {
-        if (!HasBoundToDate)
+        if (!HasBoundToDate && DateTimeSystem->GetCore())
         {
-            DateTimeSystem->DateChangeCallback.AddDynamic(this, &UClimateComponent::InternalDateChanged);
+            DateTimeSystem->GetCore()->DateChangeCallback.AddDynamic(this, &UClimateComponent::InternalDateChanged);
             HasBoundToDate = true;
         }
 
@@ -867,12 +869,13 @@ void UClimateComponent::InternalBegin()
         CachedPriorDewPoint.Value = GetDailyDewPoint(Yesterday);
         CachedPriorDewPoint.Valid = true;
 
-        DTSTimeScale = DateTimeSystem->TimeScale;
+        DTSTimeScale = DateTimeSystem->GetTimeScale();
 
-        if (IsValid(DateTimeSystem) && (UpdateLocalTime.IsBound() || LocalTimeUpdateSignal.IsBound()))
+        if (DateTimeSystem && DateTimeSystem->GetCore() &&
+            (UpdateLocalTime.IsBound() || LocalTimeUpdateSignal.IsBound()))
         {
             // If someone is listening to the update, we pass it through
-            DateTimeSystem->CleanTimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
+            DateTimeSystem->GetCore()->CleanTimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
         }
     }
 }
@@ -888,7 +891,7 @@ void UClimateComponent::SetClimateUpdateFrequency(float Frequency)
 
 FRotator UClimateComponent::GetLocalSunRotation(FVector Location)
 {
-    if (IsValid(DateTimeSystem))
+    if (DateTimeSystem)
     {
         auto AdjustedLocation = GetLocationAdjustedForNorthing(Location);
         return DateTimeSystem->GetLocalisedSunRotation(PercentileLatitude, PercentileLongitude, AdjustedLocation);
@@ -899,7 +902,7 @@ FRotator UClimateComponent::GetLocalSunRotation(FVector Location)
 
 FRotator UClimateComponent::GetLocalMoonRotation(FVector Location)
 {
-    if (IsValid(DateTimeSystem))
+    if (DateTimeSystem)
     {
         auto AdjustedLocation = GetLocationAdjustedForNorthing(Location);
         return DateTimeSystem->GetLocalisedMoonRotation(PercentileLatitude, PercentileLongitude, AdjustedLocation);
@@ -925,7 +928,7 @@ float UClimateComponent::GetAnalyticalHighForDate(FDateTimeSystemStruct &DateStr
     else
     {
         // We need
-        if (DateStruct.Month < ClimateBook.Num() && IsValid(DateTimeSystem))
+        if (DateStruct.Month < ClimateBook.Num() && DateTimeSystem)
         {
             // Which do we need. We need the fractional month value
             auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
@@ -971,7 +974,7 @@ float UClimateComponent::GetAnalyticalLowForDate(FDateTimeSystemStruct &DateStru
     else
     {
         // We need
-        if (DateStruct.Month < ClimateBook.Num() && IsValid(DateTimeSystem))
+        if (DateStruct.Month < ClimateBook.Num() && DateTimeSystem)
         {
             // Which do we need. We need the fractional month value
             auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
@@ -1015,7 +1018,7 @@ float UClimateComponent::GetAnalyticalDewPointForDate(FDateTimeSystemStruct &Dat
     }
     else
     {
-        if (DateStruct.Month < ClimateBook.Num() && IsValid(DateTimeSystem))
+        if (DateStruct.Month < ClimateBook.Num() && DateTimeSystem)
         {
             // Which do we need. We need the fractional month value
             auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
@@ -1163,7 +1166,7 @@ float UClimateComponent::GetAnalyticalPrecipitationThresholdDate(FDateTimeSystem
     }
     else
     {
-        if (DateStruct.Month < ClimateBook.Num() && IsValid(DateTimeSystem))
+        if (DateStruct.Month < ClimateBook.Num() && DateTimeSystem)
         {
             // Which do we need. We need the fractional month value
             auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
@@ -1241,7 +1244,7 @@ float UClimateComponent::GetAnalyticalPrecipitationAmountDate(FDateTimeSystemStr
     }
     else
     {
-        if (DateStruct.Month < ClimateBook.Num() && IsValid(DateTimeSystem))
+        if (DateStruct.Month < ClimateBook.Num() && DateTimeSystem)
         {
             // Which do we need. We need the fractional month value
             auto MonthFrac = DateTimeSystem->GetFractionalMonth(DateStruct);
