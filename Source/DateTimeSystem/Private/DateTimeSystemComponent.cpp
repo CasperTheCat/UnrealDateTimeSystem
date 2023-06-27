@@ -324,6 +324,68 @@ FVector UDateTimeSystemComponent::GetMoonVector(float Latitude, float Longitude)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
+FRotator UDateTimeSystemComponent::GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent,
+                                                  FVector Location)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->GetLocalisedSunRotation(BaseLatitudePercent, BaseLongitudePercent, Location);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FRotator();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FRotator UDateTimeSystemComponent::GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent,
+                                                   FVector Location)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->GetLocalisedMoonRotation(BaseLatitudePercent, BaseLongitudePercent, Location);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FRotator();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+bool UDateTimeSystemComponent::DoesYearLeap(int Year)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->DoesYearLeap(Year);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return false;
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
 FText UDateTimeSystemComponent::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
@@ -699,86 +761,6 @@ int UDateTimeSystemComponent::GetLengthOfCalendarYear(int Year)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-double UDateTimeSystemComponent::GetJulianDay(FDateTimeSystemStruct &DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->GetJulianDay(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return 0.f;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-bool UDateTimeSystemComponent::HandleDayRollover(FDateTimeSystemStruct &DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->HandleDayRollover(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return false;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-bool UDateTimeSystemComponent::HandleMonthRollover(FDateTimeSystemStruct &DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->HandleMonthRollover(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return false;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-bool UDateTimeSystemComponent::HandleYearRollover(FDateTimeSystemStruct &DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->HandleYearRollover(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return false;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
 int UDateTimeSystemComponent::GetDaysInCurrentMonth()
 {
 #if DATETIMESYSTEM_POINTERCHECK
@@ -859,128 +841,6 @@ bool UDateTimeSystemComponent::SanitiseDateTime(FDateTimeSystemStruct &DateStruc
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-bool UDateTimeSystemComponent::SanitiseSolarDateTime(FDateTimeSystemStruct &DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->SanitiseSolarDateTime(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return false;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-float UDateTimeSystemComponent::GetSolarFractionalDay()
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->GetSolarFractionalDay();
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return 0.f;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-float UDateTimeSystemComponent::GetSolarFractionalYear()
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->GetSolarFractionalYear();
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return 0.f;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-float UDateTimeSystemComponent::SolarDeclinationAngle(float YearInRadians)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->SolarDeclinationAngle(YearInRadians);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return 0.f;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-FRotator UDateTimeSystemComponent::GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent,
-                                                           FVector Location)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->GetLocalisedSunRotation(BaseLatitudePercent, BaseLongitudePercent, Location);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return FRotator();
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-FRotator UDateTimeSystemComponent::GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent,
-                                                            FVector Location)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->GetLocalisedMoonRotation(BaseLatitudePercent, BaseLongitudePercent, Location);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return FRotator();
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
 FVector UDateTimeSystemComponent::AlignWorldLocationInternalCoordinates(FVector WorldLocation,
                                                                         FVector NorthingDirection)
 {
@@ -1002,26 +862,6 @@ FVector UDateTimeSystemComponent::AlignWorldLocationInternalCoordinates(FVector 
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-float UDateTimeSystemComponent::SolarTimeCorrection(float YearInRadians)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->SolarTimeCorrection(YearInRadians);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return 0.f;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
 void UDateTimeSystemComponent::DateTimeSetup()
 {
     PrimaryComponentTick.bCanEverTick = true;
@@ -1035,24 +875,4 @@ void UDateTimeSystemComponent::DateTimeSetup()
     CoreClass = UDateTimeSystemCore::StaticClass();
     TicksPerSecond = 10.f;
     TimeScale = 1.f;
-}
-
-FDateTimeSystemDateOverrideRow **UDateTimeSystemComponent::GetDateOverride(FDateTimeSystemStruct *DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->GetDateOverride(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return nullptr;
-#endif // DATETIMESYSTEM_POINTERCHECK
 }

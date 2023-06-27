@@ -40,13 +40,18 @@ class DATETIMESYSTEM_API IDateTimeSystemCommon
 
 public:
     ///// ///// ////////// ///// /////
-    // Date Functions
+    // Core Functions
     //
+
     UFUNCTION(BlueprintCallable)
     virtual UDateTimeSystemCore *GetCore();
 
     UFUNCTION(BlueprintCallable)
     virtual bool IsReady();
+
+    ///// ///// ////////// ///// /////
+    // Date Functions
+    //
 
     /**
      * @brief Populate DateStruct with today's date
@@ -224,36 +229,22 @@ public:
                                                                          UPARAM(ref) FDateTimeSystemStruct &Date2,
                                                                          FDateTimeSystemStruct &Result);
 
-    /**
-     * @brief Get the Latitude From Location
-     *
-     * @param BaseLatitudePercent
-     * @param Location
-     * @return float
-     */
-    UFUNCTION(BlueprintCallable)
-    virtual float GetLatitudeFromLocation(float BaseLatitudePercent, FVector Location);
+
+
+
+
+
+    ///// ///// ////////// ///// /////
+    // Sun and Moon
+    //
 
     /**
-     * @brief Get the Longitude From Location
+     * @brief Get the Sun Rotation
      *
-     * @param BaseLatitudePercent
-     * @param BaseLongitudePercent
-     * @param Location
-     * @return float
+     * @return FRotator
      */
     UFUNCTION(BlueprintCallable)
-    virtual float GetLongitudeFromLocation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
-
-    /**
-     * @brief Does the Given Year Leap?
-     *
-     * @param Year
-     * @return true
-     * @return false
-     */
-    UFUNCTION(BlueprintCallable)
-    virtual bool DoesYearLeap(int Year);
+    virtual FRotator GetSunRotation();
 
     /**
      * @brief Get the Sun Rotation For WorldLocation
@@ -265,20 +256,20 @@ public:
     virtual FRotator GetSunRotationForLocation(FVector Location);
 
     /**
-     * @brief Get the Sun Rotation
-     *
-     * @return FRotator
-     */
-    UFUNCTION(BlueprintCallable)
-    virtual FRotator GetSunRotation();
-
-    /**
      * @brief Get the Sun Vector
      *
      * @return FVector
      */
     UFUNCTION(BlueprintCallable)
     virtual FVector GetSunVector(float Latitude, float Longitude);
+
+    /**
+     * @brief Get the Moon Rotation
+     *
+     * @return FRotator
+     */
+    UFUNCTION(BlueprintCallable)
+    virtual FRotator GetMoonRotation();
 
     /**
      * @brief Get the Moon Rotation For WorldLocation
@@ -290,14 +281,6 @@ public:
     virtual FRotator GetMoonRotationForLocation(FVector Location);
 
     /**
-     * @brief Get the Moon Rotation
-     *
-     * @return FRotator
-     */
-    UFUNCTION(BlueprintCallable)
-    virtual FRotator GetMoonRotation();
-
-    /**
      * @brief Get the Moon Vector
      *
      * @return FVector
@@ -305,9 +288,50 @@ public:
     UFUNCTION(BlueprintCallable)
     virtual FVector GetMoonVector(float Latitude, float Longitude);
 
+    /**
+     * @brief Get the Localised Sun Rotation
+     * Base Percents are the percent of a rotation around the globe
+     * Location is player location from the base. This requires globe radius
+     *
+     * @param BaseLatitudePercent
+     * @param BaseLongitudePercent
+     * @param Location
+     * @return FRotator
+     */
+    UFUNCTION(BlueprintCallable)
+    virtual FRotator GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
+
+    /**
+     * @brief Get the Localised Moon Rotation
+     * Base Percents are the percent of a rotation around the globe
+     * Location is player location from the base. This requires globe radius
+     *
+     * @param BaseLatitudePercent
+     * @param BaseLongitudePercent
+     * @param Location
+     * @return FRotator
+     */
+    UFUNCTION(BlueprintCallable)
+    virtual FRotator GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
+
+
+
+
+
+
     ///// ///// ////////// ///// /////
-    // Getters
+    // Misc Getters
     //
+
+    /**
+     * @brief Does the Given Year Leap?
+     *
+     * @param Year
+     * @return true
+     * @return false
+     */
+    UFUNCTION(BlueprintCallable)
+    virtual bool DoesYearLeap(int Year);
 
     /**
      * @brief Get the Fractional Days in DateStruct
@@ -346,74 +370,6 @@ public:
     virtual float GetFractionalCalendarYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
-     * @brief This function is used if the component cannot tick itself.
-     * Such as, for example, when placed on a GameInstance.
-     */
-    UFUNCTION(BlueprintCallable)
-    virtual void InternalTick(float DeltaTime, bool NonContiguous = false);
-
-    /**
-     * @brief Align the World Position to Date System Coordinate
-     * By default, X is North.
-     * If you wish to rotate this, pass the new north as a normalised vector
-     *
-     * @param WorldLocation
-     * @param NorthingDirection
-     * @return FVector
-     */
-    UFUNCTION(BlueprintCallable)
-    virtual FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection);
-
-    /**
-     * @brief Return the FName of the month
-     *
-     * Remember, FName's are not localised, and this isn't using FText, which is
-     * Using the FName directly in the UI is not advised
-     */
-    UFUNCTION(BlueprintCallable)
-    virtual FText GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
-
-    /**
-     * @brief Get the Time Scale
-     *
-     * @return float
-     */
-    UFUNCTION(BlueprintCallable)
-    virtual float GetTimeScale();
-
-    UFUNCTION(BlueprintCallable)
-    virtual float GetLengthOfDay();
-
-    UFUNCTION(BlueprintCallable)
-    virtual bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct);
-
-    /**
-     * @brief Get the Localised Sun Rotation
-     * Base Percents are the percent of a rotation around the globe
-     * Location is player location from the base. This requires globe radius
-     *
-     * @param BaseLatitudePercent
-     * @param BaseLongitudePercent
-     * @param Location
-     * @return FRotator
-     */
-    UFUNCTION(BlueprintCallable)
-    virtual FRotator GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
-
-    /**
-     * @brief Get the Localised Moon Rotation
-     * Base Percents are the percent of a rotation around the globe
-     * Location is player location from the base. This requires globe radius
-     *
-     * @param BaseLatitudePercent
-     * @param BaseLongitudePercent
-     * @param Location
-     * @return FRotator
-     */
-    UFUNCTION(BlueprintCallable)
-    virtual FRotator GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
-
-    /**
      * @brief Get the Length Of a Calendar Year
      *
      * @param Year
@@ -447,6 +403,65 @@ public:
      */
     UFUNCTION(BlueprintCallable)
     virtual int GetMonthsInYear(int YearIndex);
+
+    /**
+     * @brief Return the FName of the month
+     *
+     * Remember, FName's are not localised, and this isn't using FText, which is
+     * Using the FName directly in the UI is not advised
+     */
+    UFUNCTION(BlueprintCallable)
+    virtual FText GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+
+    /**
+     * @brief Get the Time Scale
+     *
+     * @return float
+     */
+    UFUNCTION(BlueprintCallable)
+    virtual float GetTimeScale();
+
+    /**
+     * @brief Get Length of Day
+     *
+     * @return float
+     */
+    UFUNCTION(BlueprintCallable)
+    virtual float GetLengthOfDay();
+
+
+    ///// ///// ////////// ///// /////
+    // Misc Helper Functions
+    //
+
+    /**
+     * @brief This function is used if the component cannot tick itself.
+     * Such as, for example, when placed on a GameInstance.
+     */
+    UFUNCTION(BlueprintCallable)
+    virtual void InternalTick(float DeltaTime, bool NonContiguous = false);
+
+    /**
+     * @brief Align the World Position to Date System Coordinate
+     * By default, X is North.
+     * If you wish to rotate this, pass the new north as a normalised vector
+     *
+     * @param WorldLocation
+     * @param NorthingDirection
+     * @return FVector
+     */
+    UFUNCTION(BlueprintCallable)
+    virtual FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection);
+    
+    /**
+     * @brief Sanitise Date Time
+     *
+     * @param FDateTimeSystemStruct
+     * @return bool
+     */
+    UFUNCTION(BlueprintCallable)
+    virtual bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct);
+
 };
 
 // Interface

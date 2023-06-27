@@ -661,86 +661,6 @@ int UDateTimeSystem::GetLengthOfCalendarYear(int Year)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-double UDateTimeSystem::GetJulianDay(FDateTimeSystemStruct &DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->GetJulianDay(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return 0.f;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-bool UDateTimeSystem::HandleDayRollover(FDateTimeSystemStruct &DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->HandleDayRollover(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return false;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-bool UDateTimeSystem::HandleMonthRollover(FDateTimeSystemStruct &DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->HandleMonthRollover(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return false;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-bool UDateTimeSystem::HandleYearRollover(FDateTimeSystemStruct &DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->HandleYearRollover(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return false;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
 int UDateTimeSystem::GetDaysInCurrentMonth()
 {
 #if DATETIMESYSTEM_POINTERCHECK
@@ -821,86 +741,6 @@ bool UDateTimeSystem::SanitiseDateTime(FDateTimeSystemStruct &DateStruct)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-bool UDateTimeSystem::SanitiseSolarDateTime(FDateTimeSystemStruct &DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->SanitiseSolarDateTime(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return false;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-float UDateTimeSystem::GetSolarFractionalDay()
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->GetSolarFractionalDay();
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return 0.f;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-float UDateTimeSystem::GetSolarFractionalYear()
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->GetSolarFractionalYear();
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return 0.f;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-float UDateTimeSystem::SolarDeclinationAngle(float YearInRadians)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->SolarDeclinationAngle(YearInRadians);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return 0.f;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
 FRotator UDateTimeSystem::GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent,
                                                   FVector Location)
 {
@@ -943,6 +783,26 @@ FRotator UDateTimeSystem::GetLocalisedMoonRotation(float BaseLatitudePercent, fl
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
+bool UDateTimeSystem::DoesYearLeap(int Year)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->DoesYearLeap(Year);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return false;
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
 FVector UDateTimeSystem::AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection)
 {
 #if DATETIMESYSTEM_POINTERCHECK
@@ -960,86 +820,6 @@ FVector UDateTimeSystem::AlignWorldLocationInternalCoordinates(FVector WorldLoca
     }
 
     return FVector();
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-float UDateTimeSystem::SolarTimeCorrection(float YearInRadians)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->SolarTimeCorrection(YearInRadians);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return 0.f;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-uint32 UDateTimeSystem::GetHashForDate(FDateTimeSystemStruct *DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->GetHashForDate(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return 0;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-uint32 UDateTimeSystem::GetHashForDate(FDateTimeSystemDateOverrideRow *DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->GetHashForDate(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return 0;
-#endif // DATETIMESYSTEM_POINTERCHECK
-}
-
-FDateTimeSystemDateOverrideRow **UDateTimeSystem::GetDateOverride(FDateTimeSystemStruct *DateStruct)
-{
-#if DATETIMESYSTEM_POINTERCHECK
-    if (IsValid(CoreObject))
-    {
-#endif // DATETIMESYSTEM_POINTERCHECK
-
-        return CoreObject->GetDateOverride(DateStruct);
-
-#if DATETIMESYSTEM_POINTERCHECK
-    }
-    else
-    {
-        checkNoEntry();
-    }
-
-    return nullptr;
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 

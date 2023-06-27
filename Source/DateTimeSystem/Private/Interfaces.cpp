@@ -54,19 +54,6 @@ TTuple<float, float, float> IDateTimeSystemCommon::ComputeDeltaBetweenDatesInter
     return TTuple<float, float, float>();
 }
 
-float IDateTimeSystemCommon::GetLatitudeFromLocation(float BaseLatitudePercent, FVector Location)
-{
-    checkNoEntry();
-    return 0;
-}
-
-float IDateTimeSystemCommon::GetLongitudeFromLocation(float BaseLatitudePercent, float BaseLongitudePercent,
-                                                      FVector Location)
-{
-    checkNoEntry();
-    return 0;
-}
-
 bool IDateTimeSystemCommon::DoesYearLeap(int Year)
 {
     checkNoEntry();
