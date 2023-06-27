@@ -276,6 +276,14 @@ public:
     double GetJulianDay(FDateTimeSystemStruct &DateStruct);
 
     /**
+     * @brief Get the Julian Day
+     *
+     * @param DateStruct
+     * @return double
+     */
+    double GetSolarYears(FDateTimeSystemStruct &DateStruct);
+
+    /**
      * @brief Get the number of days In current month
      *
      * @return int

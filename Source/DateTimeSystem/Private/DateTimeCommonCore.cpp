@@ -223,14 +223,27 @@ FVector UDateTimeSystemCore::GetMoonVector_Implementation(float Latitude, float 
     DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetMoonVector_Implementation"), STAT_ACIGetMoonVector,
                                 STATGROUP_ACIDateTimeCommon);
 
-    double Day = GetJulianDay(InternalDate);
-    double T = Day * 0.00273785078713210130047912388775;
+    // Shortcut this
+    // The US Govt. paper shows 0.00273... which is 1/365.25
+    auto T = GetSolarYears(InternalDate) * 0.01;
 
-    auto H = InternalDate.StoredSolarSeconds * InvLengthOfDay;
-    auto SiderealTimeRads = 100.4606184 + 0.9856473662862 * Day + 15 * H + T * T;
+    //double Day = GetJulianDay(InternalDate);
+    //auto T = (Day - 2451545) / 36525;
+    //double T = Day * 0.00273785078713210130047912388775;
+    //auto H = InternalDate.StoredSolarSeconds * InvLengthOfDay;
+    //auto SiderealTimeRads = 100.4606184 + 0.9856473662862 * Day + 15 * H + T * T;
 
-    double GLong = 218.3164477 + 4812.6788123421 * T - 0.00000015786 * T * T;
-    double GLat = 93.2720950 + 4832.020175233 * T - 0.00000036539 * T * T;
+    double GLong = 218.3164477
+        + 481'267.88123421 * T
+        - 0.0015786 * T * T
+        + 1.855835023689734077399455498004e-6 * T * T * T
+        - 1.5338834862103874589686167438721e-8 * T * T * T * T;
+
+    double GLat = 93.2720950
+        + 483202.0175233 * T
+        - 0.0036539 * T * T
+        + 2.8360748723766307430516165626773e-7 * T * T * T
+        - 1.158332464583984895344661824837e-9* T * T * T * T;
 
     GLong = DateTimeHelpers::HelperMod(GLong, 360.f);
     GLat = DateTimeHelpers::HelperMod(GLat, 360.f);
@@ -566,6 +579,14 @@ double UDateTimeSystemCore::GetJulianDay(FDateTimeSystemStruct &DateStruct)
     auto JulianPartialDays = (InternalDate.StoredSolarSeconds - LengthOfDay) * InvLengthOfDay;
 
     return JulianSolarDays + JulianPartialDays;
+}
+
+double UDateTimeSystemCore::GetSolarYears(FDateTimeSystemStruct &DateStruct)
+{
+    auto SolarDays = DateStruct.SolarDays + InternalDate.StoredSolarSeconds * InvLengthOfDay;
+    auto SolarYears = SolarDays / DaysInOrbitalYear;
+
+    return SolarYears;
 }
 
 void UDateTimeSystemCore::DateTimeSetup()
