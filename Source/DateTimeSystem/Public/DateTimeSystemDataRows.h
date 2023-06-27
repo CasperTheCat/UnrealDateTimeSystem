@@ -38,7 +38,10 @@ public:
     float DewPoint;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    float DailyRainfall;
+    float RainfallProbability;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    float HourlyRainfall;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     FGameplayTagContainer MiscData;
@@ -74,7 +77,10 @@ public:
     float DewPoint;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    float Rainfall;
+    float RainfallProbability;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    float HourlyAverageRainfall;
 };
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemClimateMonthlyRow &Row)
@@ -111,12 +117,6 @@ public:
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     int Year;
 
-    // UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    // float HighTemp;
-
-    // UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    // float LowTemp;
-
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     FGameplayTagContainer CallbackAttributes;
 };
@@ -129,21 +129,6 @@ FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemDateOverrideRow &Row)
 
     auto Hash = HashCombine(YHash, MHash);
     return HashCombine(Hash, DHash);
-
-    return Row.DayIndex;
-
-    auto DIHash = GetTypeHash(Row.DayIndex);
-
-    auto DateHash = HashCombine(HashCombine(DIHash, DHash), HashCombine(MHash, YHash));
-
-    // auto HHash = GetTypeHash(Row.HighTemp);
-    // auto LHash = GetTypeHash(Row.LowTemp);
-
-    // auto TempHash = HashCombine(HHash, LHash);
-
-    // auto CAHash = GetTypeHash(Row.CallbackAttributes);
-
-    return DateHash; // HashCombine(DateHash, TempHash);
 }
 
 USTRUCT(BlueprintType)
@@ -158,24 +143,18 @@ public:
 
     // Starts at zero
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    FName MonthName;
+    FText MonthName;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     int NumberOfDays;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
     bool AffectedByLeap;
-
-    // UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    // float MonthlyHighTemp;
-
-    // UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    // float MonthlyLowTemp;
 };
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemYearbookRow &Row)
 {
-    auto MIHash = GetTypeHash(Row.MonthName);
+    auto MIHash = GetTypeHash(Row.MonthName.ToString());
 
     return MIHash;
 }

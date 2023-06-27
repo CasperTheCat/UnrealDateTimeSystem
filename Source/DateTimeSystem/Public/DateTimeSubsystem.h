@@ -1,53 +1,87 @@
-// [TEMPLATE]
+// [TEMPLATE_COPYRIGHT]
 
 #pragma once
 
+#include "Components/ActorComponent.h"
+#include "CoreMinimal.h"
+#include "DateTimeSystemDataRows.h"
 #include "DateTimeTypes.h"
+#include "GameplayTagContainer.h"
+#include "Interfaces.h"
 
-#include "Interfaces.generated.h"
+#include "DateTimeSubsystem.generated.h"
 
+// DATETIMESYSTEM_API DECLARE_LOG_CATEGORY_EXTERN(LogDateTimeSystem, Log, All);
+DECLARE_STATS_GROUP(TEXT("DateTimeSubsystem"), STATGROUP_ACIDateTimeSubsys, STATCAT_Advanced);
+
+// Forward Decl
 class UClimateComponent;
-class UDateTimeSystemCore;
 
-// ClimateInterface
-UINTERFACE(MinimalAPI, Blueprintable)
-class UDateTimeSystemClimateInterface : public UInterface
+/**
+ * @brief DateTimeSubsystem
+ *
+ */
+UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent),
+       DisplayName = "Date Time System")
+class DATETIMESYSTEM_API UDateTimeSystem
+    : public UGameInstanceSubsystem
+    , public FTickableGameObject
+    , public IDateTimeSystemCommon
 {
     GENERATED_BODY()
-};
 
-class DATETIMESYSTEM_API IDateTimeSystemClimateInterface
-{
-    GENERATED_BODY()
+private:
+    UPROPERTY()
+    TObjectPtr<UDateTimeSystemCore> CoreObject;
+
+    /**
+     *
+     */
+    UPROPERTY()
+    float StoredDeltaTime;
+
+    /**
+     * @brief Sets how many times per second this object should tick
+     * Only used if BeginPlay is called by the engine
+     *
+     * Set to Zero (0) to use default
+     */
+    UPROPERTY()
+    int CurrentTickIndex;
+
+    /**
+     * @brief Length of a year in calendar days
+     *
+     */
+    UPROPERTY(Transient)
+    int LengthOfCalendarYearInDays;
 
 public:
-    /** Add interface function declarations here */
-    UFUNCTION(BlueprintNativeEvent)
-    UClimateComponent *GetClimateComponent();
-    virtual UClimateComponent *GetClimateComponent_Implementation();
-};
+    /**
+     * @brief Construct a new UDateTimeSystem object
+     */
+    UDateTimeSystem();
 
-// Interface for Common Base
-UINTERFACE(MinimalAPI, NotBlueprintable)
-class UDateTimeSystemCommon : public UInterface
-{
-    GENERATED_BODY()
-};
+    /**
+     * @brief Construct a new UDateTimeSystem object
+     */
+    UDateTimeSystem(UDateTimeSystem &Other);
 
-class DATETIMESYSTEM_API IDateTimeSystemCommon
-{
-    GENERATED_BODY()
+    /**
+     * @brief Construct a new UDateTimeSystem object
+     */
+    UDateTimeSystem(const FObjectInitializer &ObjectInitializer);
 
-public:
+    
     ///// ///// ////////// ///// /////
     // Core Functions
     //
 
     UFUNCTION(BlueprintCallable)
-    virtual UDateTimeSystemCore *GetCore();
+    virtual UDateTimeSystemCore *GetCore() override;
 
     UFUNCTION(BlueprintCallable)
-    virtual bool IsReady();
+    virtual bool IsReady() override;
 
     ///// ///// ////////// ///// /////
     // Date Functions
@@ -59,7 +93,7 @@ public:
      * @param DateStruct
      */
     UFUNCTION(BlueprintCallable)
-    virtual void GetTodaysDate(FDateTimeSystemStruct &DateStruct);
+    virtual void GetTodaysDate(FDateTimeSystemStruct &DateStruct) override;
 
     /**
      * @brief Populate DateStruct with today's date including Timezone Offset
@@ -69,7 +103,7 @@ public:
      */
     UFUNCTION(BlueprintCallable)
     virtual void GetTodaysDateTZ(FDateTimeSystemStruct &DateStruct,
-                                 UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo);
+                                 UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo) override;
 
     /**
      * @brief Populate DateStruct with tomorrow's date
@@ -77,7 +111,7 @@ public:
      * @param DateStruct
      */
     UFUNCTION(BlueprintCallable)
-    virtual void GetTomorrowsDate(FDateTimeSystemStruct &DateStruct);
+    virtual void GetTomorrowsDate(FDateTimeSystemStruct &DateStruct) override;
 
     /**
      * @brief Populate DateStruct with tomorrow's date including Timezone Offset
@@ -87,7 +121,7 @@ public:
      */
     UFUNCTION(BlueprintCallable)
     virtual void GetTomorrowsDateTZ(FDateTimeSystemStruct &DateStruct,
-                                    UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo);
+                                    UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo) override;
 
     /**
      * @brief Populate DateStruct with yesterday's date
@@ -95,7 +129,7 @@ public:
      * @param DateStruct
      */
     UFUNCTION(BlueprintCallable)
-    virtual void GetYesterdaysDate(FDateTimeSystemStruct &DateStruct);
+    virtual void GetYesterdaysDate(FDateTimeSystemStruct &DateStruct) override;
 
     /**
      * @brief Populate DateStruct with yesterday's date including Timezone Offset
@@ -105,7 +139,7 @@ public:
      */
     UFUNCTION(BlueprintCallable)
     virtual void GetYesterdaysDateTZ(FDateTimeSystemStruct &DateStruct,
-                                     UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo);
+                                     UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo) override;
 
     /**
      * @brief Set DTS date
@@ -113,7 +147,7 @@ public:
      *
      */
     UFUNCTION(BlueprintCallable)
-    virtual void SetUTCDateTime(FDateTimeSystemStruct &DateStruct, bool SkipInitialisation = false);
+    virtual void SetUTCDateTime(FDateTimeSystemStruct &DateStruct, bool SkipInitialisation = false) override;
 
     /**
      * @brief Return a copy of the internal struct
@@ -121,7 +155,7 @@ public:
      *
      */
     UFUNCTION(BlueprintCallable)
-    virtual FDateTimeSystemStruct GetUTCDateTime();
+    virtual FDateTimeSystemStruct GetUTCDateTime() override;
 
     /**
      * Functions for Adding and Setting time in increments
@@ -133,7 +167,7 @@ public:
      * @param DateStruct
      */
     UFUNCTION(BlueprintCallable)
-    virtual void AddDateStruct(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+    virtual void AddDateStruct(UPARAM(ref) FDateTimeSystemStruct &DateStruct) override;
 
     /**
      * @brief Advance to the timestamp specified in the DateStruct
@@ -141,7 +175,7 @@ public:
      * @param DateStruct
      */
     UFUNCTION(BlueprintCallable)
-    virtual void AdvanceToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+    virtual void AdvanceToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct) override;
 
     /**
      * @brief Advance to the timestamp specified in params
@@ -156,7 +190,7 @@ public:
      * @return false
      */
     UFUNCTION(BlueprintCallable)
-    virtual bool AdvanceToClockTime(int Hour, int Minute, int Second, bool Safety = true);
+    virtual bool AdvanceToClockTime(int Hour, int Minute, int Second, bool Safety = true) override;
 
     /**
      * @brief Compute Delta Between Dates in Fractional Years
@@ -168,7 +202,7 @@ public:
      */
     UFUNCTION(BlueprintCallable)
     virtual float ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSystemStruct &From,
-                                           UPARAM(ref) FDateTimeSystemStruct &To);
+                                           UPARAM(ref) FDateTimeSystemStruct &To) override;
 
     /**
      * @brief Compute Delta Between Dates in Fractional Years
@@ -179,7 +213,7 @@ public:
      */
     UFUNCTION(BlueprintCallable)
     virtual float ComputeDeltaBetweenDatesYears(UPARAM(ref) FDateTimeSystemStruct &From,
-                                                UPARAM(ref) FDateTimeSystemStruct &To);
+                                                UPARAM(ref) FDateTimeSystemStruct &To) override;
 
     /**
      * @brief Compute Delta Between Dates in Fractional Months
@@ -190,7 +224,7 @@ public:
      */
     UFUNCTION(BlueprintCallable)
     virtual float ComputeDeltaBetweenDatesMonths(UPARAM(ref) FDateTimeSystemStruct &From,
-                                                 UPARAM(ref) FDateTimeSystemStruct &To);
+                                                 UPARAM(ref) FDateTimeSystemStruct &To) override;
 
     /**
      * @brief Compute Delta Between Dates in Fractional Days
@@ -201,7 +235,7 @@ public:
      */
     UFUNCTION(BlueprintCallable)
     virtual float ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSystemStruct &From,
-                                               UPARAM(ref) FDateTimeSystemStruct &To);
+                                               UPARAM(ref) FDateTimeSystemStruct &To) override;
 
     /**
      * @brief Compute Delta Between Dates in Seconds
@@ -212,7 +246,7 @@ public:
      * @return double
      */
     virtual double DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
-                                                    UPARAM(ref) FDateTimeSystemStruct &To);
+                                                    UPARAM(ref) FDateTimeSystemStruct &To) override;
 
     /**
      * @brief Compute Delta Between Dates Internal
@@ -227,12 +261,7 @@ public:
      */
     virtual TTuple<float, float, float> ComputeDeltaBetweenDatesInternal(UPARAM(ref) FDateTimeSystemStruct &Date1,
                                                                          UPARAM(ref) FDateTimeSystemStruct &Date2,
-                                                                         FDateTimeSystemStruct &Result);
-
-
-
-
-
+                                                                         FDateTimeSystemStruct &Result) override;
 
     ///// ///// ////////// ///// /////
     // Sun and Moon
@@ -244,7 +273,7 @@ public:
      * @return FRotator
      */
     UFUNCTION(BlueprintCallable)
-    virtual FRotator GetSunRotation();
+    virtual FRotator GetSunRotation() override;
 
     /**
      * @brief Get the Sun Rotation For WorldLocation
@@ -253,7 +282,7 @@ public:
      * @return FRotator
      */
     UFUNCTION(BlueprintCallable)
-    virtual FRotator GetSunRotationForLocation(FVector Location);
+    virtual FRotator GetSunRotationForLocation(FVector Location) override;
 
     /**
      * @brief Get the Sun Vector
@@ -261,7 +290,7 @@ public:
      * @return FVector
      */
     UFUNCTION(BlueprintCallable)
-    virtual FVector GetSunVector(float Latitude, float Longitude);
+    virtual FVector GetSunVector(float Latitude, float Longitude) override;
 
     /**
      * @brief Get the Moon Rotation
@@ -269,7 +298,7 @@ public:
      * @return FRotator
      */
     UFUNCTION(BlueprintCallable)
-    virtual FRotator GetMoonRotation();
+    virtual FRotator GetMoonRotation() override;
 
     /**
      * @brief Get the Moon Rotation For WorldLocation
@@ -278,7 +307,7 @@ public:
      * @return FRotator
      */
     UFUNCTION(BlueprintCallable)
-    virtual FRotator GetMoonRotationForLocation(FVector Location);
+    virtual FRotator GetMoonRotationForLocation(FVector Location) override;
 
     /**
      * @brief Get the Moon Vector
@@ -286,7 +315,7 @@ public:
      * @return FVector
      */
     UFUNCTION(BlueprintCallable)
-    virtual FVector GetMoonVector(float Latitude, float Longitude);
+    virtual FVector GetMoonVector(float Latitude, float Longitude) override;
 
     /**
      * @brief Get the Localised Sun Rotation
@@ -299,7 +328,8 @@ public:
      * @return FRotator
      */
     UFUNCTION(BlueprintCallable)
-    virtual FRotator GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
+    virtual FRotator GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent,
+                                             FVector Location) override;
 
     /**
      * @brief Get the Localised Moon Rotation
@@ -312,8 +342,8 @@ public:
      * @return FRotator
      */
     UFUNCTION(BlueprintCallable)
-    virtual FRotator GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
-
+    virtual FRotator GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent,
+                                              FVector Location) override;
 
 
 
@@ -331,7 +361,7 @@ public:
      * @return false
      */
     UFUNCTION(BlueprintCallable)
-    virtual bool DoesYearLeap(int Year);
+    virtual bool DoesYearLeap(int Year) override;
 
     /**
      * @brief Get the Fractional Days in DateStruct
@@ -340,7 +370,7 @@ public:
      * @return float
      */
     UFUNCTION(BlueprintCallable)
-    virtual float GetFractionalDay(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+    virtual float GetFractionalDay(UPARAM(ref) FDateTimeSystemStruct &DateStruct) override;
 
     /**
      * @brief Get the Fractional Month in DateStruct
@@ -349,7 +379,7 @@ public:
      * @return float
      */
     UFUNCTION(BlueprintCallable)
-    virtual float GetFractionalMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+    virtual float GetFractionalMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct) override;
 
     /**
      * @brief Get the Fractional Orbital Year in DateStruct
@@ -358,7 +388,7 @@ public:
      * @return float
      */
     UFUNCTION(BlueprintCallable)
-    virtual float GetFractionalOrbitalYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+    virtual float GetFractionalOrbitalYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct) override;
 
     /**
      * @brief Get the Fractional Calendar Days in DateStruct
@@ -367,7 +397,7 @@ public:
      * @return float
      */
     UFUNCTION(BlueprintCallable)
-    virtual float GetFractionalCalendarYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+    virtual float GetFractionalCalendarYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct) override;
 
     /**
      * @brief Get the Length Of a Calendar Year
@@ -376,7 +406,7 @@ public:
      * @return int
      */
     UFUNCTION(BlueprintCallable)
-    virtual int GetLengthOfCalendarYear(int Year);
+    virtual int GetLengthOfCalendarYear(int Year) override;
 
     /**
      * @brief Get the number of days In current month
@@ -384,7 +414,7 @@ public:
      * @return int
      */
     UFUNCTION(BlueprintCallable)
-    virtual int GetDaysInCurrentMonth();
+    virtual int GetDaysInCurrentMonth() override;
 
     /**
      * @brief Get the number of days in the specified month by index
@@ -393,7 +423,7 @@ public:
      * @return int
      */
     UFUNCTION(BlueprintCallable)
-    virtual int GetDaysInMonth(int MonthIndex);
+    virtual int GetDaysInMonth(int MonthIndex) override;
 
     /**
      * @brief Get the count of months In a year
@@ -402,7 +432,7 @@ public:
      * @return int
      */
     UFUNCTION(BlueprintCallable)
-    virtual int GetMonthsInYear(int YearIndex);
+    virtual int GetMonthsInYear(int YearIndex) override;
 
     /**
      * @brief Return the FName of the month
@@ -411,7 +441,7 @@ public:
      * Using the FName directly in the UI is not advised
      */
     UFUNCTION(BlueprintCallable)
-    virtual FText GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+    virtual FText GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct) override;
 
     /**
      * @brief Get the Time Scale
@@ -419,7 +449,7 @@ public:
      * @return float
      */
     UFUNCTION(BlueprintCallable)
-    virtual float GetTimeScale();
+    virtual float GetTimeScale() override;
 
     /**
      * @brief Get Length of Day
@@ -427,8 +457,7 @@ public:
      * @return float
      */
     UFUNCTION(BlueprintCallable)
-    virtual float GetLengthOfDay();
-
+    virtual float GetLengthOfDay() override;
 
     ///// ///// ////////// ///// /////
     // Misc Helper Functions
@@ -439,7 +468,7 @@ public:
      * Such as, for example, when placed on a GameInstance.
      */
     UFUNCTION(BlueprintCallable)
-    virtual void InternalTick(float DeltaTime, bool NonContiguous = false);
+    virtual void InternalTick(float DeltaTime, bool NonContiguous = false) override;
 
     /**
      * @brief Align the World Position to Date System Coordinate
@@ -451,8 +480,8 @@ public:
      * @return FVector
      */
     UFUNCTION(BlueprintCallable)
-    virtual FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection);
-    
+    virtual FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection) override;
+
     /**
      * @brief Sanitise Date Time
      *
@@ -460,24 +489,24 @@ public:
      * @return bool
      */
     UFUNCTION(BlueprintCallable)
-    virtual bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct);
+    virtual bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct) override;
 
-};
 
-// Interface
-UINTERFACE(MinimalAPI, Blueprintable)
-class UDateTimeSystemInterface : public UInterface
-{
-    GENERATED_BODY()
-};
 
-class DATETIMESYSTEM_API IDateTimeSystemInterface
-{
-    GENERATED_BODY()
+    friend class UClimateComponent;
 
 public:
-    /** Add interface function declarations here */
-    UFUNCTION(BlueprintNativeEvent)
-    UObject *GetDateTimeSystem();
-    virtual UObject *GetDateTimeSystem_Implementation();
+    //~USubsystem interface
+    virtual void Initialize(FSubsystemCollectionBase &Collection) override;
+    virtual void Deinitialize() override;
+    virtual bool ShouldCreateSubsystem(UObject *Outer) const override;
+    //~End of USubsystem interface
+
+    //~FTickableObjectBase interface
+    virtual void Tick(float DeltaTime) override;
+    virtual ETickableTickType GetTickableTickType() const override;
+    virtual bool IsTickable() const override;
+    virtual TStatId GetStatId() const override;
+    virtual UWorld *GetTickableGameObjectWorld() const override;
+    //~End of FTickableObjectBase interface
 };
