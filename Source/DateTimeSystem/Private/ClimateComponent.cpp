@@ -12,7 +12,7 @@ void UClimateComponent::ClimateSetup()
     PrimaryComponentTick.bCanEverTick = true;
     bWantsInitializeComponent = true;
     RegisterAllComponentTickFunctions(true);
-    HasBoundToDate = true;
+    HasBoundToDate = false;
     DefaultClimateUpdateFrequency = 30;
     TemperatureChangeSpeed = 0.001;
     FogChangeSpeed = 0.001;
