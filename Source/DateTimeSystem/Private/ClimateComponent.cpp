@@ -854,6 +854,7 @@ void UClimateComponent::InternalBegin()
         if (!HasBoundToDate && DateTimeSystem->GetCore())
         {
             DateTimeSystem->GetCore()->DateChangeCallback.AddDynamic(this, &UClimateComponent::InternalDateChanged);
+            DateTimeSystem->GetCore()->CleanTimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
             HasBoundToDate = true;
         }
 
@@ -870,13 +871,6 @@ void UClimateComponent::InternalBegin()
         CachedPriorDewPoint.Valid = true;
 
         DTSTimeScale = DateTimeSystem->GetTimeScale();
-
-        if (DateTimeSystem && DateTimeSystem->GetCore() &&
-            (UpdateLocalTime.IsBound() || LocalTimeUpdateSignal.IsBound()))
-        {
-            // If someone is listening to the update, we pass it through
-            DateTimeSystem->GetCore()->CleanTimeUpdate.AddDynamic(this, &UClimateComponent::UpdateLocalTimePassthrough);
-        }
     }
 }
 
