@@ -32,15 +32,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     float Puddles;
 
-    // Amount of frost
-    // Similar to Wetness, but when cold
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    float Frost;
-
-    // Snow. I use this for light snow
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    float Snow;
-
     // WindVector
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FVector Wind;
@@ -413,6 +404,13 @@ public:
      */
     UPROPERTY(BlueprintAssignable)
     FUpdateClimateData UpdateLocalClimateCallback;
+
+    /**
+     * @brief Temperature Change Callback
+     * Lightweight call. Use functions to read the data
+     */
+    UPROPERTY(BlueprintAssignable)
+    FLocalDateTimeEvent UpdateLocalClimateSignal;
 
     /**
      * @brief Temperature Change Callback
@@ -1189,4 +1187,20 @@ public:
      * @return FDateTimeClimateDataStruct
      */
     virtual FDateTimeClimateDataStruct GetUpdatedClimateData_Implementation();
+
+
+    /**
+     * @brief Get the Updated Climate Data object
+     *
+     * @return FDateTimeClimateDataStruct
+     */
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    void GetClimateDataByRef(UPARAM(ref) FDateTimeClimateDataStruct &ClimateData);
+
+    /**
+     * @brief Native Implementation of GetUpdatedClimateData
+     *
+     * @return FDateTimeClimateDataStruct
+     */
+    virtual void GetClimateDataByRef_Implementation(UPARAM(ref) FDateTimeClimateDataStruct &ClimateData);
 };

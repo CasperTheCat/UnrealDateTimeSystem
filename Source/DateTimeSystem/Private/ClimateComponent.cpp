@@ -265,14 +265,20 @@ FDateTimeClimateDataStruct UClimateComponent::GetUpdatedClimateData_Implementati
     Returnable.Wetness = GetCurrentWetness();
     Returnable.Puddles = GetCurrentSittingWater();
 
-    // TODO: Implement Frost, and Wetness
-    Returnable.Frost = 0.f;
-
-    // This needs to lerp between 0 and 1 depending on rainfall level and duration
-    // New vars, but do it on Rainfall
-
-    //
     return Returnable;
+}
+
+void UClimateComponent::GetClimateDataByRef_Implementation(FDateTimeClimateDataStruct &ClimateData)
+{
+    auto WindVector = FVector(0, 0, 0);
+
+    ClimateData.Temperature = GetCurrentTemperature();
+    ClimateData.HeatOffset = GetHeatIndex();
+    ClimateData.Wind = WindVector;
+    ClimateData.ChillOffset = GetWindChillFromVector(WindVector);
+    ClimateData.Rain = GetCurrentRainfall();
+    ClimateData.Wetness = GetCurrentWetness();
+    ClimateData.Puddles = GetCurrentSittingWater();
 }
 
 void UClimateComponent::UpdateCurrentTemperature(float DeltaTime, bool NonContiguous)
@@ -707,7 +713,15 @@ float UClimateComponent::GetHeatIndexForLocation(FVector Location)
     auto C8 = 7.2546e-4f;
     auto C9 = -3.582e-6f;
 
-    auto HeatIndex = C1 + C2 * T + C3 * R + C4 * T * R + C5 * TT + C6 * RR + C7 * TT * R + C8 * T * RR + C9 * TT * RR;
+    auto HeatIndex = C1
+        + C2 * T
+        + C3 * R
+        + C4 * T * R
+        + C5 * TT
+        + C6 * RR
+        + C7 * TT * R
+        + C8 * T * RR
+        + C9 * TT * RR;
 
     return HeatIndex;
 
@@ -804,15 +818,24 @@ void UClimateComponent::InternalTick(float DeltaTime)
             }
         }
 
-        if (UpdateLocalClimateCallback.IsBound())
+        if (UpdateLocalClimateCallback.IsBound() || UpdateLocalClimateSignal.IsBound())
         {
             // Check if DeltaTime is greater than threshold
             AccumulatedDeltaForCallback += DeltaTime;
             if (AccumulatedDeltaForCallback > OneOverUpdateFrequency)
             {
                 // Update
-                auto UpdatedClimateData = GetUpdatedClimateData();
-                UpdateLocalClimateCallback.Broadcast(UpdatedClimateData);
+                if (UpdateLocalClimateCallback.IsBound())
+                {
+                    auto UpdatedClimateData = GetUpdatedClimateData();
+                    UpdateLocalClimateCallback.Broadcast(UpdatedClimateData);
+                }
+
+                if (UpdateLocalClimateSignal.IsBound())
+                {
+                    UpdateLocalClimateSignal.Broadcast();
+                }
+
                 AccumulatedDeltaForCallback = 0.f;
             }
         }
