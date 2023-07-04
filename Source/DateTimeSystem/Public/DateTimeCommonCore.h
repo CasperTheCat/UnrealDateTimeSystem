@@ -249,7 +249,7 @@ public:
      * @param DateStruct
      * @return uint32
      */
-    uint32 GetHashForDate(FDateTimeSystemStruct *DateStruct);
+    static uint32 GetHashForDate(FDateTimeSystemStruct *DateStruct);
 
     /**
      * @brief Get the Hash For Date object
@@ -257,7 +257,7 @@ public:
      * @param DateStruct
      * @return uint32
      */
-    uint32 GetHashForDate(FDateTimeSystemDateOverrideRow *DateStruct);
+    static uint32 GetHashForDate(FDateTimeSystemDateOverrideRow *DateStruct);
 
     /**
      * @brief Get the Date Override object

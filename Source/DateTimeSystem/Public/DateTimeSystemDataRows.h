@@ -57,6 +57,11 @@ FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemClimateOverrideRow &Row)
     return HashCombine(Hash, DHash);
 }
 
+FORCEINLINE uint32 GetDateHash(const FDateTimeSystemClimateOverrideRow &Row)
+{
+    return GetTypeHash(Row);
+}
+
 USTRUCT(BlueprintType)
 struct FDateTimeSystemClimateMonthlyRow : public FTableRowBase
 {

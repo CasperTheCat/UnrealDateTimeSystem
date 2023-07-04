@@ -239,6 +239,16 @@ FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemStruct &Row)
     return DateHash;
 }
 
+FORCEINLINE uint32 GetDateHash(const FDateTimeSystemStruct &Row)
+{
+    auto DHash = GetTypeHash(Row.Day);
+    auto MHash = GetTypeHash(Row.Month);
+    auto YHash = GetTypeHash(Row.Year);
+
+    auto Hash = HashCombine(YHash, MHash);
+    return HashCombine(Hash, DHash);
+}
+
 /**
  * @brief Timezone Struct
  *

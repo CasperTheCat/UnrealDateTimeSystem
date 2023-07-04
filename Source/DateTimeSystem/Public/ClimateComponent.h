@@ -91,6 +91,14 @@ private:
     float CatchupWetnessUpblendSpeed;
 
     /**
+     * @brief How fast should Wetness catch up to the target when starting raining
+     * Only used by non-contiguous updates
+     *
+     */
+    UPROPERTY(EditAnywhere)
+    float CatchupSittingWaterLimit;
+
+    /**
      * @brief Percentage of current Wetness that should evaporate over the next minute
      *
      */
@@ -476,11 +484,26 @@ public:
     float CurrentWetness;
 
     /**
+     * @brief Computed Wetness Limit
+     * Used to clamp
+     *
+     */
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    float CurrentWetnessLimit;
+
+    /**
      * @brief Computed Sitting Water
      *
      */
     UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
     float CurrentSittingWater;
+
+    /**
+     * @brief Computed Sitting Water
+     * Used to clamp
+     */
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    float CurrentSittingWaterLimit;
 
     /**
      * @brief Computed Humidity
@@ -718,6 +741,7 @@ private:
 
     /**
      * @brief Called by DTS via callback
+     * Dynamic doesn't like reference
      *
      */
     UFUNCTION()

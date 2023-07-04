@@ -28,6 +28,7 @@ void UClimateComponent::ClimateSetup()
     UseSunPositionForEvaporation = false;
     CatchupWetnessDownblendSpeed = 5;
     CatchupWetnessUpblendSpeed = 15;
+    CatchupSittingWaterLimit = 0.5f;
     WetnessEvaporationRate = 35;
     WetnessDepositionRate = 0.2;
     WetnessEvaporationRateBase = 2;
@@ -38,6 +39,9 @@ void UClimateComponent::ClimateSetup()
     PuddleEvaporationRate = 12.5;
     PuddleEvaporationRateBase = 2;
     PuddleLimit = 6.5f;
+
+    CurrentWetnessLimit = 1.f;
+    CurrentSittingWaterLimit = 100.f;
 }
 
 void UClimateComponent::Invalidate(EDateTimeSystemInvalidationTypes Type = EDateTimeSystemInvalidationTypes::Frame)
@@ -333,6 +337,7 @@ void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguou
             {
                 auto BlendLevel = FMath::Min(1.f, FracBin * CatchupWetnessDownblendSpeed);
                 CurrentWetness = FMath::Lerp(1.f, 0.f, BlendLevel);
+                CurrentSittingWater = FMath::Lerp(CatchupSittingWaterLimit, 0.f, BlendLevel * BlendLevel);
             }
 
             // Else, if it didn't rain, but now is, upblend
@@ -340,18 +345,21 @@ void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguou
             {
                 auto BlendLevel = FMath::Min(1.f, FracBin * CatchupWetnessUpblendSpeed);
                 CurrentWetness = FMath::Lerp(0.f, 1.f, BlendLevel);
+                CurrentSittingWater = FMath::Lerp(0.f, CatchupSittingWaterLimit, BlendLevel * BlendLevel);
             }
 
             // Else, if did rain, and still is raining, wetness is 100%
             else if (DidRainLastBin && TargetRainfall > 0.f)
             {
                 CurrentWetness = 1.f;
+                CurrentSittingWater = CatchupSittingWaterLimit;
             }
 
             // Else, if it didn't rain, and still isn't, wetness is 0%
             else if (!DidRainLastBin && TargetRainfall < KINDA_SMALL_NUMBER)
             {
                 CurrentWetness = 0.f;
+                CurrentSittingWater = 0.f;
             }
 
             else
@@ -389,8 +397,9 @@ void UClimateComponent::UpdateCurrentRainfall(float DeltaTime, bool NonContiguou
                 // Fall back to using blended fractional day
                 auto FracDay = DateTimeSystem->GetFractionalDay(LocalTime);
                 auto InvertedBlend = FMath::Abs((FracDay * 2.f) - 1.f);
+                auto TighterBlend = FMath::Min(InvertedBlend * 1.66f, 1);
 
-                SunPositionBlend = 1 - InvertedBlend;
+                SunPositionBlend = 1 - TighterBlend;
             }
 
             // Wetness
@@ -465,7 +474,7 @@ void UClimateComponent::InternalDateChanged(FDateTimeSystemStruct DateStruct)
     LastLowTemp = CachedLowTemp.Value;
     CachedPriorDewPoint.Value = CachedNextDewPoint.Value;
 
-    auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
+    auto Row = DateOverrides.Find(GetDateHash(DateStruct));
     if (Row)
     {
         auto asPtr = *Row;
@@ -572,12 +581,12 @@ float UClimateComponent::GetCurrentRainfall()
 
 float UClimateComponent::GetCurrentWetness()
 {
-    return FMath::Min(1, CurrentWetness);
+    return FMath::Min(CurrentWetnessLimit, CurrentWetness);
 }
 
 float UClimateComponent::GetCurrentSittingWater()
 {
-    return CurrentSittingWater;
+    return FMath::Min(CurrentSittingWaterLimit, CurrentSittingWater);
 }
 
 float UClimateComponent::DebugGetUnclampedWetness()
@@ -764,17 +773,21 @@ void UClimateComponent::InternalTick(float DeltaTime)
         DateTimeSystem->GetTodaysDateTZ(LocalTime, TimezoneInfo);
 
         // Check for the delta
-        auto Delta = FMath::Abs(LocalTime.Seconds - PriorLocalTime.Seconds);
+        //auto Delta = FMath::Abs(LocalTime.Seconds - PriorLocalTime.Seconds);
+        auto Delta = DateTimeSystem->DComputeDeltaBetweenDatesSeconds(PriorLocalTime, LocalTime);
         auto NonContiguous = Delta > CatchupThresholdInSeconds;
 
         if (NonContiguous)
         {
-            DeltaTime += CatchupThresholdInSeconds;
+            DeltaTime += Delta;
         }
 
-        UpdateCurrentTemperature(DeltaTime, NonContiguous);
-        UpdateCurrentClimate(DeltaTime, NonContiguous);
-        UpdateCurrentRainfall(DeltaTime, NonContiguous);
+        UpdateCurrentTemperature(Delta, NonContiguous);
+        UpdateCurrentClimate(Delta, NonContiguous);
+        UpdateCurrentRainfall(Delta, NonContiguous);
+        //UpdateCurrentTemperature(DeltaTime, NonContiguous);
+        //UpdateCurrentClimate(DeltaTime, NonContiguous);
+        //UpdateCurrentRainfall(DeltaTime, NonContiguous);
 
         // Guard against calling this.
         // By default, it's just an O(1) lookup after UpdateCurrentTemp
@@ -865,7 +878,12 @@ void UClimateComponent::InternalBegin()
 
         for (auto val : DOTemps)
         {
-            DateOverrides.Add(GetTypeHash(val), val);
+            // Dereference the pointer
+            if (val)
+            {
+                auto &Row = *val;
+                DateOverrides.Add(GetDateHash(Row), val);
+            }
         }
     }
 
@@ -1077,7 +1095,7 @@ float UClimateComponent::GetDailyHigh(FDateTimeSystemStruct &DateStruct)
     }
 
     // Check Override
-    auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
+    auto Row = DateOverrides.Find(GetDateHash(DateStruct));
     if (Row)
     {
         auto asPtr = *Row;
@@ -1111,7 +1129,7 @@ float UClimateComponent::GetDailyLow(FDateTimeSystemStruct &DateStruct)
         return CachedNextLowTemp.Value;
     }
 
-    auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
+    auto Row = DateOverrides.Find(GetDateHash(DateStruct));
     if (Row)
     {
         auto asPtr = *Row;
@@ -1148,7 +1166,7 @@ float UClimateComponent::GetPrecipitationThreshold(FDateTimeSystemStruct &DateSt
     }
 
     // Compute the threshold for today's rainfall
-    auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
+    auto Row = DateOverrides.Find(GetDateHash(DateStruct));
     if (Row)
     {
         auto asPtr = *Row;
@@ -1227,14 +1245,15 @@ float UClimateComponent::GetRainfallAmount(FDateTimeSystemStruct &DateStruct)
     }
 
     // Compute the threshold for today's rainfall
-    auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
+    auto Row = DateOverrides.Find(GetDateHash(DateStruct));
     if (Row)
     {
         auto asPtr = *Row;
         if (asPtr)
         {
-            CachedRainfallLevels.Add(RainfallHash, asPtr->HourlyRainfall * (1 / asPtr->RainfallProbability));
-            return asPtr->HourlyRainfall * (1 / asPtr->RainfallProbability);
+            auto RainfallByProbability = asPtr->HourlyRainfall * (1 / asPtr->RainfallProbability);
+            CachedRainfallLevels.Add(RainfallHash, RainfallByProbability);
+            return RainfallByProbability;
         }
     }
     else
@@ -1305,7 +1324,7 @@ float UClimateComponent::GetDailyDewPoint(FDateTimeSystemStruct &DateStruct)
         return CachedNextDewPoint.Value;
     }
 
-    auto Row = DateOverrides.Find(GetTypeHash(DateStruct));
+    auto Row = DateOverrides.Find(GetDateHash(DateStruct));
     if (Row)
     {
         auto asPtr = *Row;
