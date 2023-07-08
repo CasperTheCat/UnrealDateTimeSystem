@@ -35,7 +35,7 @@ public:
      *
      */
     UPROPERTY(config, EditAnywhere, Category = "Meta Config")
-    bool CanEverTick = false;
+    bool CanEverTick = true;
 
     UPROPERTY(config, EditAnywhere, Category = "Planetary Config")
     float DaysInOrbitalYear = 365.25f;
