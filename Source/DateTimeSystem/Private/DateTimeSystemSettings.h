@@ -34,7 +34,7 @@ public:
     /**
      *
      */
-    UPROPERTY(config, EditAnywhere, Category = "Meta Config", meta = (ConsoleVariable = "DateTimeSystem.CanEverTick"))
+    UPROPERTY(config, EditAnywhere, Category = "Meta Config")
     bool CanEverTick = false;
 
     UPROPERTY(config, EditAnywhere, Category = "Planetary Config")
@@ -72,40 +72,4 @@ public:
 
     UPROPERTY(config, EditAnywhere, Category = "Meta Config")
     bool OverridedDatesSetDate = false;
-
-    //// How long to hold the loading screen up after other loading finishes (in seconds) to
-    //// try to give texture streaming a chance to avoid blurriness
-    ////
-    //// Note: This is not normally applied in the editor for iteration time, but can be
-    //// enabled via HoldLoadingScreenAdditionalSecsEvenInEditor
-    //	UPROPERTY(config, EditAnywhere, Category=Configuration, meta=(ForceUnits=s,
-    //ConsoleVariable="CommonLoadingScreen.HoldLoadingScreenAdditionalSecs")) float HoldLoadingScreenAdditionalSecs
-    // = 2.0f;
-
-    //// The interval in seconds beyond which the loading screen is considered permanently hung (if non-zero).
-    //	UPROPERTY(config, EditAnywhere, Category=Configuration, meta=(ForceUnits=s))
-    // float LoadingScreenHeartbeatHangDuration = 0.0f;
-
-    //// The interval in seconds between each log of what is keeping a loading screen up (if non-zero).
-    //	UPROPERTY(config, EditAnywhere, Category=Configuration, meta=(ForceUnits=s))
-    // float LogLoadingScreenHeartbeatInterval = 5.0f;
-
-    //// When true, the reason the loading screen is shown or hidden will be printed to the log every frame.
-    // UPROPERTY(Transient, EditAnywhere, Category=Debugging,
-    // meta=(ConsoleVariable="CommonLoadingScreen.LogLoadingScreenReasonEveryFrame")) bool
-    // LogLoadingScreenReasonEveryFrame = 0;
-
-    //// Force the loading screen to be displayed (useful for debugging)
-    // UPROPERTY(Transient, EditAnywhere, Category=Debugging, meta=(ConsoleVariable="CommonLoadingScreen.AlwaysShow"))
-    // bool ForceLoadingScreenVisible = false;
-
-    //// Should we apply the additional HoldLoadingScreenAdditionalSecs delay even in the editor
-    //// (useful when iterating on loading screens)
-    // UPROPERTY(Transient, EditAnywhere, Category=Debugging)
-    // bool HoldLoadingScreenAdditionalSecsEvenInEditor = false;
-
-    //// Should we apply the additional HoldLoadingScreenAdditionalSecs delay even in the editor
-    //// (useful when iterating on loading screens)
-    // UPROPERTY(config, EditAnywhere, Category=Configuration)
-    // bool ForceTickLoadingScreenEvenInEditor = true;
 };

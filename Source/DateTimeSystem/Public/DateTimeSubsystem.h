@@ -31,7 +31,7 @@ class DATETIMESYSTEM_API UDateTimeSystem
     GENERATED_BODY()
 
 private:
-    UPROPERTY()
+    UPROPERTY(SaveGame)
     TObjectPtr<UDateTimeSystemCore> CoreObject;
 
     /**
@@ -53,8 +53,15 @@ private:
      * @brief Length of a year in calendar days
      *
      */
-    UPROPERTY(Transient)
+    UPROPERTY()
     int LengthOfCalendarYearInDays;
+
+    /**
+     * @brief CanTick
+     *
+     */
+    UPROPERTY()
+    bool CanTick;
 
 public:
     /**
@@ -72,7 +79,6 @@ public:
      */
     UDateTimeSystem(const FObjectInitializer &ObjectInitializer);
 
-    
     ///// ///// ////////// ///// /////
     // Core Functions
     //
@@ -345,10 +351,6 @@ public:
     virtual FRotator GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent,
                                               FVector Location) override;
 
-
-
-
-
     ///// ///// ////////// ///// /////
     // Misc Getters
     //
@@ -490,8 +492,6 @@ public:
      */
     UFUNCTION(BlueprintCallable)
     virtual bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct) override;
-
-
 
     friend class UClimateComponent;
 

@@ -7,15 +7,11 @@ namespace DateTimeCVars
 {
 static float TimeScale = 1.f;
 static FAutoConsoleVariableRef CVarTimeScale(TEXT("DateTimeSystem.TimeScale"), TimeScale,
-                                             TEXT("Multiplier applied to DeltaTime"), ECVF_Default);
+                                             TEXT("Multiplier applied to DeltaTime"));
 
 static int TickStride = 1;
 static FAutoConsoleVariableRef CVarTickStride(TEXT("DateTimeSystem.TickStride"), TickStride,
-                                              TEXT("Number of frames to stride before passing tick"), ECVF_Default);
-
-static bool CanEverTick = true;
-static FAutoConsoleVariableRef CVarCanEverTick(TEXT("DateTimeSystem.CanEverTick"), CanEverTick,
-                                               TEXT("Can the global Date Time System tick"), ECVF_Default);
+                                              TEXT("Number of frames to stride before passing tick"));
 } // namespace DateTimeCVars
 
 UDateTimeSystem::UDateTimeSystem()
@@ -831,6 +827,7 @@ void UDateTimeSystem::Initialize(FSubsystemCollectionBase &Collection)
     // Create Object
     const UDateTimeSystemSettings *Settings = GetDefault<UDateTimeSystemSettings>();
     CoreObject = NewObject<UDateTimeSystemCore>(GetTransientPackage(), Settings->CoreClass.Get());
+    CanTick = Settings->CanEverTick;
 
     if (IsValid(CoreObject))
     {
@@ -868,7 +865,7 @@ bool UDateTimeSystem::ShouldCreateSubsystem(UObject *Outer) const
 
 void UDateTimeSystem::Tick(float DeltaTime)
 {
-    if (DateTimeCVars::TimeScale > 0.f && DateTimeCVars::CanEverTick)
+    if (DateTimeCVars::TimeScale > 0.f && CanTick)
     {
         StoredDeltaTime += DeltaTime;
         ++CurrentTickIndex;
@@ -890,7 +887,8 @@ ETickableTickType UDateTimeSystem::GetTickableTickType() const
 
 bool UDateTimeSystem::IsTickable() const
 {
-    return !HasAnyFlags(RF_ClassDefaultObject) && DateTimeCVars::CanEverTick;
+    // TODO: Check this
+    return !HasAnyFlags(RF_ClassDefaultObject) && CanTick;
 }
 
 TStatId UDateTimeSystem::GetStatId() const

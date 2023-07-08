@@ -192,7 +192,7 @@ private:
      * @brief Internal Date and Time stored in UTC
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, SaveGame)
     FDateTimeSystemStruct InternalDate;
 
 public:
@@ -868,10 +868,7 @@ public:
     FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection);
 
     /**
-     * @brief Return the FName of the month
-     *
-     * Remember, FName's are not localised, and this isn't using FText, which is
-     * Using the FName directly in the UI is not advised
+     * @brief Return the FText of the month
      */
     UFUNCTION(BlueprintCallable)
     FText GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);

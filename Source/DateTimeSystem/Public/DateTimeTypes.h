@@ -12,6 +12,34 @@
 #define DATETIMESYSTEM_POINTERCHECK (!(UE_BUILD_SHIPPING || UE_BUILD_TEST) || WITH_EDITOR)
 #endif
 
+struct DateTimeHelpers
+{
+    static FORCEINLINE float HelperMod(double X, double Y)
+    {
+        const double AbsY = FMath::Abs(Y);
+        if (AbsY <= 1.e-8)
+        {
+            return 0.0;
+        }
+
+        const double Div = (X / Y);
+        double Frac = FMath::Fractional(Div);
+
+        if (Frac < 0)
+        {
+            Frac += 1;
+        }
+
+        const double Result = Y * Frac;
+        return Result;
+    }
+
+    static FORCEINLINE int IntHelperMod(int X, int Y)
+    {
+        return ((X %= Y) < 0) ? X + Y : X;
+    }
+};
+
 /**
  * @brief Date Time Cache Invalidation Types
  *
@@ -224,6 +252,18 @@ public:
 
         return DateHash;
     }
+
+    FDateTime &GetDateTime()
+    {
+        auto _Hour = FMath::TruncToInt32(Seconds / 3600);
+        auto _Minute = FMath::TruncToInt32(DateTimeHelpers::HelperMod(Seconds, 3600) / 60);
+        auto _Seconds = FMath::TruncToInt32(DateTimeHelpers::HelperMod(Seconds, 60));
+        auto Milli = FMath::TruncToInt32(1000 * FMath::Frac(Seconds));
+
+        auto UEDateTime = FDateTime(Year, Month + 1, Day + 1, _Hour, _Minute, _Seconds, Milli);
+
+        return UEDateTime;
+    }
 };
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemStruct &Row)
@@ -272,34 +312,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, FDateTimeSystem
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, FDateTimeSystemStruct, NewDate, FGameplayTagContainer,
                                              Attribute);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInvalidationDelegate, EDateTimeSystemInvalidationTypes, InvalidationType);
-
-struct DateTimeHelpers
-{
-    static FORCEINLINE float HelperMod(double X, double Y)
-    {
-        const double AbsY = FMath::Abs(Y);
-        if (AbsY <= 1.e-8)
-        {
-            return 0.0;
-        }
-
-        const double Div = (X / Y);
-        double Frac = FMath::Fractional(Div);
-
-        if (Frac < 0)
-        {
-            Frac += 1;
-        }
-
-        const double Result = Y * Frac;
-        return Result;
-    }
-
-    static FORCEINLINE int IntHelperMod(int X, int Y)
-    {
-        return ((X %= Y) < 0) ? X + Y : X;
-    }
-};
 
 /**
  * @brief Cache Float

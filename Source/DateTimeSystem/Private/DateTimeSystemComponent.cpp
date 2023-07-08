@@ -325,7 +325,7 @@ FVector UDateTimeSystemComponent::GetMoonVector(float Latitude, float Longitude)
 }
 
 FRotator UDateTimeSystemComponent::GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent,
-                                                  FVector Location)
+                                                           FVector Location)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -346,7 +346,7 @@ FRotator UDateTimeSystemComponent::GetLocalisedSunRotation(float BaseLatitudePer
 }
 
 FRotator UDateTimeSystemComponent::GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent,
-                                                   FVector Location)
+                                                            FVector Location)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
