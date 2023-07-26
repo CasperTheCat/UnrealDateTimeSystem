@@ -2,8 +2,9 @@
 
 #include "ClimateComponent.h"
 #include "DateTimeSubsystem.h"
+#include "Engine/GameInstance.h"
+#include "Engine/World.h"
 #include "GameFramework/GameState.h"
-#include "Interfaces.h"
 
 void UClimateComponent::ClimateSetup()
 {
@@ -773,7 +774,7 @@ void UClimateComponent::InternalTick(float DeltaTime)
         DateTimeSystem->GetTodaysDateTZ(LocalTime, TimezoneInfo);
 
         // Check for the delta
-        //auto Delta = FMath::Abs(LocalTime.Seconds - PriorLocalTime.Seconds);
+        // auto Delta = FMath::Abs(LocalTime.Seconds - PriorLocalTime.Seconds);
         auto Delta = DateTimeSystem->DComputeDeltaBetweenDatesSeconds(PriorLocalTime, LocalTime);
         auto NonContiguous = Delta > CatchupThresholdInSeconds;
 
@@ -785,9 +786,9 @@ void UClimateComponent::InternalTick(float DeltaTime)
         UpdateCurrentTemperature(Delta, NonContiguous);
         UpdateCurrentClimate(Delta, NonContiguous);
         UpdateCurrentRainfall(Delta, NonContiguous);
-        //UpdateCurrentTemperature(DeltaTime, NonContiguous);
-        //UpdateCurrentClimate(DeltaTime, NonContiguous);
-        //UpdateCurrentRainfall(DeltaTime, NonContiguous);
+        // UpdateCurrentTemperature(DeltaTime, NonContiguous);
+        // UpdateCurrentClimate(DeltaTime, NonContiguous);
+        // UpdateCurrentRainfall(DeltaTime, NonContiguous);
 
         // Guard against calling this.
         // By default, it's just an O(1) lookup after UpdateCurrentTemp

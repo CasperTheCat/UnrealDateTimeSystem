@@ -3,6 +3,7 @@
 #pragma once
 
 #include "DateTimeTypes.h"
+#include "UObject/Interface.h"
 
 #include "Interfaces.generated.h"
 

@@ -8,6 +8,8 @@
 #include "DateTimeTypes.h"
 #include "GameplayTagContainer.h"
 #include "Interfaces.h"
+#include "Subsystems/GameInstanceSubsystem.h"
+#include "Tickable.h"
 
 #include "DateTimeSubsystem.generated.h"
 

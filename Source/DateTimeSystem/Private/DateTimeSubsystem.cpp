@@ -1,6 +1,7 @@
 // [TEMPLATE_COPYRIGHT]
 
 #include "DateTimeSubsystem.h"
+#include "HAL/IConsoleManager.h"
 #include "DateTimeSystem/Private/DateTimeSystemSettings.h"
 
 namespace DateTimeCVars
@@ -826,7 +827,8 @@ void UDateTimeSystem::Initialize(FSubsystemCollectionBase &Collection)
 
     // Create Object
     const UDateTimeSystemSettings *Settings = GetDefault<UDateTimeSystemSettings>();
-    CoreObject = NewObject<UDateTimeSystemCore>(GetTransientPackage(), Settings->CoreClass.Get());
+    CoreObject = NewObject < UDateTimeSystemCore>((UObject *)GetTransientPackage(), Settings->CoreClass.Get());
+    //CoreObject = NewObject<UDateTimeSystemCore>(this, Settings->CoreClass.Get());
     CanTick = Settings->CanEverTick;
 
     if (IsValid(CoreObject))
