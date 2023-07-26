@@ -110,28 +110,28 @@ struct FDateTimeSystemStruct
     GENERATED_BODY()
 
 public:
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Date and Time")
     float Seconds;
 
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Date and Time")
     int Day;
 
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Date and Time")
     int Month;
 
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Date and Time")
     int Year;
 
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Date and Time")
     int DayOfWeek;
 
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Date and Time")
     int DayIndex;
 
-    UPROPERTY(SaveGame, BlueprintReadWrite)
+    UPROPERTY(SaveGame, BlueprintReadWrite, BlueprintReadWrite, Category = "Date and Time")
     int SolarDays;
 
-    UPROPERTY(SaveGame, BlueprintReadWrite)
+    UPROPERTY(SaveGame, BlueprintReadWrite, BlueprintReadWrite, Category = "Date and Time")
     float StoredSolarSeconds;
 
 public:
@@ -300,7 +300,7 @@ struct FDateTimeSystemTimezoneStruct
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere)
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, BlueprintReadWrite, Category = "TZ")
     float HoursDeltaFromMeridian;
 };
 

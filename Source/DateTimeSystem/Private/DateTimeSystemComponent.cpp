@@ -67,7 +67,7 @@ void UDateTimeSystemComponent::InternalTick(float DeltaTime, bool NonContiguous)
 void UDateTimeSystemComponent::InternalBegin()
 {
     // Create the Core
-    CoreObject = NewObject<UDateTimeSystemCore>(GetTransientPackage(), CoreClass.Get());
+    CoreObject = NewObject<UDateTimeSystemCore>(this, CoreClass.Get());
 
     if (IsValid(CoreObject))
     {
