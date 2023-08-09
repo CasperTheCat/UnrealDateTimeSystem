@@ -3,6 +3,7 @@
 #pragma once
 
 #include "DateTimeTypes.h"
+#include "UObject/Interface.h"
 
 #include "Interfaces.generated.h"
 
@@ -43,10 +44,10 @@ public:
     // Core Functions
     //
 
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Core")
     virtual UDateTimeSystemCore *GetCore();
 
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Core")
     virtual bool IsReady();
 
     ///// ///// ////////// ///// /////
@@ -58,7 +59,7 @@ public:
      *
      * @param DateStruct
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Today")
     virtual void GetTodaysDate(FDateTimeSystemStruct &DateStruct);
 
     /**
@@ -67,7 +68,7 @@ public:
      * @param DateStruct
      * @param TimezoneInfo
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Today")
     virtual void GetTodaysDateTZ(FDateTimeSystemStruct &DateStruct,
                                  UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo);
 
@@ -76,7 +77,7 @@ public:
      *
      * @param DateStruct
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Tomorrow")
     virtual void GetTomorrowsDate(FDateTimeSystemStruct &DateStruct);
 
     /**
@@ -85,7 +86,7 @@ public:
      * @param DateStruct
      * @param TimezoneInfo
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Tomorrow")
     virtual void GetTomorrowsDateTZ(FDateTimeSystemStruct &DateStruct,
                                     UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo);
 
@@ -94,7 +95,7 @@ public:
      *
      * @param DateStruct
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Yesterday")
     virtual void GetYesterdaysDate(FDateTimeSystemStruct &DateStruct);
 
     /**
@@ -103,7 +104,7 @@ public:
      * @param DateStruct
      * @param TimezoneInfo
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Yesterday")
     virtual void GetYesterdaysDateTZ(FDateTimeSystemStruct &DateStruct,
                                      UPARAM(ref) FDateTimeSystemTimezoneStruct &TimezoneInfo);
 
@@ -112,7 +113,7 @@ public:
      * Use SkipInitialisation if we are loading a checkpoint
      *
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Setters")
     virtual void SetUTCDateTime(FDateTimeSystemStruct &DateStruct, bool SkipInitialisation = false);
 
     /**
@@ -120,7 +121,7 @@ public:
      * Useful for saving the state
      *
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|UTCDate")
     virtual FDateTimeSystemStruct GetUTCDateTime();
 
     /**
@@ -132,7 +133,7 @@ public:
      *
      * @param DateStruct
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Functions|Add")
     virtual void AddDateStruct(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
@@ -140,7 +141,7 @@ public:
      *
      * @param DateStruct
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Functions|Set")
     virtual void AdvanceToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
@@ -155,7 +156,7 @@ public:
      * @return true
      * @return false
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Functions|Set")
     virtual bool AdvanceToClockTime(int Hour, int Minute, int Second, bool Safety = true);
 
     /**
@@ -166,7 +167,7 @@ public:
      * @param To
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Functions|Delta")
     virtual float ComputeDeltaBetweenDates(UPARAM(ref) FDateTimeSystemStruct &From,
                                            UPARAM(ref) FDateTimeSystemStruct &To);
 
@@ -177,7 +178,7 @@ public:
      * @param To
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Functions|Delta")
     virtual float ComputeDeltaBetweenDatesYears(UPARAM(ref) FDateTimeSystemStruct &From,
                                                 UPARAM(ref) FDateTimeSystemStruct &To);
 
@@ -188,7 +189,7 @@ public:
      * @param To
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Functions|Delta")
     virtual float ComputeDeltaBetweenDatesMonths(UPARAM(ref) FDateTimeSystemStruct &From,
                                                  UPARAM(ref) FDateTimeSystemStruct &To);
 
@@ -199,7 +200,7 @@ public:
      * @param To
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Functions|Delta")
     virtual float ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSystemStruct &From,
                                                UPARAM(ref) FDateTimeSystemStruct &To);
 
@@ -243,7 +244,7 @@ public:
      *
      * @return FRotator
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Sun")
     virtual FRotator GetSunRotation();
 
     /**
@@ -252,7 +253,7 @@ public:
      * @param Location
      * @return FRotator
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Sun")
     virtual FRotator GetSunRotationForLocation(FVector Location);
 
     /**
@@ -260,7 +261,7 @@ public:
      *
      * @return FVector
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Sun")
     virtual FVector GetSunVector(float Latitude, float Longitude);
 
     /**
@@ -268,7 +269,7 @@ public:
      *
      * @return FRotator
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Moon")
     virtual FRotator GetMoonRotation();
 
     /**
@@ -277,7 +278,7 @@ public:
      * @param Location
      * @return FRotator
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Moon")
     virtual FRotator GetMoonRotationForLocation(FVector Location);
 
     /**
@@ -285,7 +286,7 @@ public:
      *
      * @return FVector
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Moon")
     virtual FVector GetMoonVector(float Latitude, float Longitude);
 
     /**
@@ -298,7 +299,7 @@ public:
      * @param Location
      * @return FRotator
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Sun")
     virtual FRotator GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
 
     /**
@@ -311,7 +312,7 @@ public:
      * @param Location
      * @return FRotator
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Moon")
     virtual FRotator GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
 
 
@@ -330,7 +331,7 @@ public:
      * @return true
      * @return false
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Misc")
     virtual bool DoesYearLeap(int Year);
 
     /**
@@ -339,7 +340,7 @@ public:
      * @param DateStruct
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Fractionals")
     virtual float GetFractionalDay(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
@@ -348,7 +349,7 @@ public:
      * @param DateStruct
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Fractionals")
     virtual float GetFractionalMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
@@ -357,7 +358,7 @@ public:
      * @param DateStruct
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Fractionals")
     virtual float GetFractionalOrbitalYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
@@ -366,7 +367,7 @@ public:
      * @param DateStruct
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Fractionals")
     virtual float GetFractionalCalendarYear(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
@@ -375,7 +376,7 @@ public:
      * @param Year
      * @return int
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Fractionals")
     virtual int GetLengthOfCalendarYear(int Year);
 
     /**
@@ -383,7 +384,7 @@ public:
      *
      * @return int
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Misc")
     virtual int GetDaysInCurrentMonth();
 
     /**
@@ -392,7 +393,7 @@ public:
      * @param MonthIndex
      * @return int
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Misc")
     virtual int GetDaysInMonth(int MonthIndex);
 
     /**
@@ -401,7 +402,7 @@ public:
      * @param YearIndex
      * @return int
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Misc")
     virtual int GetMonthsInYear(int YearIndex);
 
     /**
@@ -410,7 +411,7 @@ public:
      * Remember, FName's are not localised, and this isn't using FText, which is
      * Using the FName directly in the UI is not advised
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Misc")
     virtual FText GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
@@ -418,7 +419,7 @@ public:
      *
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Misc")
     virtual float GetTimeScale();
 
     /**
@@ -426,7 +427,7 @@ public:
      *
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Misc")
     virtual float GetLengthOfDay();
 
 
@@ -438,7 +439,7 @@ public:
      * @brief This function is used if the component cannot tick itself.
      * Such as, for example, when placed on a GameInstance.
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Tick")
     virtual void InternalTick(float DeltaTime, bool NonContiguous = false);
 
     /**
@@ -450,7 +451,7 @@ public:
      * @param NorthingDirection
      * @return FVector
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Alignment")
     virtual FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection);
     
     /**
@@ -459,7 +460,7 @@ public:
      * @param FDateTimeSystemStruct
      * @return bool
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Sanitise")
     virtual bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct);
 
 };

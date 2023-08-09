@@ -67,7 +67,8 @@ void UDateTimeSystemComponent::InternalTick(float DeltaTime, bool NonContiguous)
 void UDateTimeSystemComponent::InternalBegin()
 {
     // Create the Core
-    CoreObject = NewObject<UDateTimeSystemCore>(GetTransientPackage(), CoreClass.Get());
+    //CoreObject = NewObject<UDateTimeSystemCore>((UObject *)GetTransientPackage(), CoreClass.Get());
+    CoreObject = NewObject<UDateTimeSystemCore>(this, CoreClass.Get());
 
     if (IsValid(CoreObject))
     {
@@ -325,7 +326,7 @@ FVector UDateTimeSystemComponent::GetMoonVector(float Latitude, float Longitude)
 }
 
 FRotator UDateTimeSystemComponent::GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent,
-                                                  FVector Location)
+                                                           FVector Location)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -346,7 +347,7 @@ FRotator UDateTimeSystemComponent::GetLocalisedSunRotation(float BaseLatitudePer
 }
 
 FRotator UDateTimeSystemComponent::GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent,
-                                                   FVector Location)
+                                                            FVector Location)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))

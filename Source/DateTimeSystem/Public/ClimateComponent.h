@@ -21,40 +21,31 @@ struct FDateTimeClimateDataStruct
 
 public:
     // Encodes how much water there is in the world
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Climate")
     float Wetness;
 
     // Amount of Rain to apply to shader
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Climate")
     float Rain;
 
     // Accumulated Puddles
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Climate")
     float Puddles;
 
-    // Amount of frost
-    // Similar to Wetness, but when cold
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    float Frost;
-
-    // Snow. I use this for light snow
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    float Snow;
-
     // WindVector
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Climate")
     FVector Wind;
 
     // Temperataure
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Climate")
     float Temperature;
 
     // Temperataure
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Climate")
     float ChillOffset;
 
     // Temperataure
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Climate")
     float HeatOffset;
 };
 
@@ -74,13 +65,13 @@ private:
      * @brief Tick rate when engine is ticking the component
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float TicksPerSecond;
 
     /**
      * @brief Threshold at which to use a non-contiguous time update
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float CatchupThresholdInSeconds;
 
     /**
@@ -88,7 +79,7 @@ private:
      * Only used by non-contiguous updates
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float CatchupWetnessDownblendSpeed;
 
     /**
@@ -96,21 +87,29 @@ private:
      * Only used by non-contiguous updates
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float CatchupWetnessUpblendSpeed;
+
+    /**
+     * @brief How fast should Wetness catch up to the target when starting raining
+     * Only used by non-contiguous updates
+     *
+     */
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
+    float CatchupSittingWaterLimit;
 
     /**
      * @brief Percentage of current Wetness that should evaporate over the next minute
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float WetnessEvaporationRate;
 
     /**
      * @brief Rate at which rainfall creates wetness
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float WetnessDepositionRate;
 
     /**
@@ -118,7 +117,7 @@ private:
      * Used when the sun is set or at night local time depending on UseSunPositionForEvaporation
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float WetnessEvaporationRateBase;
 
     /**
@@ -126,35 +125,35 @@ private:
      * Fallback is a linear interpolate over the day, which removes seasonality
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     bool UseSunPositionForEvaporation;
 
     /**
      * @brief Speed that rainfall lerps up to target in live update
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float RainfallBlendIncreaseSpeed;
 
     /**
      * @brief Speed that rainfall lerps down to target in live update
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float RainfallBlendDecreaseSpeed;
 
     /**
      * @brief Fraction of the Wetness that spills over into puddles over 1.f
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float RainfallWetnessOverflowPuddlingScale;
 
     /**
      * @brief Percentage of current puddles that should evaporate over the next minute
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float PuddleEvaporationRate;
 
     /**
@@ -162,14 +161,14 @@ private:
      * Used when the sun is set or at night local time depending on UseSunPositionForEvaporation
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float PuddleEvaporationRateBase;
 
     /**
      * @brief Upper Limit to stored water
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float PuddleLimit;
 
     /**
@@ -177,7 +176,7 @@ private:
      * Uses FDateTimeSystemClimateMonthlyRow
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     TObjectPtr<UDataTable> ClimateTable;
 
     /**
@@ -185,7 +184,7 @@ private:
      * Uses FDateTimeSystemClimateOverrideRow
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     TObjectPtr<UDataTable> ClimateOverridesTable;
 
     /**
@@ -416,6 +415,13 @@ public:
 
     /**
      * @brief Temperature Change Callback
+     * Lightweight call. Use functions to read the data
+     */
+    UPROPERTY(BlueprintAssignable)
+    FLocalDateTimeEvent UpdateLocalClimateSignal;
+
+    /**
+     * @brief Temperature Change Callback
      * Try to avoid this call if you can
      */
     UPROPERTY(BlueprintAssignable)
@@ -460,75 +466,90 @@ public:
      * @brief Computed Temperature
      *
      */
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|State")
     float CurrentTemperature;
 
     /**
      * @brief Computed Rainfall
      *
      */
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|State")
     float CurrentRainfall;
 
     /**
      * @brief Computed Wetness
      *
      */
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|State")
     float CurrentWetness;
+
+    /**
+     * @brief Computed Wetness Limit
+     * Used to clamp
+     *
+     */
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|State")
+    float CurrentWetnessLimit;
 
     /**
      * @brief Computed Sitting Water
      *
      */
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|State")
     float CurrentSittingWater;
+
+    /**
+     * @brief Computed Sitting Water
+     * Used to clamp
+     */
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|State")
+    float CurrentSittingWaterLimit;
 
     /**
      * @brief Computed Humidity
      *
      */
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|State")
     float CurrentRelativeHumidity;
 
     /**
      * @brief Computed Dew Point
      */
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|State")
     float CurrentDewPoint;
 
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|Configuration")
     int NumberOfRainSlotsPerDay;
 
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|State")
     float CurrentPrecipitationLevel;
 
     /**
      * @brief Computed Fog Level
      *
      */
-    UPROPERTY(SaveGame)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|State")
     float CurrentFog;
 
     /**
      * @brief Temperature Update Rate
      *
      */
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|Configuration")
     float TemperatureChangeSpeed;
 
     /**
      * @brief Fog Update Rate
      *
      */
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|Configuration")
     float FogChangeSpeed;
 
     /**
      * @brief Mean Sea Level
      * Used for offsetting the floor
      */
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|Configuration")
     float SeaLevel;
 
     /**
@@ -549,28 +570,28 @@ public:
      * @brief At what angle below the horizon, in radians, does sunset callback trigger
      *
      */
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|Configuration")
     float SunPositionBelowHorizonThreshold;
 
     /**
      * @brief At what angle above the horizon, in radians, does sunrise callback trigger
      *
      */
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|Configuration")
     float SunPositionAboveHorizonThreshold;
 
     /**
      * @brief Base Latitude relative to the DTS's reference
      *
      */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Climate|Internal|Configuration")
     float ReferenceLatitude;
 
     /**
      * @brief Base Longitude relative to the DTS's reference
      *
      */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Climate|Internal|Configuration")
     float ReferenceLongitude;
 
     /**
@@ -578,14 +599,14 @@ public:
      * Use SetClimateUpdateFrequency to set in gameplay
      *
      */
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
     float DefaultClimateUpdateFrequency;
 
     /**
      * @brief Timezone for this Climate Region
      * Does not support DST as that's hard
      */
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|Configuration")
     FDateTimeSystemTimezoneStruct TimezoneInfo;
 
     /**
@@ -593,7 +614,7 @@ public:
      * Used to rotate Vectors
      * Defaults to +X North
      */
-    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(SaveGame, EditAnywhere, BlueprintReadWrite, Category = "Climate|Internal|Configuration")
     FVector NorthingDirection;
 
 private:
@@ -720,6 +741,7 @@ private:
 
     /**
      * @brief Called by DTS via callback
+     * Dynamic doesn't like reference
      *
      */
     UFUNCTION()
@@ -781,7 +803,7 @@ public:
      *
      * @return FDateTimeSystemStruct
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Time")
     FDateTimeSystemStruct GetLocalTime();
 
     /**
@@ -789,14 +811,14 @@ public:
      * Normally called by InternalBegin
      *
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Internal|Bind")
     void BindToDateTimeSystem();
 
     /**
      * @brief Return whether the sun has risen
      *
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Sun")
     bool GetHasSunRisen()
     {
         return SunHasRisen;
@@ -806,7 +828,7 @@ public:
      * @brief Return whether the sun has set
      *
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Sun")
     bool GetHasSunSet()
     {
         return SunHasSet;
@@ -818,7 +840,7 @@ public:
      * @param MonthIndex
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Temperature")
     float GetMonthlyHighTemperature(int MonthIndex);
 
     /**
@@ -827,7 +849,7 @@ public:
      * @param MonthIndex
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Temperature")
     float GetMonthlyLowTemperature(int MonthIndex);
 
     /**
@@ -835,7 +857,7 @@ public:
      *
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Temperature")
     float GetCurrentTemperature();
 
     /**
@@ -843,7 +865,7 @@ public:
      *
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Rainfall")
     float GetCurrentRainfall();
 
     /**
@@ -851,7 +873,7 @@ public:
      *
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Wetness")
     float GetCurrentWetness();
 
     /**
@@ -859,11 +881,11 @@ public:
      *
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Wetness")
     float GetCurrentSittingWater();
 
     // TODO: DELETE
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Wetness")
     float DebugGetUnclampedWetness();
 
     /**
@@ -872,7 +894,7 @@ public:
      * @param Location
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Temperature")
     float GetCurrentTemperatureForLocation(FVector Location);
 
     /**
@@ -881,7 +903,7 @@ public:
      * @param WindVelocity
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Temperature")
     float GetCurrentFeltTemperature(float WindVelocity);
 
     /**
@@ -891,7 +913,7 @@ public:
      * @param Location
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Temperature")
     float GetCurrentFeltTemperatureForLocation(float WindVelocity, FVector Location);
 
     /**
@@ -900,7 +922,7 @@ public:
      * @param Location
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Dew Point")
     float GetCurrentDewPointForLocation(FVector Location);
 
     /**
@@ -909,7 +931,7 @@ public:
      * @param Location
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Humidity")
     float GetRelativeHumidityForLocation(FVector Location);
 
     /**
@@ -917,7 +939,7 @@ public:
      *
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Cloud")
     float GetCloudLevel();
 
     /**
@@ -927,7 +949,7 @@ public:
      * @param Scale
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Fog")
     float GetFogLevel(float DeltaTime, float Scale = 1.f);
 
     /**
@@ -935,7 +957,7 @@ public:
      *
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Temperature")
     float GetHeatIndex();
 
     /**
@@ -944,7 +966,7 @@ public:
      * @param Location
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Temperature")
     float GetHeatIndexForLocation(FVector Location);
 
     /**
@@ -953,7 +975,7 @@ public:
      * @param WindVector
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Temperature")
     float GetWindChillFromVector(FVector WindVector);
 
     /**
@@ -962,7 +984,7 @@ public:
      * @param WindVelocity
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Temperature")
     float GetWindChillFromVelocity(float WindVelocity);
 
     /**
@@ -972,7 +994,7 @@ public:
      *
      * @param DeltaTime
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Internal|Tick")
     void InternalTick(float DeltaTime);
 
     /**
@@ -980,7 +1002,7 @@ public:
      * Can be called if the component isn't receiving a BeginPlay
      * Such as when on a GameInstance
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Internal|Begin")
     void InternalBegin();
 
     /**
@@ -988,7 +1010,7 @@ public:
      *
      * @param Frequency
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Setters|Update")
     void SetClimateUpdateFrequency(float Frequency);
 
     /**
@@ -997,7 +1019,7 @@ public:
      * @param Location
      * @return FRotator
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Sun")
     FRotator GetLocalSunRotation(FVector Location);
 
     /**
@@ -1006,7 +1028,7 @@ public:
      * @param Location
      * @return FRotator
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Moon")
     FRotator GetLocalMoonRotation(FVector Location);
 
     /**
@@ -1015,7 +1037,7 @@ public:
      *
      * @param DateStruct
      */
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Climate|Functionality|Date")
     void DateChanged(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
 
     /**
@@ -1035,7 +1057,7 @@ public:
      * @param PreviousDayHigh
      * @return float
      */
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Climate|Functionality|Temperature")
     float DailyLowModulation(UPARAM(ref) FDateTimeSystemStruct &DateStruct, FGameplayTagContainer &Attributes,
                              float Temperature, float PreviousDayLow, float PreviousDayHigh);
 
@@ -1063,7 +1085,7 @@ public:
      * @param PreviousDayHigh
      * @return float
      */
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Climate|Functionality|Temperature")
     float DailyHighModulation(UPARAM(ref) FDateTimeSystemStruct &DateStruct, FGameplayTagContainer &Attributes,
                               float Temperature, float PreviousDayLow, float PreviousDayHigh);
 
@@ -1090,7 +1112,7 @@ public:
      * @param HighTemperature
      * @return float
      */
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Climate|Functionality|Temperature")
     float ModulateTemperature(float Temperature, float SecondsSinceUpdate, float LowTemperature, float HighTemperature);
 
     /**
@@ -1114,7 +1136,7 @@ public:
      * @param HighTemperature
      * @return float
      */
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Climate|Functionality|Rainfall")
     float ModulateRainfall(float CurrentRainfallLevel, float SecondsSinceUpdate, float TargetRainfall);
 
     /**
@@ -1137,7 +1159,7 @@ public:
      * @param RainLevel
      * @return float
      */
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Climate|Functionality|Fog")
     float ModulateFogByRainfall(float FogHeight, float SecondsSinceUpdate, float RainLevel);
 
     /**
@@ -1155,7 +1177,7 @@ public:
      *
      * @return float
      */
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Climate|Getters|Rainfall")
     float GetRainLevel();
 
     /**
@@ -1172,7 +1194,7 @@ public:
      * @param Location
      * @return float
      */
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, Category = "Climate|Functionality|Temperature")
     float ModulateTemperatureByLocation(float Temperature, FVector Location);
 
     /**
@@ -1180,7 +1202,7 @@ public:
      *
      * @return FDateTimeClimateDataStruct
      */
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Climate|Getters")
     FDateTimeClimateDataStruct GetUpdatedClimateData();
 
     /**
@@ -1189,4 +1211,20 @@ public:
      * @return FDateTimeClimateDataStruct
      */
     virtual FDateTimeClimateDataStruct GetUpdatedClimateData_Implementation();
+
+
+    /**
+     * @brief Get the Updated Climate Data object
+     *
+     * @return FDateTimeClimateDataStruct
+     */
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Climate|Getters")
+    void GetClimateDataByRef(UPARAM(ref) FDateTimeClimateDataStruct &ClimateData);
+
+    /**
+     * @brief Native Implementation of GetUpdatedClimateData
+     *
+     * @return FDateTimeClimateDataStruct
+     */
+    virtual void GetClimateDataByRef_Implementation(UPARAM(ref) FDateTimeClimateDataStruct &ClimateData);
 };
