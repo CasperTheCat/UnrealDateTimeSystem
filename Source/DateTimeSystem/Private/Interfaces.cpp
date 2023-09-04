@@ -246,6 +246,18 @@ FVector IDateTimeSystemCommon::AlignWorldLocationInternalCoordinates(FVector Wor
     return FVector();
 }
 
+FVector IDateTimeSystemCommon::RotateLocationByNorthing(FVector Location, FVector NorthingDirection)
+{
+    checkNoEntry();
+    return FVector();
+}
+
+FRotator IDateTimeSystemCommon::RotateRotationByNorthing(FRotator Rotation, FVector NorthingDirection)
+{
+    checkNoEntry();
+    return FRotator();
+}
+
 UDateTimeSystemCore *IDateTimeSystemCommon::GetCore()
 {
     checkNoEntry();

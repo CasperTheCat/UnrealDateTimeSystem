@@ -487,6 +487,30 @@ public:
     virtual FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection) override;
 
     /**
+     * @brief Rotate the Location around world origin by the new north
+     * By default, X is North.
+     * If you wish to rotate this, pass the new north as a normalised vector
+     *
+     * @param WorldLocation
+     * @param NorthingDirection
+     * @return FVector
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Alignment")
+    virtual FVector RotateLocationByNorthing(FVector Location, FVector NorthingDirection) override;
+
+    /**
+     * @brief Rotate the rotator around world origin by the new north
+     * By default, X is North.
+     * If you wish to rotate this, pass the new north as a normalised vector
+     *
+     * @param WorldLocation
+     * @param NorthingDirection
+     * @return FVector
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Alignment")
+    virtual FRotator RotateRotationByNorthing(FRotator Rotation, FVector NorthingDirection) override;
+
+    /**
      * @brief Sanitise Date Time
      *
      * @param FDateTimeSystemStruct

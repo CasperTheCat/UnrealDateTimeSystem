@@ -863,6 +863,46 @@ FVector UDateTimeSystemComponent::AlignWorldLocationInternalCoordinates(FVector 
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
+FVector UDateTimeSystemComponent::RotateLocationByNorthing(FVector Location, FVector NorthingDirection)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->RotateLocationByNorthing(Location, NorthingDirection);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FVector();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FRotator UDateTimeSystemComponent::RotateRotationByNorthing(FRotator Rotation, FVector NorthingDirection)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->RotateRotationByNorthing(Rotation, NorthingDirection);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FRotator();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
 void UDateTimeSystemComponent::DateTimeSetup()
 {
     PrimaryComponentTick.bCanEverTick = true;

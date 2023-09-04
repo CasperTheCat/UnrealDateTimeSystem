@@ -759,6 +759,18 @@ private:
      */
     FVector GetLocationAdjustedForNorthing(FVector Location);
 
+    /**
+     * @brief Internal function for adjusting Location Northing Vector
+     *
+     */
+    FVector RotateByNorthing(FVector Location);
+
+    /**
+     * @brief Internal function for adjusting Location Northing Vector
+     *
+     */
+    FRotator RotateByNorthing(FRotator Rotation);
+
 public:
     /**
      * @brief Construct a new UClimateComponent

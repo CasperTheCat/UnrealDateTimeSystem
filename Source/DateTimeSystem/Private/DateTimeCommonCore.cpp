@@ -1008,6 +1008,20 @@ FVector UDateTimeSystemCore::AlignWorldLocationInternalCoordinates(FVector World
     return FVector(RetVal);
 }
 
+FVector UDateTimeSystemCore::RotateLocationByNorthing(FVector Location, FVector NorthingDirection)
+{
+    auto NorthingRotation = NorthingDirection.ToOrientationRotator();
+    auto RetVal = FRotationMatrix(NorthingRotation).TransformVector(Location);
+
+    return FVector(RetVal);
+}
+
+FRotator UDateTimeSystemCore::RotateRotationByNorthing(FRotator Rotation, FVector NorthingDirection)
+{
+    auto NorthingRotation = NorthingDirection.ToOrientationRotator();
+    return NorthingRotation + Rotation;
+}
+
 float UDateTimeSystemCore::SolarTimeCorrection(float YearInRadians)
 {
     DECLARE_SCOPE_CYCLE_COUNTER(TEXT("SolarTimeCorrection"), STAT_ACISolarTimeCorrection, STATGROUP_ACIDateTimeCommon);
