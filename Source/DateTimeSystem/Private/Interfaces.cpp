@@ -1,4 +1,4 @@
-// [TEMPLATE]
+// Copyright Acinonyx Ltd. 2023. All Rights Reserved.
 
 #include "Interfaces.h"
 

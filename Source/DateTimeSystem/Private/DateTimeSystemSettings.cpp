@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Acinonyx Ltd. 2023. All Rights Reserved.
 
 #include "DateTimeSystemSettings.h"
 
