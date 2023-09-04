@@ -7,8 +7,8 @@
 	"Category": "Other",
 	"CreatedBy": "Acinonyx Ltd.",
 	"CreatedByURL": "https://acinonyx.nz/",
-	"DocsURL": "",
-	"MarketplaceURL": "",
+	"DocsURL": "https://acinonyx.nz/documentation-date-climate-root/",
+	"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/9c68a1bd8bdb4206976ef68de0ee49ef",
 	"SupportURL": "",
 	"EngineVersion" : "5.2.0",
 	"CanContainContent": true,
@@ -19,7 +19,11 @@
 		{
 			"Name": "DateTimeSystem",
 			"Type": "Runtime",
-			"LoadingPhase": "PreDefault"
+			"LoadingPhase": "PreDefault",
+			"PlatformAllowList": [
+				"Win64",
+				"Linux"
+			]
 		}
 	]
 }

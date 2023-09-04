@@ -1,4 +1,4 @@
-// [TEMPLATE_COPYRIGHT]
+// Copyright Acinonyx Ltd. 2023. All Rights Reserved.
 
 #pragma once
 
@@ -758,6 +758,18 @@ private:
      *
      */
     FVector GetLocationAdjustedForNorthing(FVector Location);
+
+    /**
+     * @brief Internal function for adjusting Location Northing Vector
+     *
+     */
+    FVector RotateByNorthing(FVector Location);
+
+    /**
+     * @brief Internal function for adjusting Location Northing Vector
+     *
+     */
+    FRotator RotateByNorthing(FRotator Rotation);
 
 public:
     /**

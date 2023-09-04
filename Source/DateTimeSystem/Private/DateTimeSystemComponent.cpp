@@ -1,4 +1,4 @@
-// [TEMPLATE_COPYRIGHT]
+// Copyright Acinonyx Ltd. 2023. All Rights Reserved.
 
 #include "DateTimeSystemComponent.h"
 
@@ -860,6 +860,46 @@ FVector UDateTimeSystemComponent::AlignWorldLocationInternalCoordinates(FVector 
     }
 
     return FVector();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FVector UDateTimeSystemComponent::RotateLocationByNorthing(FVector Location, FVector NorthingDirection)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->RotateLocationByNorthing(Location, NorthingDirection);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FVector();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FRotator UDateTimeSystemComponent::RotateRotationByNorthing(FRotator Rotation, FVector NorthingDirection)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->RotateRotationByNorthing(Rotation, NorthingDirection);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FRotator();
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 

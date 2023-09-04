@@ -1,4 +1,4 @@
-// [TEMPLATE_COPYRIGHT]
+// Copyright Acinonyx Ltd. 2023. All Rights Reserved.
 
 #pragma once
 
@@ -859,6 +859,7 @@ public:
      * @brief Align the World Position to Date System Coordinate
      * By default, X is North.
      * If you wish to rotate this, pass the new north as a normalised vector
+     * Avoid setting Z, unless you know what you're doing
      *
      * @param WorldLocation
      * @param NorthingDirection
@@ -866,6 +867,30 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Alignment")
     FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection);
+
+    /**
+     * @brief Rotate the Location around world origin by the new north
+     * By default, X is North.
+     * If you wish to rotate this, pass the new north as a normalised vector
+     *
+     * @param WorldLocation
+     * @param NorthingDirection
+     * @return FVector
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Alignment")
+    FVector RotateLocationByNorthing(FVector Location, FVector NorthingDirection);
+
+    /**
+     * @brief Rotate the rotator around world origin by the new north
+     * By default, X is North.
+     * If you wish to rotate this, pass the new north as a normalised vector
+     *
+     * @param WorldLocation
+     * @param NorthingDirection
+     * @return FVector
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Alignment")
+    FRotator RotateRotationByNorthing(FRotator Rotation, FVector NorthingDirection);
 
     /**
      * @brief Return the FText of the month

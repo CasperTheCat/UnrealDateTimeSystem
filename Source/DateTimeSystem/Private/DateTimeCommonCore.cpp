@@ -1,4 +1,4 @@
-// [TEMPLATE_COPYRIGHT]
+// Copyright Acinonyx Ltd. 2023. All Rights Reserved.
 
 #include "DateTimeCommonCore.h"
 
@@ -1006,6 +1006,20 @@ FVector UDateTimeSystemCore::AlignWorldLocationInternalCoordinates(FVector World
     auto RetVal = FRotationMatrix(InverseRotation).TransformVector(WorldLocation);
 
     return FVector(RetVal);
+}
+
+FVector UDateTimeSystemCore::RotateLocationByNorthing(FVector Location, FVector NorthingDirection)
+{
+    auto NorthingRotation = NorthingDirection.ToOrientationRotator();
+    auto RetVal = FRotationMatrix(NorthingRotation).TransformVector(Location);
+
+    return FVector(RetVal);
+}
+
+FRotator UDateTimeSystemCore::RotateRotationByNorthing(FRotator Rotation, FVector NorthingDirection)
+{
+    auto NorthingRotation = NorthingDirection.ToOrientationRotator();
+    return NorthingRotation + Rotation;
 }
 
 float UDateTimeSystemCore::SolarTimeCorrection(float YearInRadians)

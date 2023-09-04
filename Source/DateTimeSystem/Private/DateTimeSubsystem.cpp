@@ -1,8 +1,9 @@
-// [TEMPLATE_COPYRIGHT]
+// Copyright Acinonyx Ltd. 2023. All Rights Reserved.
 
 #include "DateTimeSubsystem.h"
-#include "HAL/IConsoleManager.h"
 #include "DateTimeSystem/Private/DateTimeSystemSettings.h"
+#include "Engine/GameInstance.h"
+#include "HAL/IConsoleManager.h"
 
 namespace DateTimeCVars
 {
@@ -820,6 +821,46 @@ FVector UDateTimeSystem::AlignWorldLocationInternalCoordinates(FVector WorldLoca
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
+FVector UDateTimeSystem::RotateLocationByNorthing(FVector Location, FVector NorthingDirection)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->RotateLocationByNorthing(Location, NorthingDirection);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FVector();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FRotator UDateTimeSystem::RotateRotationByNorthing(FRotator Rotation, FVector NorthingDirection)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->RotateRotationByNorthing(Rotation, NorthingDirection);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FRotator();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
 void UDateTimeSystem::Initialize(FSubsystemCollectionBase &Collection)
 {
     const UGameInstance *LocalGameInstance = GetGameInstance();
@@ -827,8 +868,8 @@ void UDateTimeSystem::Initialize(FSubsystemCollectionBase &Collection)
 
     // Create Object
     const UDateTimeSystemSettings *Settings = GetDefault<UDateTimeSystemSettings>();
-    CoreObject = NewObject < UDateTimeSystemCore>((UObject *)GetTransientPackage(), Settings->CoreClass.Get());
-    //CoreObject = NewObject<UDateTimeSystemCore>(this, Settings->CoreClass.Get());
+    CoreObject = NewObject<UDateTimeSystemCore>((UObject *)GetTransientPackage(), Settings->CoreClass.Get());
+    // CoreObject = NewObject<UDateTimeSystemCore>(this, Settings->CoreClass.Get());
     CanTick = Settings->CanEverTick;
 
     if (IsValid(CoreObject))

@@ -1,4 +1,4 @@
-// [TEMPLATE_COPYRIGHT]
+// Copyright Acinonyx Ltd. 2023. All Rights Reserved.
 
 #include "ClimateComponent.h"
 #include "DateTimeSubsystem.h"
@@ -570,6 +570,26 @@ FORCEINLINE FVector UClimateComponent::GetLocationAdjustedForNorthing(FVector Lo
     return Location;
 }
 
+FVector UClimateComponent::RotateByNorthing(FVector Location)
+{
+    if (DateTimeSystem)
+    {
+        return DateTimeSystem->RotateLocationByNorthing(Location, NorthingDirection);
+    }
+
+    return Location;
+}
+
+FRotator UClimateComponent::RotateByNorthing(FRotator Rotation)
+{
+    if (DateTimeSystem)
+    {
+        return DateTimeSystem->RotateRotationByNorthing(Rotation, NorthingDirection);
+    }
+
+    return Rotation;
+}
+
 float UClimateComponent::GetCurrentTemperature()
 {
     return CurrentTemperature;
@@ -929,8 +949,9 @@ FRotator UClimateComponent::GetLocalSunRotation(FVector Location)
 {
     if (DateTimeSystem)
     {
-        auto AdjustedLocation = GetLocationAdjustedForNorthing(Location);
-        return DateTimeSystem->GetLocalisedSunRotation(PercentileLatitude, PercentileLongitude, AdjustedLocation);
+        // 1.1.1 - Compute as if X is North, then correct to northing
+        auto SunRotation = DateTimeSystem->GetLocalisedSunRotation(PercentileLatitude, PercentileLongitude, Location);
+        return RotateByNorthing(SunRotation);
     }
 
     return FRotator();
@@ -940,8 +961,9 @@ FRotator UClimateComponent::GetLocalMoonRotation(FVector Location)
 {
     if (DateTimeSystem)
     {
-        auto AdjustedLocation = GetLocationAdjustedForNorthing(Location);
-        return DateTimeSystem->GetLocalisedMoonRotation(PercentileLatitude, PercentileLongitude, AdjustedLocation);
+        // 1.1.1 - Compute as if X is North, then correct to northing
+        auto MoonRotation = DateTimeSystem->GetLocalisedMoonRotation(PercentileLatitude, PercentileLongitude, Location);
+        return RotateByNorthing(MoonRotation);
     }
 
     return FRotator();
