@@ -555,7 +555,7 @@ public:
      * @param DateStruct
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Functions|Set")
-    void AdvanceToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct);
+    void AdvanceToTime(UPARAM(ref) const FDateTimeSystemStruct &DateStruct);
 
     /**
      * @brief Advance to the timestamp specified in params

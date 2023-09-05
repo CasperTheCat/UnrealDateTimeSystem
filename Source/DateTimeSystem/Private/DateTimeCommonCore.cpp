@@ -299,7 +299,7 @@ FDateTimeSystemStruct UDateTimeSystemCore::GetUTCDateTime()
     return InternalDate;
 }
 
-void UDateTimeSystemCore::AdvanceToTime(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
+void UDateTimeSystemCore::AdvanceToTime(UPARAM(ref) const FDateTimeSystemStruct &DateStruct)
 {
     // Technically, we want to compute the delta of Internal to DateStruct, then add it
     auto Delta = DateStruct - InternalDate;
@@ -311,8 +311,13 @@ bool UDateTimeSystemCore::AdvanceToClockTime(int Hour, int Minute, int Second, b
     // Struct to adding
     FDateTimeSystemStruct Local{};
 
+    // CLAMP
+    auto InternalHour = Hour % 24;
+    auto InternalMinute = Minute % 60;
+    auto InternalSecond = Second % 60;
+
     // Step one. Compute the second value of this
-    auto ClockTimeInSeconds = (Hour * 60 + Minute) * 60 + Second;
+    auto ClockTimeInSeconds = (InternalHour * 60 + InternalMinute) * 60 + InternalSecond;
     auto TimeToTravel = ClockTimeInSeconds - InternalDate.Seconds;
 
     // Step two. Have we already missed this clock time?
