@@ -694,31 +694,7 @@ float UClimateComponent::GetFogLevel(float DeltaTime, float Scale)
 
 float UClimateComponent::GetHeatIndex()
 {
-    auto HeatIndex = GetHeatIndexForLocation(FVector(0, 0, SeaLevel));
-    // auto T = CurrentTemperature;
-    // auto R = CurrentRelativeHumidity;
-    // auto TT = T * T;
-    // auto RR = R * R;
-
-    //// Constants
-    // auto C1 = -8.78469475556f;
-    // auto C2 = 1.61139411f;
-    // auto C3 = 2.33854883889f;
-    // auto C4 = -0.14611605f;
-    // auto C5 = -0.012308084f;
-    // auto C6 = -0.0164248277778f;
-    // auto C7 = 2.211732e-3f;
-    // auto C8 = 7.2546e-4f;
-    // auto C9 = -3.582e-6f;
-
-    // auto HeatIndex = C1 + C2 * T + C3 * R + C4 * T * R + C5 * TT + C6 * RR + C7 * TT * R + C8 * T * RR + C9 * TT *
-    // RR;
-
-    // We want to mute HI when temp is under 25C
-    // We can do this rolling off
-    auto HeatIndexDelta = HeatIndex - CurrentTemperature;
-
-    return FMath::Lerp(0, HeatIndexDelta, FMath::Clamp(CurrentTemperature - 25, 0, 1));
+    return GetHeatIndexForLocation(FVector(0, 0, SeaLevel));
 }
 
 float UClimateComponent::GetHeatIndexForLocation(FVector Location)
@@ -753,13 +729,13 @@ float UClimateComponent::GetHeatIndexForLocation(FVector Location)
         + C8 * T * RR
         + C9 * TT * RR;
 
-    return HeatIndex;
+    //return HeatIndex;
 
     //// We want to mute HI when temp is under 25C
     //// We can do this rolling off
-    // auto HeatIndexDelta = HeatIndex - CurrentTemperature;
+    auto HeatIndexDelta = HeatIndex - CurrentTemperature;
 
-    // return FMath::Lerp(0, HeatIndexDelta, FMath::Clamp(CurrentTemperature - 25, 0, 1));
+    return FMath::Lerp(0, HeatIndexDelta, FMath::Clamp(CurrentTemperature - 25, 0, 1));
 }
 
 float UClimateComponent::GetWindChillFromVector(FVector WindVector)
@@ -777,10 +753,6 @@ float UClimateComponent::GetWindChillFromVelocity(float WindVelocity)
     return FMath::Min(0, WC - CurrentTemperature);
 }
 
-// Start a counter here so it captures the super call
-// DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetCameraView (Including Super::)"), STAT_ACIGetCameraViewInc,
-// STATGROUP_ACIExtCam);
-
 void UClimateComponent::InternalTick(float DeltaTime)
 {
     DECLARE_SCOPE_CYCLE_COUNTER(TEXT("InternalTick"), STAT_ACICSInternalTick, STATGROUP_ACIClimateSys);
@@ -795,7 +767,7 @@ void UClimateComponent::InternalTick(float DeltaTime)
 
         // Check for the delta
         // auto Delta = FMath::Abs(LocalTime.Seconds - PriorLocalTime.Seconds);
-        auto Delta = DateTimeSystem->DComputeDeltaBetweenDatesSeconds(PriorLocalTime, LocalTime);
+        auto Delta = DateTimeSystem->ComputeDeltaBetweenDatesSeconds(PriorLocalTime, LocalTime);
         auto NonContiguous = Delta > CatchupThresholdInSeconds;
 
         if (NonContiguous)

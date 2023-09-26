@@ -1224,7 +1224,6 @@ public:
      */
     virtual FDateTimeClimateDataStruct GetUpdatedClimateData_Implementation();
 
-
     /**
      * @brief Get the Updated Climate Data object
      *

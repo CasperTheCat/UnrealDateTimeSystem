@@ -212,8 +212,9 @@ public:
      * @param To
      * @return double
      */
-    virtual double DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
-                                                    UPARAM(ref) FDateTimeSystemStruct &To);
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Functions|Delta")
+    virtual double ComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
+                                                   UPARAM(ref) FDateTimeSystemStruct &To);
 
     /**
      * @brief Compute Delta Between Dates Internal
@@ -229,11 +230,6 @@ public:
     virtual TTuple<float, float, float> ComputeDeltaBetweenDatesInternal(UPARAM(ref) FDateTimeSystemStruct &Date1,
                                                                          UPARAM(ref) FDateTimeSystemStruct &Date2,
                                                                          FDateTimeSystemStruct &Result);
-
-
-
-
-
 
     ///// ///// ////////// ///// /////
     // Sun and Moon
@@ -255,6 +251,15 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Sun")
     virtual FRotator GetSunRotationForLocation(FVector Location);
+
+    /**
+     * @brief Get the Sun Rotation For Lat/Long
+     *
+     * @param Location
+     * @return FRotator
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Sun")
+    virtual FRotator GetSunRotationForLatLong(double Latitude, double Longitude);
 
     /**
      * @brief Get the Sun Vector
@@ -280,6 +285,15 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Moon")
     virtual FRotator GetMoonRotationForLocation(FVector Location);
+
+    /**
+     * @brief Get the Moon Rotation For Lat/Long
+     *
+     * @param Location
+     * @return FRotator
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Moon")
+    virtual FRotator GetMoonRotationForLatLong(double Latitude, double Longitude);
 
     /**
      * @brief Get the Moon Vector
@@ -314,11 +328,6 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Moon")
     virtual FRotator GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent, FVector Location);
-
-
-
-
-
 
     ///// ///// ////////// ///// /////
     // Misc Getters
@@ -430,7 +439,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Misc")
     virtual float GetLengthOfDay();
 
-
     ///// ///// ////////// ///// /////
     // Misc Helper Functions
     //
@@ -453,7 +461,7 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Alignment")
     virtual FVector AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection);
-    
+
     /**
      * @brief Rotate the Location around world origin by the new north
      * By default, X is North.
@@ -486,7 +494,6 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Sanitise")
     virtual bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct);
-
 };
 
 // Interface

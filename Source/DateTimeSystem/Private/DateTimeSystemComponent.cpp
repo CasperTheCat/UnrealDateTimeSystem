@@ -245,6 +245,26 @@ FRotator UDateTimeSystemComponent::GetSunRotation()
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
+FRotator UDateTimeSystemComponent::GetSunRotationForLatLong(double Latitude, double Longitude)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->GetSunRotationForLatLong(Latitude, Longitude);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FRotator();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
 FVector UDateTimeSystemComponent::GetSunVector(float Latitude, float Longitude)
 {
 #if DATETIMESYSTEM_POINTERCHECK
@@ -293,6 +313,26 @@ FRotator UDateTimeSystemComponent::GetMoonRotation()
 #endif // DATETIMESYSTEM_POINTERCHECK
 
         return CoreObject->GetMoonRotation();
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FRotator();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FRotator UDateTimeSystemComponent::GetMoonRotationForLatLong(double Latitude, double Longitude)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->GetMoonRotationForLatLong(Latitude, Longitude);
 
 #if DATETIMESYSTEM_POINTERCHECK
     }
@@ -602,7 +642,7 @@ float UDateTimeSystemComponent::ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTi
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
-double UDateTimeSystemComponent::DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &Date1,
+double UDateTimeSystemComponent::ComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &Date1,
                                                                   UPARAM(ref) FDateTimeSystemStruct &Date2)
 {
 #if DATETIMESYSTEM_POINTERCHECK
@@ -610,7 +650,7 @@ double UDateTimeSystemComponent::DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FD
     {
 #endif // DATETIMESYSTEM_POINTERCHECK
 
-        return CoreObject->DComputeDeltaBetweenDatesSeconds(Date1, Date2);
+        return CoreObject->ComputeDeltaBetweenDatesSeconds(Date1, Date2);
 
 #if DATETIMESYSTEM_POINTERCHECK
     }

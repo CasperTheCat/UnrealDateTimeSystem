@@ -148,6 +148,17 @@ FRotator UDateTimeSystemCore::GetSunRotationForLocation_Implementation(FVector L
     return GetLocalisedSunRotation(PercentLatitude, PercentLongitude, Location);
 }
 
+FRotator UDateTimeSystemCore::GetSunRotationForLatLong_Implementation(double Latitude, double Longitude)
+{
+    auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
+    auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
+
+    return GetLocalisedSunRotation(LocalisedPercentLatitude, LocalisedPercentLongitude,
+                                   FVector::ZeroVector);
+}
+
+
+
 FRotator UDateTimeSystemCore::GetSunRotation_Implementation()
 {
     return GetSunRotationForLocation(FVector::ZeroVector);
@@ -184,11 +195,6 @@ FVector UDateTimeSystemCore::GetSunVector_Implementation(float Latitude, float L
     // TimeOffset is acting
     float TimeOffset = EQTime + 4 * FMath::RadiansToDegrees(LocalLong); // -60 * TimezoneInfo.HoursDeltaFromMeridian;
 
-    // Get the time in minutes, and add the offset, also in minutes
-    float CorrectedTime = InternalDate.GetTimeInMinutes() + TimeOffset;
-    float SolarHour = (CorrectedTime / 4) - 180;
-    float SolarAngle = FMath::DegreesToRadians(SolarHour);
-
     // New Method
     float LatOut = DeclAngle;
     float LongOut = FMath::DegreesToRadians(-15 * (((InternalDate.Seconds - LengthOfDay * 0.5) + EQTime * 60) / 3600));
@@ -214,6 +220,15 @@ FRotator UDateTimeSystemCore::GetMoonRotationForLocation_Implementation(FVector 
 FRotator UDateTimeSystemCore::GetMoonRotation_Implementation()
 {
     return GetMoonRotationForLocation(FVector::ZeroVector);
+}
+
+FRotator UDateTimeSystemCore::GetMoonRotationForLatLong_Implementation(double Latitude, double Longitude)
+{
+    auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
+    auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
+
+    return GetLocalisedMoonRotation(LocalisedPercentLatitude, LocalisedPercentLongitude,
+                                   FVector::ZeroVector);
 }
 
 /////
@@ -392,7 +407,7 @@ float UDateTimeSystemCore::ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSys
     return DeltaDays + FractionalDay;
 }
 
-double UDateTimeSystemCore::DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &Date1,
+double UDateTimeSystemCore::ComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &Date1,
                                                              UPARAM(ref) FDateTimeSystemStruct &Date2)
 {
     double Days = ComputeDeltaBetweenDatesDays(Date1, Date2);
