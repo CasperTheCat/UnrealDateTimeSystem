@@ -72,6 +72,12 @@ FRotator IDateTimeSystemCommon::GetSunRotation()
     return FRotator();
 }
 
+FRotator IDateTimeSystemCommon::GetSunRotationForLatLong(double Latitude, double Longitude)
+{
+    checkNoEntry();
+    return FRotator();
+}
+
 FVector IDateTimeSystemCommon::GetSunVector(float Latitude, float Longitude)
 {
     checkNoEntry();
@@ -90,6 +96,12 @@ FRotator IDateTimeSystemCommon::GetMoonRotation()
     return FRotator();
 }
 
+FRotator IDateTimeSystemCommon::GetMoonRotationForLatLong(double Latitude, double Longitude)
+{
+    checkNoEntry();
+    return FRotator();
+}
+
 FVector IDateTimeSystemCommon::GetMoonVector(float Latitude, float Longitude)
 {
     checkNoEntry();
@@ -98,6 +110,7 @@ FVector IDateTimeSystemCommon::GetMoonVector(float Latitude, float Longitude)
 
 FText IDateTimeSystemCommon::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
 {
+    checkNoEntry();
     return FText::FromString("Missing Month Name");
 }
 
@@ -158,9 +171,10 @@ float IDateTimeSystemCommon::ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeS
     return 0;
 }
 
-double IDateTimeSystemCommon::DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
+double IDateTimeSystemCommon::ComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
                                                                UPARAM(ref) FDateTimeSystemStruct &To)
 {
+    checkNoEntry();
     return 0.0;
 }
 
@@ -176,6 +190,7 @@ float IDateTimeSystemCommon::GetFractionalDay(FDateTimeSystemStruct &DateStruct)
 
 float IDateTimeSystemCommon::GetFractionalMonth(FDateTimeSystemStruct &DateStruct)
 {
+    checkNoEntry();
     return 0.0f;
 }
 

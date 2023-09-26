@@ -412,8 +412,9 @@ public:
      * @param To
      * @return double
      */
-    virtual double DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
-                                                    UPARAM(ref) FDateTimeSystemStruct &To) override;
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Functions|Delta")
+    virtual double ComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
+                                                   UPARAM(ref) FDateTimeSystemStruct &To) override;
 
     /**
      * @brief Compute Delta Between Dates Internal
@@ -452,6 +453,15 @@ public:
     virtual FRotator GetSunRotationForLocation(FVector Location) override;
 
     /**
+     * @brief Get the Sun Rotation For Lat/Long
+     *
+     * @param Location
+     * @return FRotator
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Sun")
+    virtual FRotator GetSunRotationForLatLong(double Latitude, double Longitude) override;
+
+    /**
      * @brief Get the Sun Vector
      *
      * @return FVector
@@ -475,6 +485,15 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Moon")
     virtual FRotator GetMoonRotationForLocation(FVector Location) override;
+
+    /**
+     * @brief Get the Moon Rotation For Lat/Long
+     *
+     * @param Location
+     * @return FRotator
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Moon")
+    virtual FRotator GetMoonRotationForLatLong(double Latitude, double Longitude) override;
 
     /**
      * @brief Get the Moon Vector
@@ -511,10 +530,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Moon")
     virtual FRotator GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent,
                                               FVector Location) override;
-
-
-
-
 
     ///// ///// ////////// ///// /////
     // Misc Getters
@@ -681,8 +696,6 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Sanitise")
     virtual bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct) override;
-
-
 
     friend class UClimateComponent;
 };

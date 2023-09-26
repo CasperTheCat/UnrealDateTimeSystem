@@ -448,23 +448,6 @@ public:
      */
     UDateTimeSystemCore(const FObjectInitializer &ObjectInitializer);
 
-    ///**
-    // * @brief Engine tick function. Called when this component is on a tickable actor.
-    // * If it isn't, call InternalTick manually.
-    // *
-    // * @param DeltaTime
-    // * @param TickType
-    // * @param ThisTickFunction
-    // */
-    // virtual void TickComponent(float DeltaTime, enum ELevelTick TickType,
-    //                           FActorComponentTickFunction *ThisTickFunction) override;
-
-    ///**
-    // * @brief Engine Begin Function. Called by the engine on a tickable actor.
-    // * If it isn't, call InternalBegin manually.
-    // */
-    // virtual void BeginPlay();
-
     ///// ///// ////////// ///// /////
     // Date Functions
     //
@@ -622,8 +605,9 @@ public:
      * @param To
      * @return double
      */
-    double DComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
-                                            UPARAM(ref) FDateTimeSystemStruct &To);
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Functions|Delta")
+    double ComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
+                                           UPARAM(ref) FDateTimeSystemStruct &To);
 
     /**
      * @brief Compute Delta Between Dates Internal
@@ -715,6 +699,23 @@ public:
     virtual FRotator GetSunRotationForLocation_Implementation(FVector Location);
 
     /**
+     * @brief Get the Sun Rotation For Lat/Long
+     *
+     * @param Location
+     * @return FRotator
+     */
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|Sun")
+    FRotator GetSunRotationForLatLong(double Latitude, double Longitude);
+
+    /**
+     * @brief Native Implementation for GetSunRotationForLatLong
+     *
+     * @param Location
+     * @return FRotator
+     */
+    virtual FRotator GetSunRotationForLatLong_Implementation(double Latitude, double Longitude);
+
+    /**
      * @brief Get the Sun Rotation
      *
      * @return FRotator
@@ -760,6 +761,23 @@ public:
      * @return FRotator
      */
     virtual FRotator GetMoonRotationForLocation_Implementation(FVector Location);
+
+    /**
+     * @brief Get the Moon Rotation For Lat/Long
+     *
+     * @param Location
+     * @return FRotator
+     */
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|Moon")
+    FRotator GetMoonRotationForLatLong(double Latitude, double Longitude);
+
+    /**
+     * @brief Native Implementation for GetMoonRotationForLatLong
+     *
+     * @param Location
+     * @return FRotator
+     */
+    virtual FRotator GetMoonRotationForLatLong_Implementation(double Latitude, double Longitude);
 
     /**
      * @brief Get the Moon Rotation
