@@ -153,11 +153,8 @@ FRotator UDateTimeSystemCore::GetSunRotationForLatLong_Implementation(double Lat
     auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
     auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
 
-    return GetLocalisedSunRotation(LocalisedPercentLatitude, LocalisedPercentLongitude,
-                                   FVector::ZeroVector);
+    return GetLocalisedSunRotation(LocalisedPercentLatitude, LocalisedPercentLongitude, FVector::ZeroVector);
 }
-
-
 
 FRotator UDateTimeSystemCore::GetSunRotation_Implementation()
 {
@@ -227,8 +224,7 @@ FRotator UDateTimeSystemCore::GetMoonRotationForLatLong_Implementation(double La
     auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
     auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
 
-    return GetLocalisedMoonRotation(LocalisedPercentLatitude, LocalisedPercentLongitude,
-                                   FVector::ZeroVector);
+    return GetLocalisedMoonRotation(LocalisedPercentLatitude, LocalisedPercentLongitude, FVector::ZeroVector);
 }
 
 /////
@@ -242,23 +238,19 @@ FVector UDateTimeSystemCore::GetMoonVector_Implementation(float Latitude, float 
     // The US Govt. paper shows 0.00273... which is 1/365.25
     auto T = GetSolarYears(InternalDate) * 0.01;
 
-    //double Day = GetJulianDay(InternalDate);
-    //auto T = (Day - 2451545) / 36525;
-    //double T = Day * 0.00273785078713210130047912388775;
-    //auto H = InternalDate.StoredSolarSeconds * InvLengthOfDay;
-    //auto SiderealTimeRads = 100.4606184 + 0.9856473662862 * Day + 15 * H + T * T;
+    // double Day = GetJulianDay(InternalDate);
+    // auto T = (Day - 2451545) / 36525;
+    // double T = Day * 0.00273785078713210130047912388775;
+    // auto H = InternalDate.StoredSolarSeconds * InvLengthOfDay;
+    // auto SiderealTimeRads = 100.4606184 + 0.9856473662862 * Day + 15 * H + T * T;
 
-    double GLong = 218.3164477
-        + 481'267.88123421 * T
-        - 0.0015786 * T * T
-        + 1.855835023689734077399455498004e-6 * T * T * T
-        - 1.5338834862103874589686167438721e-8 * T * T * T * T;
+    double GLong = 218.3164477 + 481'267.88123421 * T - 0.0015786 * T * T +
+                   1.855835023689734077399455498004e-6 * T * T * T -
+                   1.5338834862103874589686167438721e-8 * T * T * T * T;
 
-    double GLat = 93.2720950
-        + 483202.0175233 * T
-        - 0.0036539 * T * T
-        + 2.8360748723766307430516165626773e-7 * T * T * T
-        - 1.158332464583984895344661824837e-9* T * T * T * T;
+    double GLat = 93.2720950 + 483202.0175233 * T - 0.0036539 * T * T +
+                  2.8360748723766307430516165626773e-7 * T * T * T -
+                  1.158332464583984895344661824837e-9 * T * T * T * T;
 
     GLong = DateTimeHelpers::HelperMod(GLong, 360.f);
     GLat = DateTimeHelpers::HelperMod(GLat, 360.f);
@@ -408,7 +400,7 @@ float UDateTimeSystemCore::ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSys
 }
 
 double UDateTimeSystemCore::ComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &Date1,
-                                                             UPARAM(ref) FDateTimeSystemStruct &Date2)
+                                                            UPARAM(ref) FDateTimeSystemStruct &Date2)
 {
     double Days = ComputeDeltaBetweenDatesDays(Date1, Date2);
 
@@ -660,7 +652,7 @@ bool UDateTimeSystemCore::HandleDayRollover(FDateTimeSystemStruct &DateStruct)
 
         return true;
     }
-    else if (DateStruct.Seconds > LengthOfDay)
+    else if (DateStruct.Seconds >= LengthOfDay)
     {
         DateStruct.Seconds -= LengthOfDay;
         DateStruct.DayOfWeek = (DateStruct.DayOfWeek + 1) % DaysInWeek;
@@ -687,7 +679,7 @@ bool UDateTimeSystemCore::HandleMonthRollover(FDateTimeSystemStruct &DateStruct)
     auto SafeMonth = DateTimeHelpers::IntHelperMod(DateStruct.Month, GetMonthsInYear(DateStruct.Year));
     auto DaysInMonth = GetDaysInMonth(SafeMonth);
 
-    if (DateStruct.Day > DaysInMonth)
+    if (DateStruct.Day >= DaysInMonth)
     {
         DateStruct.Day -= DaysInMonth;
         ++DateStruct.Month;
@@ -708,7 +700,7 @@ bool UDateTimeSystemCore::HandleMonthRollover(FDateTimeSystemStruct &DateStruct)
 bool UDateTimeSystemCore::HandleYearRollover(FDateTimeSystemStruct &DateStruct)
 {
     auto MonthsInYear = GetMonthsInYear(DateStruct.Year);
-    if (DateStruct.Month > MonthsInYear)
+    if (DateStruct.Month >= MonthsInYear)
     {
         DateStruct.Month -= MonthsInYear;
         ++DateStruct.Year;
@@ -753,17 +745,7 @@ bool UDateTimeSystemCore::SanitiseDateTime(FDateTimeSystemStruct &DateStruct)
 {
     DECLARE_SCOPE_CYCLE_COUNTER(TEXT("SanitiseDateTime"), STAT_ACISanitiseDateTime, STATGROUP_ACIDateTimeCommon);
 
-    // Year First
-    auto DidRolloverYear = false;
-    {
-        auto ContinueLoop = false;
-        do
-        {
-            ContinueLoop = HandleYearRollover(DateStruct);
-            DidRolloverYear = ContinueLoop || DidRolloverYear;
-        }
-        while (ContinueLoop);
-    }
+    auto DidRolloverDay = HandleDayRollover(DateStruct);
 
     // Loop externally to the month function
     // It's cleaner as we need yearbook for it
@@ -778,7 +760,17 @@ bool UDateTimeSystemCore::SanitiseDateTime(FDateTimeSystemStruct &DateStruct)
         while (ContinueLoop);
     }
 
-    auto DidRolloverDay = HandleDayRollover(DateStruct);
+    // Year First
+    auto DidRolloverYear = false;
+    {
+        auto ContinueLoop = false;
+        do
+        {
+            ContinueLoop = HandleYearRollover(DateStruct);
+            DidRolloverYear = ContinueLoop || DidRolloverYear;
+        }
+        while (ContinueLoop);
+    }
 
     return DidRolloverDay || DidRolloverMonth || DidRolloverYear;
 }

@@ -69,6 +69,13 @@ private:
     float TicksPerSecond;
 
     /**
+     * @brief Multiplier for rain change
+     *
+     */
+    UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
+    float RainProbabilityMultiplier;
+
+    /**
      * @brief Threshold at which to use a non-contiguous time update
      */
     UPROPERTY(EditAnywhere, Category = "Climate|Internal|Configuration")
@@ -212,6 +219,13 @@ private:
      */
     UPROPERTY(Transient)
     TScriptInterface<IDateTimeSystemCommon> DateTimeSystem;
+
+    /**
+     * @brief HourlyToBinly
+     *
+     */
+    UPROPERTY(Transient)
+    float HourlyToPerBin;
 
     /**
      * @brief Previous High Temp for blending
