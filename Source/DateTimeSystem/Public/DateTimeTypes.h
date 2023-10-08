@@ -71,6 +71,58 @@ struct FDateTimeSystemPackedCacheFloat
 };
 
 /**
+ * @brief Cache Double
+ *
+ * Includes Validity
+ * Packing does nothing on this type
+ * Size: 128b
+ */
+USTRUCT(BlueprintType, Blueprintable)
+struct FDateTimeSystemPackedCacheDouble
+{
+    GENERATED_BODY()
+
+    bool Valid;
+    double Value;
+};
+
+/**
+ * @brief Cache Double
+ *
+ * Includes Validity
+ * Packing does nothing on this type
+ * Size: 192b
+ */
+USTRUCT(BlueprintType, Blueprintable)
+struct FDateTimeSystemPackedCacheDoublePair
+{
+    GENERATED_BODY()
+
+    bool Valid;
+    double Value1;
+    double Value2;
+};
+
+/**
+ * @brief Cache Double Triplet
+ *
+ * Includes Validity
+ * Packing does nothing on this type
+ * Size: 256b
+ */
+USTRUCT(BlueprintType, Blueprintable)
+struct FDateTimeSystemPackedCacheDoubleTriplet
+{
+    GENERATED_BODY()
+
+    bool Valid;
+    double Value1;
+    double Value2;
+    double Value3;
+};
+
+
+/**
  * @brief Cache Vector
  *
  * Includes Validity

@@ -154,6 +154,13 @@ private:
      *
      */
     UPROPERTY(Transient)
+    FDateTimeSystemPackedCacheDoubleTriplet CachedLunarGeocentricDeclinationRightAscSidereal;
+
+    /**
+     * @brief Cache for Solar Declination Angle
+     *
+     */
+    UPROPERTY(Transient)
     FDateTimeSystemPackedCacheFloat CachedSolarTimeCorrection;
 
     /**
@@ -343,6 +350,14 @@ public:
      * @return float
      */
     float SolarDeclinationAngle(float YearInRadians);
+
+    /**
+     * @brief Get Solar Declination Angle
+     *
+     * @param YearInRadians
+     * @return float
+     */
+    TTuple<double, double, double> LunarDeclinationRightAscensionSiderealTime();
 
     /**
      * @brief Does the Year Leap?
