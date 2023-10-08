@@ -234,126 +234,49 @@ FVector UDateTimeSystemCore::GetMoonVector_Implementation(float Latitude, float 
         return *Cache;
     }
 
-    //// Shortcut this
-    //// The US Govt. paper shows 0.00273... which is 1/365.25
-    //auto T = GetSolarYears(InternalDate) * 0.01; // JCE
-    //auto U = T * 0.01;
-
-    //double GLong = 218.3164477 + 481'267.88123421 * T - 0.0015786 * T * T +
-    //               1.855835023689734077399455498004e-6 * T * T * T -
-    //               1.5338834862103874589686167438721e-8 * T * T * T * T;
-
-    //double GeocentricLatRad = 0.089535390624750 * FMath::Sin(1.62839219 + 8433.4662010464 * T) +
-    //                          0.004886921905444 * FMath::Sin(3.98284135293722 + 16762.15766910478 * T) -
-    //                          0.004886921905444 * FMath::Sin(5.555383008939 + 104.77473298810291 * T) -
-    //                          0.002967059728305 * FMath::Sin(3.797836452231 - 7109.2882137217735 * T);
-
-    //double GeocentricLongRad = FMath::DegreesToRadians(GLong);
-
-    //auto EpsilonZeroArcSec = 84381.448 - 4680.93 * U - 1.55 * U * U + 1999.25 * U * U * U - 51.38 * U * U * U * U;
-    //auto EpsilonZero = FMath::DegreesToRadians(EpsilonZeroArcSec / 3600);
-
-    //// auto D = GetJulianDay(InternalDate) - 2451545.0;
-    //auto GMST = 6.697374558 + 879'000.051336906897 * T + 0.000026 * T * T;
-    //// auto GMST = 18.697374558 + 24.06570982441908 * D;
-
-    //auto SinMoonParallax = PlanetRadius / 385000;
-
-    //auto MoonDeclination =
-    //    FMath::Asin(FMath::Sin(GeocentricLatRad) * FMath::Cos(EpsilonZero) +
-    //                FMath::Cos(GeocentricLatRad) * FMath::Sin(EpsilonZero) * FMath::Sin(GeocentricLongRad));
-
-    //auto MoonRightAscension = FMath::Atan2(FMath::Sin(GeocentricLongRad) * FMath::Cos(EpsilonZero) -
-    //                                           FMath::Tan(GeocentricLatRad) * FMath::Sin(EpsilonZero),
-    //                                       FMath::Cos(GeocentricLongRad));
-
-    //GEngine->AddOnScreenDebugMessage(66636101, 15.f, FColor::Magenta,
-    //                                 FString("MRA: ") + FString::SanitizeFloat(MoonRightAscension));
-
-    //GEngine->AddOnScreenDebugMessage(66636102, 15.f, FColor::Magenta,
-    //                                 FString("MDecl: ") + FString::SanitizeFloat(MoonDeclination));
-
-    //auto GAST = FMath::DegreesToRadians(GMST * 15);
-
-    //GEngine->AddOnScreenDebugMessage(66636103, 15.f, FColor::Magenta,
-    //                                 FString("Apparent Sidereal Rad: ") + FString::SanitizeFloat(GAST));
-
-
     auto SinMoonParallax = PlanetRadius / 385000;
 
-
+    // Non-LatLong dependant compution
+    // We use a faster approximation of sidereal time
+    // And Declination and Right Ascension are also simplified
     auto DRaSt = LunarDeclinationRightAscensionSiderealTime();
-
     auto MoonDeclination = DRaSt.Get<0>();
     auto MoonRightAscension = DRaSt.Get<1>();
     auto ApparentSiderealTime = DRaSt.Get<2>();
 
+
     auto HourAngle = ApparentSiderealTime + Longitude - MoonRightAscension;
 
-    GEngine->AddOnScreenDebugMessage(66636104, 15.f, FColor::Magenta,
-                                     FString("Observer Hour Angle Rad: ") + FString::SanitizeFloat(HourAngle));
 
-    // Can we zero this term?
     auto FlatteningTerm = FMath::Atan(0.99664719 * FMath::Tan(Latitude));
     auto ObserverElevationTerm = FMath::Cos(FlatteningTerm);
     auto TermY = 0.99664719 * FMath::Sin(FlatteningTerm);
-
-    GEngine->AddOnScreenDebugMessage(66636105, 15.f, FColor::Magenta,
-                                     FString("FlatteningTerm: ") + FString::SanitizeFloat(FlatteningTerm));
-
-    GEngine->AddOnScreenDebugMessage(66636106, 15.f, FColor::Magenta,
-                                     FString("ObserverElevationTerm: ") +
-                                         FString::SanitizeFloat(ObserverElevationTerm));
-
-    GEngine->AddOnScreenDebugMessage(66636107, 15.f, FColor::Magenta,
-                                     FString("TermY: ") + FString::SanitizeFloat(TermY));
 
     auto MoonRightAscParallax =
         FMath::Atan2((-ObserverElevationTerm * SinMoonParallax * FMath::Sin(HourAngle)),
                      (FMath::Cos(MoonDeclination) - ObserverElevationTerm * SinMoonParallax * FMath::Cos(HourAngle)));
 
-    GEngine->AddOnScreenDebugMessage(66636108, 15.f, FColor::Magenta,
-                                     FString("MRA Parallax: ") + FString::SanitizeFloat(MoonRightAscParallax));
-
+    // Local Hour Angle: Hour angle with parallax accounted for
     auto LHA = HourAngle - MoonRightAscParallax;
 
-    GEngine->AddOnScreenDebugMessage(66636109, 15.f, FColor::Magenta,
-                                     FString("Topocentric Hour Rad: ") + FString::SanitizeFloat(LHA));
-
+    // Topocentric Declination
     auto DeclPrime =
         FMath::Atan2(((FMath::Sin(MoonDeclination) - TermY * SinMoonParallax) * FMath::Cos(MoonRightAscParallax)),
                      (FMath::Cos(MoonDeclination) - TermY * SinMoonParallax * FMath::Cos(HourAngle)));
 
-    GEngine->AddOnScreenDebugMessage(66636110, 15.f, FColor::Magenta,
-                                     FString("Topocentric Declination: ") + FString::SanitizeFloat(DeclPrime));
-
+    // Topocentric Elevation
     auto MoonTopoElevationAngle = FMath::Asin(FMath::Sin(Latitude) * FMath::Sin(DeclPrime) +
                                               FMath::Cos(Latitude) * FMath::Cos(DeclPrime) * FMath::Cos(LHA));
 
+    // Topocentric Azimuth
     auto MoonTopoAzimuthAngle = PI + FMath::Atan2(FMath::Sin(LHA), (FMath::Cos(LHA) * FMath::Sin(Latitude) -
                                                                     FMath::Tan(DeclPrime) * FMath::Cos(Latitude)));
 
-    GEngine->AddOnScreenDebugMessage(66636001, 15.f, FColor::Purple,
-                                     FString("Elevation: ") + FString::SanitizeFloat(MoonTopoElevationAngle));
-    GEngine->AddOnScreenDebugMessage(66636002, 15.f, FColor::Purple,
-                                     FString("Azimuth: ") + FString::SanitizeFloat(MoonTopoAzimuthAngle));
-
-    auto FastElevation = FMath::Asin(FMath::Sin(Latitude) * FMath::Sin(MoonDeclination) +
-                                     FMath::Cos(Latitude) * FMath::Cos(MoonDeclination) * FMath::Cos(HourAngle));
-    auto FastAzimuth = FMath::Acos((FMath::Sin(MoonDeclination) - FMath::Sin(FastElevation) * FMath::Sin(Latitude)) /
-                                   (FMath::Cos(FastElevation) * FMath::Cos(Latitude)));
-
-    GEngine->AddOnScreenDebugMessage(66636003, 15.f, FColor::Purple,
-                                     FString("Fast Elevation: ") + FString::SanitizeFloat(FastElevation));
-    GEngine->AddOnScreenDebugMessage(66636004, 15.f, FColor::Purple,
-                                     FString("Fast Azimuth: ") + FString::SanitizeFloat(FastAzimuth));
-
-    auto FastSwitchElevation = MoonTopoElevationAngle;
-    auto FastSwitchAzimuth = MoonTopoAzimuthAngle;
-
+    // Result. Cache and return
     auto MoonInverse =
-        FVector(FMath::Cos(FastSwitchAzimuth) * FMath::Cos(FastSwitchElevation),
-                FMath::Sin(FastSwitchAzimuth) * FMath::Cos(FastSwitchElevation), FMath::Sin(FastSwitchElevation))
+        FVector(FMath::Cos(MoonTopoAzimuthAngle) * FMath::Cos(MoonTopoElevationAngle),
+                               FMath::Sin(MoonTopoAzimuthAngle) * FMath::Cos(MoonTopoElevationAngle),
+                               FMath::Sin(MoonTopoElevationAngle))
             .GetSafeNormal();
 
     CachedMoonVectors.Add(HashType, MoonInverse);
