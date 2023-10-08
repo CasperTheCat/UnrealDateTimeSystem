@@ -153,11 +153,8 @@ FRotator UDateTimeSystemCore::GetSunRotationForLatLong_Implementation(double Lat
     auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
     auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
 
-    return GetLocalisedSunRotation(LocalisedPercentLatitude, LocalisedPercentLongitude,
-                                   FVector::ZeroVector);
+    return GetLocalisedSunRotation(LocalisedPercentLatitude, LocalisedPercentLongitude, FVector::ZeroVector);
 }
-
-
 
 FRotator UDateTimeSystemCore::GetSunRotation_Implementation()
 {
@@ -176,11 +173,6 @@ FVector UDateTimeSystemCore::GetSunVector_Implementation(float Latitude, float L
         return *Cache;
     }
 
-    // Okay, compute this one
-
-    // First, we want Solar Elevation. This is our Pitch component
-    // Then we want to get our yaw, which is related to Solar Hour
-
     // https://gml.noaa.gov/grad/solcalc/solareqns.PDF
 
     float LocalLat = Latitude;
@@ -188,12 +180,8 @@ FVector UDateTimeSystemCore::GetSunVector_Implementation(float Latitude, float L
     float YearInRads = GetSolarFractionalYear();
     float DeclAngle = SolarDeclinationAngle(YearInRads);
 
-    // Correct to meridian solar time
-    // float SolarHour = InternalDate.Seconds - TimezoneInfo.HoursDeltaFromMeridian * 3600;
-    float EQTime = SolarTimeCorrection(YearInRads);
-
-    // TimeOffset is acting
-    float TimeOffset = EQTime + 4 * FMath::RadiansToDegrees(LocalLong); // -60 * TimezoneInfo.HoursDeltaFromMeridian;
+    // Equation of Time
+    double EQTime = SolarTimeCorrection(YearInRads);
 
     // New Method
     float LatOut = DeclAngle;
@@ -227,54 +215,73 @@ FRotator UDateTimeSystemCore::GetMoonRotationForLatLong_Implementation(double La
     auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
     auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
 
-    return GetLocalisedMoonRotation(LocalisedPercentLatitude, LocalisedPercentLongitude,
-                                   FVector::ZeroVector);
+    return GetLocalisedMoonRotation(LocalisedPercentLatitude, LocalisedPercentLongitude, FVector::ZeroVector);
 }
 
 /////
 // https://www.nrel.gov/docs/fy10osti/47681.pdf
+// https://aa.usno.navy.mil/faq/docs/GAST.php
 FVector UDateTimeSystemCore::GetMoonVector_Implementation(float Latitude, float Longitude)
 {
     DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetMoonVector_Implementation"), STAT_ACIGetMoonVector,
                                 STATGROUP_ACIDateTimeCommon);
 
-    // Shortcut this
-    // The US Govt. paper shows 0.00273... which is 1/365.25
-    auto T = GetSolarYears(InternalDate) * 0.01;
+    // Check Cache. We may compute this a few times per frame
+    auto HashType = HashCombine(GetTypeHash(Latitude), GetTypeHash(Longitude));
+    auto Cache = CachedMoonVectors.Find(HashType);
+    if (Cache)
+    {
+        return *Cache;
+    }
 
-    //double Day = GetJulianDay(InternalDate);
-    //auto T = (Day - 2451545) / 36525;
-    //double T = Day * 0.00273785078713210130047912388775;
-    //auto H = InternalDate.StoredSolarSeconds * InvLengthOfDay;
-    //auto SiderealTimeRads = 100.4606184 + 0.9856473662862 * Day + 15 * H + T * T;
+    auto SinMoonParallax = PlanetRadius / 385000;
 
-    double GLong = 218.3164477
-        + 481'267.88123421 * T
-        - 0.0015786 * T * T
-        + 1.855835023689734077399455498004e-6 * T * T * T
-        - 1.5338834862103874589686167438721e-8 * T * T * T * T;
+    // Non-LatLong dependant compution
+    // We use a faster approximation of sidereal time
+    // And Declination and Right Ascension are also simplified
+    auto DRaSt = LunarDeclinationRightAscensionSiderealTime();
+    auto MoonDeclination = DRaSt.Get<0>();
+    auto MoonRightAscension = DRaSt.Get<1>();
+    auto ApparentSiderealTime = DRaSt.Get<2>();
 
-    double GLat = 93.2720950
-        + 483202.0175233 * T
-        - 0.0036539 * T * T
-        + 2.8360748723766307430516165626773e-7 * T * T * T
-        - 1.158332464583984895344661824837e-9* T * T * T * T;
 
-    GLong = DateTimeHelpers::HelperMod(GLong, 360.f);
-    GLat = DateTimeHelpers::HelperMod(GLat, 360.f);
+    auto HourAngle = ApparentSiderealTime + Longitude - MoonRightAscension;
 
-    double LocalLat = Latitude;
-    double LocalLong = Longitude;
-    double LatOut = FMath::DegreesToRadians(GLat);
-    double LongOut = FMath::DegreesToRadians(GLong);
-    double LongDiff = LongOut - LocalLong;
-    double SX = FMath::Cos(LatOut) * FMath::Sin(LongDiff);
-    double SY =
-        FMath::Cos(LocalLat) * FMath::Sin(LatOut) - FMath::Sin(LocalLat) * FMath::Cos(LatOut) * FMath::Cos(LongDiff);
-    double SZ =
-        FMath::Sin(LocalLat) * FMath::Sin(LatOut) + FMath::Cos(LocalLat) * FMath::Cos(LatOut) * FMath::Cos(LongDiff);
 
-    return FVector(SX, SY, SZ);
+    auto FlatteningTerm = FMath::Atan(0.99664719 * FMath::Tan(Latitude));
+    auto ObserverElevationTerm = FMath::Cos(FlatteningTerm);
+    auto TermY = 0.99664719 * FMath::Sin(FlatteningTerm);
+
+    auto MoonRightAscParallax =
+        FMath::Atan2((-ObserverElevationTerm * SinMoonParallax * FMath::Sin(HourAngle)),
+                     (FMath::Cos(MoonDeclination) - ObserverElevationTerm * SinMoonParallax * FMath::Cos(HourAngle)));
+
+    // Local Hour Angle: Hour angle with parallax accounted for
+    auto LHA = HourAngle - MoonRightAscParallax;
+
+    // Topocentric Declination
+    auto DeclPrime =
+        FMath::Atan2(((FMath::Sin(MoonDeclination) - TermY * SinMoonParallax) * FMath::Cos(MoonRightAscParallax)),
+                     (FMath::Cos(MoonDeclination) - TermY * SinMoonParallax * FMath::Cos(HourAngle)));
+
+    // Topocentric Elevation
+    auto MoonTopoElevationAngle = FMath::Asin(FMath::Sin(Latitude) * FMath::Sin(DeclPrime) +
+                                              FMath::Cos(Latitude) * FMath::Cos(DeclPrime) * FMath::Cos(LHA));
+
+    // Topocentric Azimuth
+    auto MoonTopoAzimuthAngle = PI + FMath::Atan2(FMath::Sin(LHA), (FMath::Cos(LHA) * FMath::Sin(Latitude) -
+                                                                    FMath::Tan(DeclPrime) * FMath::Cos(Latitude)));
+
+    // Result. Cache and return
+    auto MoonInverse =
+        FVector(FMath::Cos(MoonTopoAzimuthAngle) * FMath::Cos(MoonTopoElevationAngle),
+                               FMath::Sin(MoonTopoAzimuthAngle) * FMath::Cos(MoonTopoElevationAngle),
+                               FMath::Sin(MoonTopoElevationAngle))
+            .GetSafeNormal();
+
+    CachedMoonVectors.Add(HashType, MoonInverse);
+
+    return MoonInverse;
 }
 
 FText UDateTimeSystemCore::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
@@ -408,7 +415,7 @@ float UDateTimeSystemCore::ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSys
 }
 
 double UDateTimeSystemCore::ComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &Date1,
-                                                             UPARAM(ref) FDateTimeSystemStruct &Date2)
+                                                            UPARAM(ref) FDateTimeSystemStruct &Date2)
 {
     double Days = ComputeDeltaBetweenDatesDays(Date1, Date2);
 
@@ -598,7 +605,7 @@ double UDateTimeSystemCore::GetJulianDay(FDateTimeSystemStruct &DateStruct)
     auto JulianSolarDays = 4716 * DaysInOrbitalYear + DateStruct.SolarDays;
     auto JulianPartialDays = (InternalDate.StoredSolarSeconds - LengthOfDay) * InvLengthOfDay;
 
-    return JulianSolarDays + JulianPartialDays;
+    return JulianSolarDays + JulianPartialDays - 0.5;
 }
 
 double UDateTimeSystemCore::GetSolarYears(FDateTimeSystemStruct &DateStruct)
@@ -634,9 +641,11 @@ void UDateTimeSystemCore::Invalidate(EDateTimeSystemInvalidationTypes Type = EDa
     // Clear sun vector helpers
     CachedSolarDeclinationAngle.Valid = false;
     CachedSolarFractionalYear.Valid = false;
+    CachedLunarGeocentricDeclinationRightAscSidereal.Valid = false;
 
     // Clear all sun vectors
     CachedSunVectors.Empty();
+    CachedMoonVectors.Empty();
 
     if (InvalidationCallback.IsBound())
     {
@@ -660,7 +669,7 @@ bool UDateTimeSystemCore::HandleDayRollover(FDateTimeSystemStruct &DateStruct)
 
         return true;
     }
-    else if (DateStruct.Seconds > LengthOfDay)
+    else if (DateStruct.Seconds >= LengthOfDay)
     {
         DateStruct.Seconds -= LengthOfDay;
         DateStruct.DayOfWeek = (DateStruct.DayOfWeek + 1) % DaysInWeek;
@@ -687,7 +696,7 @@ bool UDateTimeSystemCore::HandleMonthRollover(FDateTimeSystemStruct &DateStruct)
     auto SafeMonth = DateTimeHelpers::IntHelperMod(DateStruct.Month, GetMonthsInYear(DateStruct.Year));
     auto DaysInMonth = GetDaysInMonth(SafeMonth);
 
-    if (DateStruct.Day > DaysInMonth)
+    if (DateStruct.Day >= DaysInMonth)
     {
         DateStruct.Day -= DaysInMonth;
         ++DateStruct.Month;
@@ -708,7 +717,7 @@ bool UDateTimeSystemCore::HandleMonthRollover(FDateTimeSystemStruct &DateStruct)
 bool UDateTimeSystemCore::HandleYearRollover(FDateTimeSystemStruct &DateStruct)
 {
     auto MonthsInYear = GetMonthsInYear(DateStruct.Year);
-    if (DateStruct.Month > MonthsInYear)
+    if (DateStruct.Month >= MonthsInYear)
     {
         DateStruct.Month -= MonthsInYear;
         ++DateStruct.Year;
@@ -753,17 +762,7 @@ bool UDateTimeSystemCore::SanitiseDateTime(FDateTimeSystemStruct &DateStruct)
 {
     DECLARE_SCOPE_CYCLE_COUNTER(TEXT("SanitiseDateTime"), STAT_ACISanitiseDateTime, STATGROUP_ACIDateTimeCommon);
 
-    // Year First
-    auto DidRolloverYear = false;
-    {
-        auto ContinueLoop = false;
-        do
-        {
-            ContinueLoop = HandleYearRollover(DateStruct);
-            DidRolloverYear = ContinueLoop || DidRolloverYear;
-        }
-        while (ContinueLoop);
-    }
+    auto DidRolloverDay = HandleDayRollover(DateStruct);
 
     // Loop externally to the month function
     // It's cleaner as we need yearbook for it
@@ -778,7 +777,17 @@ bool UDateTimeSystemCore::SanitiseDateTime(FDateTimeSystemStruct &DateStruct)
         while (ContinueLoop);
     }
 
-    auto DidRolloverDay = HandleDayRollover(DateStruct);
+    // Year First
+    auto DidRolloverYear = false;
+    {
+        auto ContinueLoop = false;
+        do
+        {
+            ContinueLoop = HandleYearRollover(DateStruct);
+            DidRolloverYear = ContinueLoop || DidRolloverYear;
+        }
+        while (ContinueLoop);
+    }
 
     return DidRolloverDay || DidRolloverMonth || DidRolloverYear;
 }
@@ -838,6 +847,60 @@ float UDateTimeSystemCore::SolarDeclinationAngle(float YearInRadians)
     CachedSolarDeclinationAngle.Value = A1;
 
     return A1;
+}
+
+TTuple<double, double, double> UDateTimeSystemCore::LunarDeclinationRightAscensionSiderealTime()
+{
+    DECLARE_SCOPE_CYCLE_COUNTER(TEXT("LunarDeclinationRightAscensionSiderealTime"), STAT_ACIGetLunarDRaST,
+                                STATGROUP_ACIDateTimeCommon);
+
+    if (CachedLunarGeocentricDeclinationRightAscSidereal.Valid)
+    {
+        // Pack and return
+        return TTuple<double, double, double>(CachedLunarGeocentricDeclinationRightAscSidereal.Value1,
+                                              CachedLunarGeocentricDeclinationRightAscSidereal.Value2,
+                                              CachedLunarGeocentricDeclinationRightAscSidereal.Value3);
+    }
+
+    // Shortcut this
+    // The US Govt. paper shows 0.00273... which is 1/365.25
+    auto T = GetSolarYears(InternalDate) * 0.01; // JCE
+    auto U = T * 0.01;
+
+    // Geocentric LatLong
+    double GeocentricLongDeg = 218.3164477 + 481'267.88123421 * T - 0.0015786 * T * T +
+                               1.855835023689734077399455498004e-6 * T * T * T -
+                               1.5338834862103874589686167438721e-8 * T * T * T * T;
+
+    double GeocentricLatRad = 0.089535390624750 * FMath::Sin(1.62839219 + 8433.4662010464 * T) +
+                              0.004886921905444 * FMath::Sin(3.98284135293722 + 16762.15766910478 * T) -
+                              0.004886921905444 * FMath::Sin(5.555383008939 + 104.77473298810291 * T) -
+                              0.002967059728305 * FMath::Sin(3.797836452231 - 7109.2882137217735 * T);
+
+    auto GeocentricLongRad = FMath::DegreesToRadians(GeocentricLongDeg);
+
+    // Epsilon Term from U
+    auto EpsilonZeroArcSec = 84381.448 - 4680.93 * U - 1.55 * U * U + 1999.25 * U * U * U - 51.38 * U * U * U * U;
+    auto EpsilonZero = FMath::DegreesToRadians(EpsilonZeroArcSec / 3600);
+
+    auto GMST = 6.697374558 + 879'000.051336906897 * T + 0.000026 * T * T;
+
+    auto MoonDeclination =
+        FMath::Asin(FMath::Sin(GeocentricLatRad) * FMath::Cos(EpsilonZero) +
+                    FMath::Cos(GeocentricLatRad) * FMath::Sin(EpsilonZero) * FMath::Sin(GeocentricLongRad));
+
+    auto MoonRightAscension = FMath::Atan2(FMath::Sin(GeocentricLongRad) * FMath::Cos(EpsilonZero) -
+                                               FMath::Tan(GeocentricLatRad) * FMath::Sin(EpsilonZero),
+                                           FMath::Cos(GeocentricLongRad));
+
+    auto GAST = FMath::DegreesToRadians(GMST * 15);
+
+    CachedLunarGeocentricDeclinationRightAscSidereal.Valid = true;
+    CachedLunarGeocentricDeclinationRightAscSidereal.Value1 = MoonDeclination;
+    CachedLunarGeocentricDeclinationRightAscSidereal.Value2 = MoonRightAscension;
+    CachedLunarGeocentricDeclinationRightAscSidereal.Value3 = GAST;
+
+    return TTuple<double, double, double>(MoonDeclination, MoonRightAscension, GAST);
 }
 
 bool UDateTimeSystemCore::InternalDoesLeap(int Year)
