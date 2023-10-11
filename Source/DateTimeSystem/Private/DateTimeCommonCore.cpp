@@ -244,9 +244,7 @@ FVector UDateTimeSystemCore::GetMoonVector_Implementation(float Latitude, float 
     auto MoonRightAscension = DRaSt.Get<1>();
     auto ApparentSiderealTime = DRaSt.Get<2>();
 
-
     auto HourAngle = ApparentSiderealTime + Longitude - MoonRightAscension;
-
 
     auto FlatteningTerm = FMath::Atan(0.99664719 * FMath::Tan(Latitude));
     auto ObserverElevationTerm = FMath::Cos(FlatteningTerm);
@@ -273,15 +271,49 @@ FVector UDateTimeSystemCore::GetMoonVector_Implementation(float Latitude, float 
                                                                     FMath::Tan(DeclPrime) * FMath::Cos(Latitude)));
 
     // Result. Cache and return
-    auto MoonInverse =
-        FVector(FMath::Cos(MoonTopoAzimuthAngle) * FMath::Cos(MoonTopoElevationAngle),
+    auto MoonInverse = FVector(FMath::Cos(MoonTopoAzimuthAngle) * FMath::Cos(MoonTopoElevationAngle),
                                FMath::Sin(MoonTopoAzimuthAngle) * FMath::Cos(MoonTopoElevationAngle),
                                FMath::Sin(MoonTopoElevationAngle))
-            .GetSafeNormal();
+                           .GetSafeNormal();
 
     CachedMoonVectors.Add(HashType, MoonInverse);
 
     return MoonInverse;
+}
+
+FMatrix UDateTimeSystemCore::GetNightSkyRotationMatrixForLocation_Implementation(FVector Location)
+{
+    return GetNightSkyRotation(PercentLatitude, PercentLongitude, Location);
+}
+
+FMatrix UDateTimeSystemCore::GetNightSkyRotationMatrix_Implementation()
+{
+    return GetNightSkyRotationMatrixForLocation(FVector::ZeroVector);
+}
+
+FMatrix UDateTimeSystemCore::GetNightSkyRotationMatrixForLatLong_Implementation(double Latitude, double Longitude)
+{
+    auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
+    auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
+
+    return GetNightSkyRotation(LocalisedPercentLatitude, LocalisedPercentLongitude, FVector::ZeroVector);
+}
+
+FMatrix UDateTimeSystemCore::GetNightSkyRotation(double PercLatitude, double PercLongitude, FVector Location)
+{
+    auto Latitude = GetLatitudeFromLocation(PercLatitude, Location);
+    auto Longitude = GetLongitudeFromLocation(PercLatitude, PercLongitude, Location);
+
+    // +X points north
+
+    // X rotation is the hour angle
+    auto T = GetSolarYears(InternalDate) * 0.01;
+    auto GMST = 6.697374558 + 879'000.051336906897 * T + 0.000026 * T * T;
+    auto GAST = GMST * 15;
+
+    auto HourAngle = DateTimeHelpers::HelperMod(GAST + FMath::RadiansToDegrees(Longitude), 360.f);
+
+    return FRotationMatrix(FRotator(FMath::RadiansToDegrees(Latitude), 0, HourAngle));
 }
 
 FText UDateTimeSystemCore::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
@@ -1031,29 +1063,34 @@ void UDateTimeSystemCore::InternalBegin(FDateTimeCommonCoreInitializer &CoreInit
     // Let's go
     if (CoreInitializer.YearbookTable)
     {
-        CoreInitializer.YearbookTable->GetAllRows<FDateTimeSystemYearbookRow>(FString("Yearbook Rows"), YearBook);
+        TArray<FDateTimeSystemYearbookRow *> LocalYearbook;
+        CoreInitializer.YearbookTable->GetAllRows<FDateTimeSystemYearbookRow>(FString("Yearbook Rows"), LocalYearbook);
 
         LengthOfCalendarYearInDays = 0;
-        for (auto val : YearBook)
+        for (auto val : LocalYearbook)
         {
             LengthOfCalendarYearInDays += val->NumberOfDays;
+
+            YearBook.Add(DateTimeRowHelpers::CreateYearbookRowFromTableRow(val));
         }
     }
 
     if (CoreInitializer.DateOverridesTable)
     {
+        TArray<FDateTimeSystemDateOverrideRow *> LocalDOTemps;
         CoreInitializer.DateOverridesTable->GetAllRows<FDateTimeSystemDateOverrideRow>(FString("Yearbook Rows"),
-                                                                                       DOTemps);
+                                                                                       LocalDOTemps);
 
-        for (auto val : DOTemps)
+        for (auto val : LocalDOTemps)
         {
+            auto DateOverridePtr = DateTimeRowHelpers::CreateOverrideItemFromTableRow(val);
             if (UseDayIndexForOverride)
             {
-                DateOverrides.Add(val->DayIndex, val);
+                DateOverrides.Add(DateOverridePtr->DayIndex, DateOverridePtr);
             }
             else
             {
-                DateOverrides.Add(GetHashForDate(val), val);
+                DateOverrides.Add(GetHashForDate(DateOverridePtr), DateOverridePtr);
             }
         }
     }
@@ -1133,7 +1170,7 @@ uint32 UDateTimeSystemCore::GetHashForDate(FDateTimeSystemStruct *DateStruct)
     return HashCombine(Hash, DayHash);
 }
 
-uint32 UDateTimeSystemCore::GetHashForDate(FDateTimeSystemDateOverrideRow *DateStruct)
+uint32 UDateTimeSystemCore::GetHashForDate(UDateTimeSystemDateOverrideItem *DateStruct)
 {
     auto DayHash = GetTypeHash(DateStruct->Day);
     auto MonthHash = GetTypeHash(DateStruct->Month);
@@ -1142,7 +1179,7 @@ uint32 UDateTimeSystemCore::GetHashForDate(FDateTimeSystemDateOverrideRow *DateS
     return HashCombine(Hash, DayHash);
 }
 
-FDateTimeSystemDateOverrideRow **UDateTimeSystemCore::GetDateOverride(FDateTimeSystemStruct *DateStruct)
+UDateTimeSystemDateOverrideItem **UDateTimeSystemCore::GetDateOverride(FDateTimeSystemStruct *DateStruct)
 {
     if (UseDayIndexForOverride)
     {

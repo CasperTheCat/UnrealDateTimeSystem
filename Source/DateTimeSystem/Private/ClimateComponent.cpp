@@ -862,21 +862,24 @@ void UClimateComponent::InternalBegin()
     // Let's go
     if (ClimateTable)
     {
-        ClimateTable->GetAllRows<FDateTimeSystemClimateMonthlyRow>(FString("Climate Rows"), ClimateBook);
+        TArray<FDateTimeSystemClimateMonthlyRow *> LocalClimateBook;
+        ClimateTable->GetAllRows<FDateTimeSystemClimateMonthlyRow>(FString("Climate Rows"), LocalClimateBook);
+
+        for (auto val : LocalClimateBook)
+        {
+            ClimateBook.Add(DateTimeRowHelpers::CreateClimateMonthlyFromTableRow(val));
+        }
     }
 
     if (ClimateOverridesTable)
     {
-        ClimateOverridesTable->GetAllRows<FDateTimeSystemClimateOverrideRow>(FString("Climate Rows"), DOTemps);
+        TArray<FDateTimeSystemClimateOverrideRow *> LocalOverrides;
+        ClimateOverridesTable->GetAllRows<FDateTimeSystemClimateOverrideRow>(FString("Climate Rows"), LocalOverrides);
 
-        for (auto val : DOTemps)
+        for (auto val : LocalOverrides)
         {
-            // Dereference the pointer
-            if (val)
-            {
-                auto &Row = *val;
-                DateOverrides.Add(GetDateHash(Row), val);
-            }
+            auto Override = DateTimeRowHelpers::CreateClimateMonthlyOverrideFromTableRow(val);
+            DateOverrides.Add(GetDateHash(Override), Override);
         }
     }
 

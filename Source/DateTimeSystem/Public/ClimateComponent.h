@@ -195,22 +195,18 @@ private:
     TObjectPtr<UDataTable> ClimateOverridesTable;
 
     /**
-     * @brief Climate Data Override Array
-     *
-     */
-    TArray<FDateTimeSystemClimateOverrideRow *> DOTemps;
-
-    /**
      * @brief Map for looking up Overrides
      *
      */
-    TMap<uint32, FDateTimeSystemClimateOverrideRow *> DateOverrides;
+    UPROPERTY()
+    TMap<uint32, UDateTimeSystemClimateOverrideItem *> DateOverrides;
 
     /**
      * @brief Climate Data
      *
      */
-    TArray<FDateTimeSystemClimateMonthlyRow *> ClimateBook;
+    UPROPERTY()
+    TArray<UDateTimeSystemClimateMonthlyItem *> ClimateBook;
 
     /**
      * @brief Date Time System

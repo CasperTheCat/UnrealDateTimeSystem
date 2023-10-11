@@ -109,23 +109,18 @@ private:
     int DaysInWeek;
 
     /**
-     * @brief Array holding DateOverrides
-     *
-     */
-    TArray<FDateTimeSystemDateOverrideRow *> DOTemps;
-
-    /**
      * @brief Map from value to DateOverrides
      * Value is dictated by the UseDayIndexForOverride function
      *
      */
-    TMap<uint32, FDateTimeSystemDateOverrideRow *> DateOverrides;
+    TMap<uint32, UDateTimeSystemDateOverrideItem *> DateOverrides;
 
     /**
      * @brief Array holding Yearbook rows
      *
      */
-    TArray<FDateTimeSystemYearbookRow *> YearBook;
+    UPROPERTY()
+    TArray<UDateTimeSystemYearbookItem *> YearBook;
 
     /**
      * @brief Length of a year in calendar days
@@ -264,7 +259,7 @@ public:
      * @param DateStruct
      * @return uint32
      */
-    static uint32 GetHashForDate(FDateTimeSystemDateOverrideRow *DateStruct);
+    static uint32 GetHashForDate(UDateTimeSystemDateOverrideItem *DateStruct);
 
     /**
      * @brief Get the Date Override object
@@ -272,7 +267,7 @@ public:
      * @param DateStruct
      * @return FDateTimeSystemDateOverrideRow**
      */
-    FDateTimeSystemDateOverrideRow **GetDateOverride(FDateTimeSystemStruct *DateStruct);
+    UDateTimeSystemDateOverrideItem **GetDateOverride(FDateTimeSystemStruct *DateStruct);
 
     /**
      * @brief Get the Julian Day
@@ -823,6 +818,43 @@ public:
      * @return FVector
      */
     virtual FVector GetMoonVector_Implementation(float Latitude, float Longitude);
+
+    /**
+     * @brief Get the Night Sky Rotation Matrix
+     *
+     * @return FMatrix3x3
+     */
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|SkySphere")
+    FMatrix GetNightSkyRotationMatrixForLocation(FVector Location);
+
+    virtual FMatrix GetNightSkyRotationMatrixForLocation_Implementation(FVector Location);
+
+    /**
+     * @brief Get the Night Sky Rotation Matrix
+     *
+     * @return FMatrix3x3
+     */
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|SkySphere")
+    FMatrix GetNightSkyRotationMatrix();
+
+    virtual FMatrix GetNightSkyRotationMatrix_Implementation();
+
+    /**
+     * @brief Get the Night Sky Rotation Matrix
+     *
+     * @return FMatrix3x3
+     */
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|SkySphere")
+    FMatrix GetNightSkyRotationMatrixForLatLong(double Latitude, double Longitude);
+
+    virtual FMatrix GetNightSkyRotationMatrixForLatLong_Implementation(double Latitude, double Longitude);
+
+    /**
+     * @brief Get the Night Sky Rotation Matrix from Perc LatLong
+     *
+     * @return FMatrix3x3
+     */
+    virtual FMatrix GetNightSkyRotation(double PercLatitude, double PercLongitude, FVector Location);
 
     ///// ///// ////////// ///// /////
     // Getters
