@@ -314,6 +314,87 @@ FVector UDateTimeSystem::GetMoonVector(float Latitude, float Longitude)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
+FMatrix UDateTimeSystem::GetNightSkyRotationMatrix()
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->GetNightSkyRotationMatrix();
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FMatrix();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FMatrix UDateTimeSystem::GetNightSkyRotationMatrixForLocation(FVector Location)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->GetNightSkyRotationMatrixForLocation(Location);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FMatrix();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FMatrix UDateTimeSystem::GetNightSkyRotationMatrixForLatLong(double Latitude, double Longitude)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->GetNightSkyRotationMatrixForLatLong(Latitude, Longitude);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FMatrix();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FMatrix UDateTimeSystem::GetLocalisedNightSkyRotationMatrix(float BaseLatitudePercent, float BaseLongitudePercent,
+                                                            FVector Location)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->GetNightSkyRotation(BaseLatitudePercent, BaseLongitudePercent, Location);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FMatrix();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
 FText UDateTimeSystem::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
 {
 #if DATETIMESYSTEM_POINTERCHECK
@@ -756,6 +837,26 @@ int UDateTimeSystem::GetMonthsInYear(int YearIndex)
     }
 
     return 0;
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FMatrix UDateTimeSystem::RotateMatrixByNorthing(const FMatrix &RotationMatrix, FVector NorthingDirection)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->RotateMatrixByNorthing(RotationMatrix, NorthingDirection);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FMatrix();
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 

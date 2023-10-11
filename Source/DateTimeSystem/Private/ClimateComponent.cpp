@@ -591,6 +591,16 @@ FRotator UClimateComponent::RotateByNorthing(FRotator Rotation)
     return Rotation;
 }
 
+FMatrix UClimateComponent::RotateByNorthing(const FMatrix &Rotation)
+{
+    if (DateTimeSystem)
+    {
+        return DateTimeSystem->RotateMatrixByNorthing(Rotation, NorthingDirection);
+    }
+
+    return Rotation;
+}
+
 float UClimateComponent::GetCurrentTemperature()
 {
     return CurrentTemperature;
@@ -862,21 +872,24 @@ void UClimateComponent::InternalBegin()
     // Let's go
     if (ClimateTable)
     {
-        ClimateTable->GetAllRows<FDateTimeSystemClimateMonthlyRow>(FString("Climate Rows"), ClimateBook);
+        TArray<FDateTimeSystemClimateMonthlyRow *> LocalClimateBook;
+        ClimateTable->GetAllRows<FDateTimeSystemClimateMonthlyRow>(FString("Climate Rows"), LocalClimateBook);
+
+        for (auto val : LocalClimateBook)
+        {
+            ClimateBook.Add(DateTimeRowHelpers::CreateClimateMonthlyFromTableRow(val));
+        }
     }
 
     if (ClimateOverridesTable)
     {
-        ClimateOverridesTable->GetAllRows<FDateTimeSystemClimateOverrideRow>(FString("Climate Rows"), DOTemps);
+        TArray<FDateTimeSystemClimateOverrideRow *> LocalOverrides;
+        ClimateOverridesTable->GetAllRows<FDateTimeSystemClimateOverrideRow>(FString("Climate Rows"), LocalOverrides);
 
-        for (auto val : DOTemps)
+        for (auto val : LocalOverrides)
         {
-            // Dereference the pointer
-            if (val)
-            {
-                auto &Row = *val;
-                DateOverrides.Add(GetDateHash(Row), val);
-            }
+            auto Override = DateTimeRowHelpers::CreateClimateMonthlyOverrideFromTableRow(val);
+            DateOverrides.Add(GetDateHash(Override), Override);
         }
     }
 
@@ -939,6 +952,19 @@ FRotator UClimateComponent::GetLocalMoonRotation(FVector Location)
     }
 
     return FRotator();
+}
+
+FMatrix UClimateComponent::GetLocalNightSkyMatrix(FVector Location)
+{
+    if (DateTimeSystem)
+    {
+        // 1.1.1 - Compute as if X is North, then correct to northing
+        auto NightMatrix =
+            DateTimeSystem->GetLocalisedNightSkyRotationMatrix(PercentileLatitude, PercentileLongitude, Location);
+        return RotateByNorthing(NightMatrix);
+    }
+
+    return FMatrix();
 }
 
 void UClimateComponent::DateChanged_Implementation(FDateTimeSystemStruct &DateStruct)

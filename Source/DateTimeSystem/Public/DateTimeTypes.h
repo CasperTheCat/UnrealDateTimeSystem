@@ -121,7 +121,6 @@ struct FDateTimeSystemPackedCacheDoubleTriplet
     double Value3;
 };
 
-
 /**
  * @brief Cache Vector
  *
@@ -218,7 +217,7 @@ public:
         return FMath::Frac(Seconds / (LengthOfDay / NumberOfBinsPerDay));
     }
 
-    void SetFromRow(FDateTimeSystemDateOverrideRow *Row)
+    void SetFromRow(UDateTimeSystemDateOverrideItem *Row)
     {
         Seconds = 0;
         Day = Row->Day;
@@ -226,7 +225,7 @@ public:
         Year = Row->Year;
     }
 
-    static FDateTimeSystemStruct CreateFromRow(FDateTimeSystemDateOverrideRow *Row)
+    static FDateTimeSystemStruct CreateFromRow(UDateTimeSystemDateOverrideItem *Row)
     {
         auto RetVal = FDateTimeSystemStruct{};
         RetVal.Seconds = 0;

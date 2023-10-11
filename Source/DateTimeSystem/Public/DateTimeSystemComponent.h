@@ -504,6 +504,46 @@ public:
     virtual FVector GetMoonVector(float Latitude, float Longitude) override;
 
     /**
+     * @brief Get the Moon Rotation
+     *
+     * @return FRotator
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|NightSky")
+    virtual FMatrix GetNightSkyRotationMatrix() override;
+
+    /**
+     * @brief Get the Moon Rotation For WorldLocation
+     *
+     * @param Location
+     * @return FRotator
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|NightSky")
+    virtual FMatrix GetNightSkyRotationMatrixForLocation(FVector Location) override;
+
+    /**
+     * @brief Get the Moon Rotation For Lat/Long
+     *
+     * @param Location
+     * @return FRotator
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|NightSky")
+    virtual FMatrix GetNightSkyRotationMatrixForLatLong(double Latitude, double Longitude) override;
+
+    /**
+     * @brief Get the Localised NightSky Rotation Matrix
+     * Base Percents are the percent of a rotation around the globe
+     * Location is player location from the base. This requires globe radius
+     *
+     * @param BaseLatitudePercent
+     * @param BaseLongitudePercent
+     * @param Location
+     * @return FMatrix
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|NightSky")
+    virtual FMatrix GetLocalisedNightSkyRotationMatrix(float BaseLatitudePercent, float BaseLongitudePercent,
+                                                       FVector Location) override;
+
+    /**
      * @brief Get the Localised Sun Rotation
      * Base Percents are the percent of a rotation around the globe
      * Location is player location from the base. This requires globe radius
@@ -687,6 +727,18 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Alignment")
     virtual FRotator RotateRotationByNorthing(FRotator Rotation, FVector NorthingDirection) override;
+
+    /**
+     * @brief Combine the rotation around world origin by the new north
+     * By default, X is North.
+     * If you wish to rotate this, pass the new north as a normalised vector
+     *
+     * @param WorldLocation
+     * @param NorthingDirection
+     * @return FVector
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Alignment")
+    virtual FMatrix RotateMatrixByNorthing(const FMatrix &RotationMatrix, FVector NorthingDirection) override;
 
     /**
      * @brief Sanitise Date Time
