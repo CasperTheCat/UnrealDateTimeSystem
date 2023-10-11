@@ -591,6 +591,16 @@ FRotator UClimateComponent::RotateByNorthing(FRotator Rotation)
     return Rotation;
 }
 
+FMatrix UClimateComponent::RotateByNorthing(const FMatrix &Rotation)
+{
+    if (DateTimeSystem)
+    {
+        return DateTimeSystem->RotateMatrixByNorthing(Rotation, NorthingDirection);
+    }
+
+    return Rotation;
+}
+
 float UClimateComponent::GetCurrentTemperature()
 {
     return CurrentTemperature;
@@ -942,6 +952,19 @@ FRotator UClimateComponent::GetLocalMoonRotation(FVector Location)
     }
 
     return FRotator();
+}
+
+FMatrix UClimateComponent::GetLocalNightSkyMatrix(FVector Location)
+{
+    if (DateTimeSystem)
+    {
+        // 1.1.1 - Compute as if X is North, then correct to northing
+        auto NightMatrix =
+            DateTimeSystem->GetLocalisedNightSkyRotationMatrix(PercentileLatitude, PercentileLongitude, Location);
+        return RotateByNorthing(NightMatrix);
+    }
+
+    return FMatrix();
 }
 
 void UClimateComponent::DateChanged_Implementation(FDateTimeSystemStruct &DateStruct)

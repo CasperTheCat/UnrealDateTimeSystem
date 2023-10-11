@@ -108,6 +108,31 @@ FVector IDateTimeSystemCommon::GetMoonVector(float Latitude, float Longitude)
     return FVector();
 }
 
+FMatrix IDateTimeSystemCommon::GetNightSkyRotationMatrix()
+{
+    checkNoEntry();
+    return FMatrix();
+}
+
+FMatrix IDateTimeSystemCommon::GetNightSkyRotationMatrixForLocation(FVector Location)
+{
+    checkNoEntry();
+    return FMatrix();
+}
+
+FMatrix IDateTimeSystemCommon::GetNightSkyRotationMatrixForLatLong(double Latitude, double Longitude)
+{
+    checkNoEntry();
+    return FMatrix();
+}
+
+FMatrix IDateTimeSystemCommon::GetLocalisedNightSkyRotationMatrix(float BaseLatitudePercent, float BaseLongitudePercent,
+                                                                  FVector Location)
+{
+    checkNoEntry();
+    return FMatrix();
+}
+
 FText IDateTimeSystemCommon::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
 {
     checkNoEntry();
@@ -172,7 +197,7 @@ float IDateTimeSystemCommon::ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeS
 }
 
 double IDateTimeSystemCommon::ComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &From,
-                                                               UPARAM(ref) FDateTimeSystemStruct &To)
+                                                              UPARAM(ref) FDateTimeSystemStruct &To)
 {
     checkNoEntry();
     return 0.0;
@@ -228,6 +253,12 @@ int IDateTimeSystemCommon::GetMonthsInYear(int YearIndex)
 {
     checkNoEntry();
     return 12;
+}
+
+FMatrix IDateTimeSystemCommon::RotateMatrixByNorthing(const FMatrix &RotationMatrix, FVector NorthingDirection)
+{
+    checkNoEntry();
+    return FMatrix();
 }
 
 bool IDateTimeSystemCommon::SanitiseDateTime(FDateTimeSystemStruct &DateStruct)

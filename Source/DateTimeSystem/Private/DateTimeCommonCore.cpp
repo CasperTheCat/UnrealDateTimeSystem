@@ -331,6 +331,12 @@ float UDateTimeSystemCore::GetLengthOfDay()
     return LengthOfDay;
 }
 
+FMatrix UDateTimeSystemCore::RotateMatrixByNorthing(const FMatrix &RotationMatrix, FVector NorthingDirection)
+{
+    auto NorthingRotation = NorthingDirection.ToOrientationRotator();
+    return FRotationMatrix(NorthingRotation).GetTransposed() * RotationMatrix;
+}
+
 void UDateTimeSystemCore::SetUTCDateTime(FDateTimeSystemStruct &DateStruct, bool SkipInitialisation)
 {
     InternalDate = DateStruct;

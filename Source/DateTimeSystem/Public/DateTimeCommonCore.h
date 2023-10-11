@@ -822,9 +822,9 @@ public:
     /**
      * @brief Get the Night Sky Rotation Matrix
      *
-     * @return FMatrix3x3
+     * @return FMatrix4x4
      */
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|SkySphere")
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|NightSky")
     FMatrix GetNightSkyRotationMatrixForLocation(FVector Location);
 
     virtual FMatrix GetNightSkyRotationMatrixForLocation_Implementation(FVector Location);
@@ -832,9 +832,9 @@ public:
     /**
      * @brief Get the Night Sky Rotation Matrix
      *
-     * @return FMatrix3x3
+     * @return FMatrix4x4
      */
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|SkySphere")
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|NightSky")
     FMatrix GetNightSkyRotationMatrix();
 
     virtual FMatrix GetNightSkyRotationMatrix_Implementation();
@@ -842,9 +842,9 @@ public:
     /**
      * @brief Get the Night Sky Rotation Matrix
      *
-     * @return FMatrix3x3
+     * @return FMatrix4x4
      */
-    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|SkySphere")
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|NightSky")
     FMatrix GetNightSkyRotationMatrixForLatLong(double Latitude, double Longitude);
 
     virtual FMatrix GetNightSkyRotationMatrixForLatLong_Implementation(double Latitude, double Longitude);
@@ -852,7 +852,7 @@ public:
     /**
      * @brief Get the Night Sky Rotation Matrix from Perc LatLong
      *
-     * @return FMatrix3x3
+     * @return FMatrix4x4
      */
     virtual FMatrix GetNightSkyRotation(double PercLatitude, double PercLongitude, FVector Location);
 
@@ -956,6 +956,18 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Alignment")
     FRotator RotateRotationByNorthing(FRotator Rotation, FVector NorthingDirection);
+
+    /**
+     * @brief Combine the rotation around world origin by the new north
+     * By default, X is North.
+     * If you wish to rotate this, pass the new north as a normalised vector
+     *
+     * @param WorldLocation
+     * @param NorthingDirection
+     * @return FVector
+     */
+    UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Alignment")
+    FMatrix RotateMatrixByNorthing(const FMatrix &RotationMatrix, FVector NorthingDirection);
 
     /**
      * @brief Return the FText of the month

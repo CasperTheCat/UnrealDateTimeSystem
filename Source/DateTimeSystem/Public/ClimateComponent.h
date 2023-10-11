@@ -781,6 +781,12 @@ private:
      */
     FRotator RotateByNorthing(FRotator Rotation);
 
+    /**
+     * @brief Internal function for adjusting Location Northing Vector
+     *
+     */
+    FMatrix RotateByNorthing(const FMatrix &Rotation);
+
 public:
     /**
      * @brief Construct a new UClimateComponent
@@ -1052,6 +1058,15 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Climate|Getters|Moon")
     FRotator GetLocalMoonRotation(FVector Location);
+
+    /**
+     * @brief Get the Local Sun Rotation object
+     *
+     * @param Location
+     * @return FRotator
+     */
+    UFUNCTION(BlueprintCallable, Category = "Climate|Getters|NightSky")
+    FMatrix GetLocalNightSkyMatrix(FVector Location);
 
     /**
      * @brief Called internally when the date changed

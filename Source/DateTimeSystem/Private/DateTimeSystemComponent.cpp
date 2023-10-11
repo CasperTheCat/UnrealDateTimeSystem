@@ -67,7 +67,7 @@ void UDateTimeSystemComponent::InternalTick(float DeltaTime, bool NonContiguous)
 void UDateTimeSystemComponent::InternalBegin()
 {
     // Create the Core
-    //CoreObject = NewObject<UDateTimeSystemCore>((UObject *)GetTransientPackage(), CoreClass.Get());
+    // CoreObject = NewObject<UDateTimeSystemCore>((UObject *)GetTransientPackage(), CoreClass.Get());
     CoreObject = NewObject<UDateTimeSystemCore>(this, CoreClass.Get());
 
     if (IsValid(CoreObject))
@@ -365,6 +365,87 @@ FVector UDateTimeSystemComponent::GetMoonVector(float Latitude, float Longitude)
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
+FMatrix UDateTimeSystemComponent::GetNightSkyRotationMatrix()
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->GetNightSkyRotationMatrix();
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FMatrix();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FMatrix UDateTimeSystemComponent::GetNightSkyRotationMatrixForLocation(FVector Location)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->GetNightSkyRotationMatrixForLocation(Location);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FMatrix();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FMatrix UDateTimeSystemComponent::GetNightSkyRotationMatrixForLatLong(double Latitude, double Longitude)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->GetNightSkyRotationMatrixForLatLong(Latitude, Longitude);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FMatrix();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FMatrix UDateTimeSystemComponent::GetLocalisedNightSkyRotationMatrix(float BaseLatitudePercent,
+                                                                     float BaseLongitudePercent, FVector Location)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->GetNightSkyRotation(BaseLatitudePercent, BaseLongitudePercent, Location);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FMatrix();
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
 FRotator UDateTimeSystemComponent::GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent,
                                                            FVector Location)
 {
@@ -643,7 +724,7 @@ float UDateTimeSystemComponent::ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTi
 }
 
 double UDateTimeSystemComponent::ComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &Date1,
-                                                                  UPARAM(ref) FDateTimeSystemStruct &Date2)
+                                                                 UPARAM(ref) FDateTimeSystemStruct &Date2)
 {
 #if DATETIMESYSTEM_POINTERCHECK
     if (IsValid(CoreObject))
@@ -859,6 +940,26 @@ int UDateTimeSystemComponent::GetMonthsInYear(int YearIndex)
     }
 
     return 0;
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+FMatrix UDateTimeSystemComponent::RotateMatrixByNorthing(const FMatrix &RotationMatrix, FVector NorthingDirection)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->RotateMatrixByNorthing(RotationMatrix, NorthingDirection);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+
+    return FMatrix();
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
