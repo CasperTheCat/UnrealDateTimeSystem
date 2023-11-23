@@ -16,6 +16,14 @@ struct FDateTimeSystemClimateOverrideRow : public FTableRowBase
 
 public:
     FDateTimeSystemClimateOverrideRow()
+        : Day(0)
+        , Month(0)
+        , Year(0)
+        , HighTemp(0)
+        , LowTemp(0)
+        , DewPoint(0)
+        , RainfallProbability(0)
+        , HourlyRainfall(0)
     {
     }
 
@@ -118,6 +126,11 @@ struct FDateTimeSystemClimateMonthlyRow : public FTableRowBase
 
 public:
     FDateTimeSystemClimateMonthlyRow()
+        : MonthlyHighTemp(0)
+        , MonthlyLowTemp(0)
+        , DewPoint(0)
+        , RainfallProbability(0)
+        , HourlyAverageRainfall(0)
     {
     }
 
@@ -186,6 +199,10 @@ struct FDateTimeSystemDateOverrideRow : public FTableRowBase
 
 public:
     FDateTimeSystemDateOverrideRow()
+        : DayIndex(0)
+        , Day(0)
+        , Month(0)
+        , Year(0)
     {
     }
 
@@ -224,6 +241,8 @@ struct FDateTimeSystemYearbookRow : public FTableRowBase
 
 public:
     FDateTimeSystemYearbookRow()
+        : NumberOfDays(0)
+        , AffectedByLeap(false)
     {
     }
 

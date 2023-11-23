@@ -3,16 +3,19 @@
 #include "DateTimeSystemComponent.h"
 
 UDateTimeSystemComponent::UDateTimeSystemComponent()
+    : InternalDate()
 {
     DateTimeSetup();
 }
 
 UDateTimeSystemComponent::UDateTimeSystemComponent(UDateTimeSystemComponent &Other)
+    : InternalDate()
 {
     DateTimeSetup();
 }
 
 UDateTimeSystemComponent::UDateTimeSystemComponent(const FObjectInitializer &ObjectInitializer)
+    : InternalDate()
 {
     DateTimeSetup();
 }
@@ -983,6 +986,42 @@ bool UDateTimeSystemComponent::SanitiseDateTime(FDateTimeSystemStruct &DateStruc
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 
+void UDateTimeSystemComponent::RegisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->RegisterForNotification(Interface);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+void UDateTimeSystemComponent::UnregisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->UnregisterForNotification(Interface);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
 FVector UDateTimeSystemComponent::AlignWorldLocationInternalCoordinates(FVector WorldLocation,
                                                                         FVector NorthingDirection)
 {
@@ -1057,4 +1096,11 @@ void UDateTimeSystemComponent::DateTimeSetup()
     CoreClass = UDateTimeSystemCore::StaticClass();
     TicksPerSecond = 10.f;
     TimeScale = 1.f;
+
+    CanEverTick = false;
+    ReferenceLatitude = 0;
+    ReferenceLongitude = 0;
+    UseDayIndexForOverride = false;
+    LengthOfCalendarYearInDays = 0;
+    OverridedDatesSetDate = false;
 }

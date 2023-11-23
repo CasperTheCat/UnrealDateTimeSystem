@@ -146,8 +146,8 @@ struct FDateTimeSystemPackedCacheInt
 {
     GENERATED_BODY()
 
-    int32 Valid : 1;
-    int32 Value : 31;
+    uint32 Valid : 1;
+    uint32 Value : 31;
 };
 
 /**
@@ -186,6 +186,19 @@ public:
     float StoredSolarSeconds;
 
 public:
+    FDateTimeSystemStruct()
+        : Seconds(0)
+        , Day(0)
+        , Month(0)
+        , Year(0)
+        , DayOfWeek(0)
+        , DayIndex(0)
+        , SolarDays(0)
+        , StoredSolarSeconds(0)
+    {
+
+    }
+
     float GetTimeInMinutes()
     {
         return Seconds / 60;
@@ -320,14 +333,6 @@ public:
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemStruct &Row)
 {
     return Row.DayIndex;
-    auto DIHash = GetTypeHash(Row.DayIndex);
-    auto DHash = GetTypeHash(Row.Day);
-    auto MHash = GetTypeHash(Row.Month);
-    auto YHash = GetTypeHash(Row.Year);
-
-    auto DateHash = HashCombine(HashCombine(DIHash, DHash), HashCombine(MHash, YHash));
-
-    return DateHash;
 }
 
 FORCEINLINE uint32 GetDateHash(const FDateTimeSystemStruct &Row)
@@ -356,12 +361,16 @@ struct FDateTimeSystemTimezoneStruct
 };
 
 DATETIMESYSTEM_API DECLARE_LOG_CATEGORY_EXTERN(LogDateTimeSystem, Log, All);
+
 DATETIMESYSTEM_API DECLARE_LOG_CATEGORY_EXTERN(LogClimateSystem, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCleanDateChangeDelegate);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDateChangeDelegate, FDateTimeSystemStruct, NewDate);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOverridesDelegate, FDateTimeSystemStruct, NewDate, FGameplayTagContainer,
                                              Attribute);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInvalidationDelegate, EDateTimeSystemInvalidationTypes, InvalidationType);
 
 /**
@@ -407,4 +416,6 @@ struct FDateTimeCommonCoreInitializer
 
     UPROPERTY()
     bool OverridedDatesSetDate;
+
+    FDateTimeCommonCoreInitializer();
 };

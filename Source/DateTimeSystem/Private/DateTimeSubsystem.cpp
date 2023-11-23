@@ -17,14 +17,26 @@ static FAutoConsoleVariableRef CVarTickStride(TEXT("DateTimeSystem.TickStride"),
 } // namespace DateTimeCVars
 
 UDateTimeSystem::UDateTimeSystem()
+    : StoredDeltaTime(0)
+    , CurrentTickIndex(0)
+    , LengthOfCalendarYearInDays(0)
+    , CanTick(false)
 {
 }
 
 UDateTimeSystem::UDateTimeSystem(UDateTimeSystem &Other)
+    : StoredDeltaTime(0)
+    , CurrentTickIndex(0)
+    , LengthOfCalendarYearInDays(0)
+    , CanTick(false)
 {
 }
 
 UDateTimeSystem::UDateTimeSystem(const FObjectInitializer &ObjectInitializer)
+    : StoredDeltaTime(0)
+    , CurrentTickIndex(0)
+    , LengthOfCalendarYearInDays(0)
+    , CanTick(false)
 {
 }
 
@@ -877,6 +889,42 @@ bool UDateTimeSystem::SanitiseDateTime(FDateTimeSystemStruct &DateStruct)
     }
 
     return false;
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+void UDateTimeSystem::RegisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->RegisterForNotification(Interface);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
+#endif // DATETIMESYSTEM_POINTERCHECK
+}
+
+void UDateTimeSystem::UnregisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface)
+{
+#if DATETIMESYSTEM_POINTERCHECK
+    if (IsValid(CoreObject))
+    {
+#endif // DATETIMESYSTEM_POINTERCHECK
+
+        return CoreObject->UnregisterForNotification(Interface);
+
+#if DATETIMESYSTEM_POINTERCHECK
+    }
+    else
+    {
+        checkNoEntry();
+    }
 #endif // DATETIMESYSTEM_POINTERCHECK
 }
 

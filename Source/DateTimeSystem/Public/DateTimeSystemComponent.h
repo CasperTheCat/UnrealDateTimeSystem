@@ -31,10 +31,10 @@ class UClimateComponent;
  * Subclasses UActorComponent so it can be placed in more locations
  */
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent),
-       DisplayName = "Date Time System")
+    DisplayName = "Date Time System")
 class DATETIMESYSTEM_API UDateTimeSystemComponent
     : public UActorComponent
-    , public IDateTimeSystemCommon
+      , public IDateTimeSystemCommon
 {
     GENERATED_BODY()
 
@@ -748,6 +748,9 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Sanitise")
     virtual bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct) override;
+
+    virtual void RegisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface) override;
+    virtual void UnregisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface) override;
 
     friend class UClimateComponent;
 };

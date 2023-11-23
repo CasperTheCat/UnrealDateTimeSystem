@@ -48,7 +48,7 @@ void IDateTimeSystemCommon::GetYesterdaysDateTZ(FDateTimeSystemStruct &DateStruc
 }
 
 TTuple<float, float, float> IDateTimeSystemCommon::ComputeDeltaBetweenDatesInternal(
-    UPARAM(ref) FDateTimeSystemStruct &Date1, UPARAM(ref) FDateTimeSystemStruct &Date2, FDateTimeSystemStruct &Result)
+    UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To, FDateTimeSystemStruct &Result)
 {
     checkNoEntry();
     return TTuple<float, float, float>();
@@ -265,6 +265,14 @@ bool IDateTimeSystemCommon::SanitiseDateTime(FDateTimeSystemStruct &DateStruct)
 {
     checkNoEntry();
     return false;
+}
+
+void IDateTimeSystemCommon::RegisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface)
+{
+}
+
+void IDateTimeSystemCommon::UnregisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface)
+{
 }
 
 FRotator IDateTimeSystemCommon::GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent,

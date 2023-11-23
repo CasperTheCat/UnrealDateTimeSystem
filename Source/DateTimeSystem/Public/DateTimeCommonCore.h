@@ -6,6 +6,8 @@
 #include "DateTimeSystemDataRows.h"
 #include "DateTimeTypes.h"
 #include "GameplayTagContainer.h"
+#include "Interfaces.h"
+#include "UObject/WeakInterfacePtr.h"
 
 #include "DateTimeCommonCore.generated.h"
 
@@ -113,6 +115,7 @@ private:
      * Value is dictated by the UseDayIndexForOverride function
      *
      */
+    UPROPERTY()
     TMap<uint32, UDateTimeSystemDateOverrideItem *> DateOverrides;
 
     /**
@@ -230,6 +233,9 @@ public:
     UPROPERTY(BlueprintAssignable)
     FCleanDateChangeDelegate CleanTimeUpdate;
 
+    // Entities that have requested a faster path for notification
+    TArray<TWeakInterfacePtr<IDateTimeNotifyInterface>> NotifiedEntities;
+
 private:
     /**
      * @brief Called by the constructors, and nothing else
@@ -243,6 +249,10 @@ private:
      * @param Type
      */
     void Invalidate(EDateTimeSystemInvalidationTypes Type);
+
+public:
+    void RegisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface);
+    void UnregisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface);
 
 public:
     /**
@@ -624,11 +634,11 @@ public:
      *
      * @param From
      * @param To
-     * @param OUT: Return the delta struct
+     * @param Result: Return the delta struct
      * @return TTuple<float, float, float>
      */
-    TTuple<float, float, float> ComputeDeltaBetweenDatesInternal(UPARAM(ref) FDateTimeSystemStruct &Date1,
-                                                                 UPARAM(ref) FDateTimeSystemStruct &Date2,
+    TTuple<float, float, float> ComputeDeltaBetweenDatesInternal(UPARAM(ref) FDateTimeSystemStruct &From,
+                                                                 UPARAM(ref) FDateTimeSystemStruct &To,
                                                                  FDateTimeSystemStruct &Result);
 
     /**

@@ -10,6 +10,24 @@
 class UClimateComponent;
 class UDateTimeSystemCore;
 
+// Helper for actors that wish to be notified of any updates
+UINTERFACE(BlueprintType, Blueprintable)
+class UDateTimeNotifyInterface : public UInterface
+{
+    GENERATED_BODY()
+};
+
+class DATETIMESYSTEM_API IDateTimeNotifyInterface
+{
+    GENERATED_BODY()
+
+public:
+    /** Add interface function declarations here */
+    UFUNCTION(BlueprintNativeEvent)
+    void DateNotify(FDateTimeSystemStruct &NewDateStruct);
+};
+
+
 // ClimateInterface
 UINTERFACE(MinimalAPI, Blueprintable)
 class UDateTimeSystemClimateInterface : public UInterface
@@ -221,14 +239,14 @@ public:
      *
      * @param From
      * @param To
-     * @param OUT: Return the delta struct
+     * @param Result: Return the delta struct
      *     1. DeltaYears
      *     2. DeltaMonths
      *     3. DeltaDays
      * @return TTuple<float, float, float>
      */
-    virtual TTuple<float, float, float> ComputeDeltaBetweenDatesInternal(UPARAM(ref) FDateTimeSystemStruct &Date1,
-                                                                         UPARAM(ref) FDateTimeSystemStruct &Date2,
+    virtual TTuple<float, float, float> ComputeDeltaBetweenDatesInternal(UPARAM(ref) FDateTimeSystemStruct &From,
+                                                                         UPARAM(ref) FDateTimeSystemStruct &To,
                                                                          FDateTimeSystemStruct &Result);
 
     ///// ///// ////////// ///// /////
@@ -255,7 +273,8 @@ public:
     /**
      * @brief Get the Sun Rotation For Lat/Long
      *
-     * @param Location
+     * @param Latitude
+     * @param Longitude
      * @return FRotator
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Sun")
@@ -289,7 +308,8 @@ public:
     /**
      * @brief Get the Moon Rotation For Lat/Long
      *
-     * @param Location
+     * @param Latitude
+     * @param Longitude
      * @return FRotator
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Getters|Moon")
@@ -508,7 +528,7 @@ public:
      * By default, X is North.
      * If you wish to rotate this, pass the new north as a normalised vector
      *
-     * @param WorldLocation
+     * @param Location
      * @param NorthingDirection
      * @return FVector
      */
@@ -520,7 +540,7 @@ public:
      * By default, X is North.
      * If you wish to rotate this, pass the new north as a normalised vector
      *
-     * @param WorldLocation
+     * @param Rotation
      * @param NorthingDirection
      * @return FVector
      */
@@ -532,7 +552,7 @@ public:
      * By default, X is North.
      * If you wish to rotate this, pass the new north as a normalised vector
      *
-     * @param WorldLocation
+     * @param RotationMatrix
      * @param NorthingDirection
      * @return FVector
      */
@@ -542,11 +562,14 @@ public:
     /**
      * @brief Sanitise Date Time
      *
-     * @param FDateTimeSystemStruct
+     * @param DateStruct
      * @return bool
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Sanitise")
     virtual bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct);
+
+    virtual void RegisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface) = 0;
+    virtual void UnregisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface) = 0;
 };
 
 // Interface

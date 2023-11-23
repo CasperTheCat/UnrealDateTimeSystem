@@ -3,18 +3,72 @@
 #include "DateTimeCommonCore.h"
 
 UDateTimeSystemCore::UDateTimeSystemCore()
+    : LengthOfDay(0)
+    , InvLengthOfDay(0)
+    , CurrentTickIndex(0)
+    , PercentLatitude(0)
+    , PercentLongitude(0)
+    , PlanetRadius(0)
+    , InvPlanetRadius(0)
+    , UseDayIndexForOverride(false)
+    , OverridedDatesSetDate(false)
+    , DaysInOrbitalYear(0)
+    , DaysInWeek(0)
+    , LengthOfCalendarYearInDays(0)
+    , CachedSolarFractionalYear()
+    , CachedSolarDeclinationAngle()
+    , CachedLunarGeocentricDeclinationRightAscSidereal()
+    , CachedSolarTimeCorrection()
+    , CachedSolarDaysOfYear()
+    , CachedDoesLeap()
+    , InternalDate()
 {
-    DateTimeSetup();
 }
 
 UDateTimeSystemCore::UDateTimeSystemCore(UDateTimeSystemCore &Other)
+    : LengthOfDay(0)
+    , InvLengthOfDay(0)
+    , CurrentTickIndex(0)
+    , PercentLatitude(0)
+    , PercentLongitude(0)
+    , PlanetRadius(0)
+    , InvPlanetRadius(0)
+    , UseDayIndexForOverride(false)
+    , OverridedDatesSetDate(false)
+    , DaysInOrbitalYear(0)
+    , DaysInWeek(0)
+    , LengthOfCalendarYearInDays(0)
+    , CachedSolarFractionalYear()
+    , CachedSolarDeclinationAngle()
+    , CachedLunarGeocentricDeclinationRightAscSidereal()
+    , CachedSolarTimeCorrection()
+    , CachedSolarDaysOfYear()
+    , CachedDoesLeap()
+    , InternalDate()
 {
-    DateTimeSetup();
 }
 
 UDateTimeSystemCore::UDateTimeSystemCore(const FObjectInitializer &ObjectInitializer)
+    : LengthOfDay(0)
+    , InvLengthOfDay(0)
+    , CurrentTickIndex(0)
+    , PercentLatitude(0)
+    , PercentLongitude(0)
+    , PlanetRadius(0)
+    , InvPlanetRadius(0)
+    , UseDayIndexForOverride(false)
+    , OverridedDatesSetDate(false)
+    , DaysInOrbitalYear(0)
+    , DaysInWeek(0)
+    , LengthOfCalendarYearInDays(0)
+    , CachedSolarFractionalYear()
+    , CachedSolarDeclinationAngle()
+    , CachedLunarGeocentricDeclinationRightAscSidereal()
+    , CachedSolarTimeCorrection()
+    , CachedSolarDaysOfYear()
+    , CachedDoesLeap()
+    , InternalDate()
 {
-    DateTimeSetup();
 }
 
 void UDateTimeSystemCore::GetTodaysDate(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
@@ -274,7 +328,7 @@ FVector UDateTimeSystemCore::GetMoonVector_Implementation(float Latitude, float 
     auto MoonInverse = FVector(FMath::Cos(MoonTopoAzimuthAngle) * FMath::Cos(MoonTopoElevationAngle),
                                FMath::Sin(MoonTopoAzimuthAngle) * FMath::Cos(MoonTopoElevationAngle),
                                FMath::Sin(MoonTopoElevationAngle))
-                           .GetSafeNormal();
+        .GetSafeNormal();
 
     CachedMoonVectors.Add(HashType, MoonInverse);
 
@@ -461,10 +515,10 @@ double UDateTimeSystemCore::ComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTim
 }
 
 TTuple<float, float, float> UDateTimeSystemCore::ComputeDeltaBetweenDatesInternal(
-    UPARAM(ref) FDateTimeSystemStruct &Date1, UPARAM(ref) FDateTimeSystemStruct &Date2, FDateTimeSystemStruct &Result)
+    UPARAM(ref) FDateTimeSystemStruct &From, UPARAM(ref) FDateTimeSystemStruct &To, FDateTimeSystemStruct &Result)
 {
     // Date2 is reference date?
-    Result = Date2 - Date1;
+    Result = To - From;
 
     SanitiseDateTime(Result);
 
@@ -479,10 +533,10 @@ TTuple<float, float, float> UDateTimeSystemCore::ComputeDeltaBetweenDatesInterna
     // Compute the advancement of months
     for (int32 i = 0; i < Result.Month; ++i)
     {
-        auto CurrentMonthDays = GetDaysInMonth((Date2.Month + i) % GetMonthsInYear(Date2.Year));
-        auto MonthDays = GetDaysInMonth((Date2.Month + i + 1) % GetMonthsInYear(Date2.Year));
+        auto CurrentMonthDays = GetDaysInMonth((To.Month + i) % GetMonthsInYear(To.Year));
+        auto MonthDays = GetDaysInMonth((To.Month + i + 1) % GetMonthsInYear(To.Year));
 
-        auto ShortSkip = (Date2.Day + 1) - MonthDays;
+        auto ShortSkip = (To.Day + 1) - MonthDays;
 
         if (ShortSkip > 0)
         {
@@ -691,6 +745,16 @@ void UDateTimeSystemCore::Invalidate(EDateTimeSystemInvalidationTypes Type = EDa
     }
 }
 
+void UDateTimeSystemCore::RegisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface)
+{
+    NotifiedEntities.Add(Interface.GetObject());
+}
+
+void UDateTimeSystemCore::UnregisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface)
+{
+    NotifiedEntities.Remove(Interface.GetObject());
+}
+
 bool UDateTimeSystemCore::HandleDayRollover(FDateTimeSystemStruct &DateStruct)
 {
     // Check how many seconds we have
@@ -698,7 +762,7 @@ bool UDateTimeSystemCore::HandleDayRollover(FDateTimeSystemStruct &DateStruct)
     {
         // Switch to a mode that enables us to handle multiple days.
         // This is not merged into the next else if as it needs testing
-        auto NumberOfDays = FMath::TruncToInt(FMath::Floor(DateStruct.Seconds / LengthOfDay));
+        const auto NumberOfDays = FMath::TruncToInt(FMath::Floor(DateStruct.Seconds / LengthOfDay));
 
         DateStruct.Seconds -= NumberOfDays * LengthOfDay;
         DateStruct.DayOfWeek = (DateStruct.DayOfWeek + NumberOfDays) % DaysInWeek;
@@ -928,7 +992,7 @@ TTuple<double, double, double> UDateTimeSystemCore::LunarDeclinationRightAscensi
                     FMath::Cos(GeocentricLatRad) * FMath::Sin(EpsilonZero) * FMath::Sin(GeocentricLongRad));
 
     auto MoonRightAscension = FMath::Atan2(FMath::Sin(GeocentricLongRad) * FMath::Cos(EpsilonZero) -
-                                               FMath::Tan(GeocentricLatRad) * FMath::Sin(EpsilonZero),
+                                           FMath::Tan(GeocentricLatRad) * FMath::Sin(EpsilonZero),
                                            FMath::Cos(GeocentricLongRad));
 
     auto GAST = FMath::DegreesToRadians(GMST * 15);
@@ -1033,6 +1097,20 @@ void UDateTimeSystemCore::InternalTick(float DeltaTime, bool NonContiguous)
         {
             DateChangeCallback.Broadcast(InternalDate);
         }
+
+        // Notify Entities
+        for (const auto &NotifiableEntity : NotifiedEntities)
+        {
+            const auto EntityObject = NotifiableEntity.GetObject();
+            if (IsValid(EntityObject))
+            {
+                const auto EntityAsInterface = Cast<IDateTimeNotifyInterface>(EntityObject);
+                if (EntityAsInterface)
+                {
+                    EntityAsInterface->DateNotify(InternalDate);
+                }
+            }
+        }
     }
 
     if (TimeUpdate.IsBound())
@@ -1085,7 +1163,7 @@ void UDateTimeSystemCore::InternalBegin(FDateTimeCommonCoreInitializer &CoreInit
     {
         TArray<FDateTimeSystemDateOverrideRow *> LocalDOTemps;
         CoreInitializer.DateOverridesTable->GetAllRows<FDateTimeSystemDateOverrideRow>(FString("Yearbook Rows"),
-                                                                                       LocalDOTemps);
+            LocalDOTemps);
 
         for (auto val : LocalDOTemps)
         {
