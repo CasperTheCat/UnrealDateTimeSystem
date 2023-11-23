@@ -731,14 +731,14 @@ float UClimateComponent::GetHeatIndexForLocation(FVector Location)
     auto C9 = -3.582e-6f;
 
     auto HeatIndex = C1
-        + C2 * T
-        + C3 * R
-        + C4 * T * R
-        + C5 * TT
-        + C6 * RR
-        + C7 * TT * R
-        + C8 * T * RR
-        + C9 * TT * RR;
+                     + C2 * T
+                     + C3 * R
+                     + C4 * T * R
+                     + C5 * TT
+                     + C6 * RR
+                     + C7 * TT * R
+                     + C8 * T * RR
+                     + C9 * TT * RR;
 
     //// We want to mute HI when temp is under 25C
     //// We can do this rolling off
