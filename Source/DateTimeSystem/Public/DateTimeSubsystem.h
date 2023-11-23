@@ -24,11 +24,11 @@ class UClimateComponent;
  *
  */
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Custom), meta = (BlueprintSpawnableComponent),
-       DisplayName = "Date Time System")
+    DisplayName = "Date Time System")
 class DATETIMESYSTEM_API UDateTimeSystem
     : public UGameInstanceSubsystem
-    , public FTickableGameObject
-    , public IDateTimeSystemCommon
+      , public FTickableGameObject
+      , public IDateTimeSystemCommon
 {
     GENERATED_BODY()
 
@@ -589,6 +589,9 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Date and Time|Internal|Sanitise")
     virtual bool SanitiseDateTime(FDateTimeSystemStruct &DateStruct) override;
+
+    virtual void RegisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface) override;
+    virtual void UnregisterForNotification(TScriptInterface<IDateTimeNotifyInterface> Interface) override;
 
     friend class UClimateComponent;
 
