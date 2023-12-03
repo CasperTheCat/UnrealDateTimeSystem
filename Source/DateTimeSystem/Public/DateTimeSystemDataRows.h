@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/DataTable.h"
 #include "GameplayTagContainer.h"
+#include "Engine/DataTable.h"
 #include "Math/UnrealMathUtility.h"
 
 #include "DateTimeSystemDataRows.generated.h"
@@ -106,11 +106,11 @@ public:
 
 FORCEINLINE uint32 GetTypeHash(const UDateTimeSystemClimateOverrideItem *Row)
 {
-    auto DHash = GetTypeHash(Row->Day);
-    auto MHash = GetTypeHash(Row->Month);
-    auto YHash = GetTypeHash(Row->Year);
+    const auto DHash = GetTypeHash(Row->Day);
+    const auto MHash = GetTypeHash(Row->Month);
+    const auto YHash = GetTypeHash(Row->Year);
 
-    auto Hash = HashCombine(YHash, MHash);
+    const auto Hash = HashCombine(YHash, MHash);
     return HashCombine(Hash, DHash);
 }
 
@@ -152,11 +152,11 @@ public:
 
 FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemClimateMonthlyRow &Row)
 {
-    auto DHash = GetTypeHash(Row.MonthlyHighTemp);
-    auto MHash = GetTypeHash(Row.MonthlyLowTemp);
-    auto YHash = GetTypeHash(Row.DewPoint);
+    const auto DHash = GetTypeHash(Row.MonthlyHighTemp);
+    const auto MHash = GetTypeHash(Row.MonthlyLowTemp);
+    const auto YHash = GetTypeHash(Row.DewPoint);
 
-    auto Hash = HashCombine(YHash, MHash);
+    const auto Hash = HashCombine(YHash, MHash);
     return HashCombine(Hash, DHash);
 }
 
@@ -184,11 +184,11 @@ public:
 
 FORCEINLINE uint32 GetTypeHash(const UDateTimeSystemClimateMonthlyItem *Row)
 {
-    auto DHash = GetTypeHash(Row->MonthlyHighTemp);
-    auto MHash = GetTypeHash(Row->MonthlyLowTemp);
-    auto YHash = GetTypeHash(Row->DewPoint);
+    const auto DHash = GetTypeHash(Row->MonthlyHighTemp);
+    const auto MHash = GetTypeHash(Row->MonthlyLowTemp);
+    const auto YHash = GetTypeHash(Row->DewPoint);
 
-    auto Hash = HashCombine(YHash, MHash);
+    const auto Hash = HashCombine(YHash, MHash);
     return HashCombine(Hash, DHash);
 }
 
@@ -283,7 +283,7 @@ public:
 
 FORCEINLINE uint32 GetTypeHash(const UDateTimeSystemYearbookItem *Row)
 {
-    auto MIHash = GetTypeHash(Row->MonthName.ToString());
+    const auto MIHash = GetTypeHash(Row->MonthName.ToString());
 
     return MIHash;
 }
@@ -314,11 +314,11 @@ public:
 
 FORCEINLINE uint32 GetTypeHash(const UDateTimeSystemDateOverrideItem *Row)
 {
-    auto DHash = GetTypeHash(Row->Day);
-    auto MHash = GetTypeHash(Row->Month);
-    auto YHash = GetTypeHash(Row->Year);
+    const auto DHash = GetTypeHash(Row->Day);
+    const auto MHash = GetTypeHash(Row->Month);
+    const auto YHash = GetTypeHash(Row->Year);
 
-    auto Hash = HashCombine(YHash, MHash);
+    const auto Hash = HashCombine(YHash, MHash);
     return HashCombine(Hash, DHash);
 }
 

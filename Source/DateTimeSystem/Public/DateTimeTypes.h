@@ -206,16 +206,16 @@ public:
 
     uint32 GetBinHash(float LengthOfDay, int NumberOfBinsPerDay = 24)
     {
-        auto YH = GetTypeHash(Year);
-        auto MH = GetTypeHash(Month);
-        auto DH = GetTypeHash(Day);
+        const auto YH = GetTypeHash(Year);
+        const auto MH = GetTypeHash(Month);
+        const auto DH = GetTypeHash(Day);
 
-        auto HourBin = FMath::TruncToInt32(Seconds / (LengthOfDay / NumberOfBinsPerDay));
-        auto HH = GetTypeHash(HourBin);
+        const auto HourBin = FMath::TruncToInt32(Seconds / (LengthOfDay / NumberOfBinsPerDay));
+        const auto HH = GetTypeHash(HourBin);
 
-        auto YMH = HashCombine(YH, MH);
-        auto DHH = HashCombine(DH, HH);
-        auto YMDHH = HashCombine(YMH, DHH);
+        const auto YMH = HashCombine(YH, MH);
+        const auto DHH = HashCombine(DH, HH);
+        const auto YMDHH = HashCombine(YMH, DHH);
 
         return YMDHH;
     }
@@ -307,22 +307,22 @@ public:
 
     uint32 GetHash()
     {
-        auto SHash = GetTypeHash(Seconds);
-        auto DHash = GetTypeHash(Day);
-        auto MHash = GetTypeHash(Month);
-        auto YHash = GetTypeHash(Year);
+        const auto SHash = GetTypeHash(Seconds);
+        const auto DHash = GetTypeHash(Day);
+        const auto MHash = GetTypeHash(Month);
+        const auto YHash = GetTypeHash(Year);
 
-        auto DateHash = HashCombine(HashCombine(SHash, DHash), HashCombine(MHash, YHash));
+        const auto DateHash = HashCombine(HashCombine(SHash, DHash), HashCombine(MHash, YHash));
 
         return DateHash;
     }
 
     FDateTime &GetDateTime()
     {
-        auto _Hour = FMath::TruncToInt32(Seconds / 3600);
-        auto _Minute = FMath::TruncToInt32(DateTimeHelpers::HelperMod(Seconds, 3600) / 60);
-        auto _Seconds = FMath::TruncToInt32(DateTimeHelpers::HelperMod(Seconds, 60));
-        auto Milli = FMath::TruncToInt32(1000 * FMath::Frac(Seconds));
+        const auto _Hour = FMath::TruncToInt32(Seconds / 3600);
+        const auto _Minute = FMath::TruncToInt32(DateTimeHelpers::HelperMod(Seconds, 3600) / 60);
+        const auto _Seconds = FMath::TruncToInt32(DateTimeHelpers::HelperMod(Seconds, 60));
+        const auto Milli = FMath::TruncToInt32(1000 * FMath::Frac(Seconds));
 
         auto UEDateTime = FDateTime(Year, Month + 1, Day + 1, _Hour, _Minute, _Seconds, Milli);
 
@@ -337,11 +337,11 @@ FORCEINLINE uint32 GetTypeHash(const FDateTimeSystemStruct &Row)
 
 FORCEINLINE uint32 GetDateHash(const FDateTimeSystemStruct &Row)
 {
-    auto DHash = GetTypeHash(Row.Day);
-    auto MHash = GetTypeHash(Row.Month);
-    auto YHash = GetTypeHash(Row.Year);
+    const auto DHash = GetTypeHash(Row.Day);
+    const auto MHash = GetTypeHash(Row.Month);
+    const auto YHash = GetTypeHash(Row.Year);
 
-    auto Hash = HashCombine(YHash, MHash);
+    const auto Hash = HashCombine(YHash, MHash);
     return HashCombine(Hash, DHash);
 }
 

@@ -2,13 +2,12 @@
 
 #pragma once
 
-#include "Components/ActorComponent.h"
 #include "CoreMinimal.h"
-#include "DateTimeSystem/Public/DateTimeTypes.h"
-#include "DateTimeSystemComponent.h"
 #include "DateTimeSystemDataRows.h"
 #include "GameplayTagContainer.h"
 #include "Interfaces.h"
+#include "Components/ActorComponent.h"
+#include "DateTimeSystem/Public/DateTimeTypes.h"
 
 #include "ClimateComponent.generated.h"
 
@@ -455,7 +454,7 @@ public:
 
     /**
      * @brief Lighter weight DateTime Update Callback
-     *
+     * Primarily used as a shortcut to binding to the DTS directly
      */
     UPROPERTY(BlueprintAssignable)
     FLocalDateTimeEvent LocalTimeUpdateSignal;

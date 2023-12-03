@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "DateTimeSystemDataRows.h"
 #include "DateTimeTypes.h"
-#include "GameplayTagContainer.h"
 #include "Interfaces.h"
 #include "UObject/WeakInterfacePtr.h"
 
