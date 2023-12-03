@@ -65,6 +65,12 @@ class DATETIMESYSTEM_API UClimateComponent : public UActorComponent
 
 private:
     /**
+     * @brief Is the system initialised?
+     */
+    UPROPERTY()
+    bool IsInitialised;
+
+    /**
      * @brief Tick rate when engine is ticking the component
      *
      */
@@ -1266,4 +1272,19 @@ public:
      * @return FDateTimeClimateDataStruct
      */
     virtual void GetClimateDataByRef_Implementation(UPARAM(ref) FDateTimeClimateDataStruct &ClimateData);
+
+    /**
+     * 
+     * @param NewClimateTable The new table object
+     * @param ForceReinitialise Should we warn about initialisation or just force redo it
+     */
+    virtual void SetClimateTable(TObjectPtr<UDataTable> NewClimateTable, bool ForceReinitialise = false);
+
+    /**
+     * 
+     * @param NewClimateOverrideTable The new table object
+     * @param ForceReinitialise Should we warn about initialisation or just force redo it
+     */
+    virtual void SetClimateOverridesTable(TObjectPtr<UDataTable> NewClimateOverrideTable,
+                                          bool ForceReinitialise = false);
 };

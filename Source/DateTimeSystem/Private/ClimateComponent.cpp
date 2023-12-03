@@ -8,6 +8,7 @@
 
 void UClimateComponent::ClimateSetup()
 {
+    IsInitialised = false;
     TicksPerSecond = 0;
     RainProbabilityMultiplier = 1.f;
     CatchupThresholdInSeconds = 30;
@@ -285,6 +286,38 @@ void UClimateComponent::GetClimateDataByRef_Implementation(FDateTimeClimateDataS
     ClimateData.Rain = GetCurrentRainfall();
     ClimateData.Wetness = GetCurrentWetness();
     ClimateData.Puddles = GetCurrentSittingWater();
+}
+
+void UClimateComponent::SetClimateTable(TObjectPtr<UDataTable> NewClimateTable, bool ForceReinitialise)
+{
+    // Check init state
+    if(IsInitialised && !ForceReinitialise)
+    {
+        UE_LOG(LogClimateSystem, Error, TEXT("SetClimateTable called on initialised table"));
+    }
+    ClimateTable = NewClimateTable;
+
+    if(IsInitialised && ForceReinitialise)
+    {
+        UE_LOG(LogClimateSystem, Log, TEXT("SetClimateTable called on initialised table. Performing Reinit"));
+        InternalBegin();
+    }
+}
+
+void UClimateComponent::SetClimateOverridesTable(TObjectPtr<UDataTable> NewClimateOverrideTable, bool ForceReinitialise)
+{
+    // Check init state
+    if(IsInitialised && !ForceReinitialise)
+    {
+        UE_LOG(LogClimateSystem, Error, TEXT("SetClimateTable called on initialised table"));
+    }
+    ClimateOverridesTable = NewClimateOverrideTable;
+
+    if(IsInitialised && ForceReinitialise)
+    {
+        UE_LOG(LogClimateSystem, Log, TEXT("SetClimateTable called on initialised table. Performing Reinit"));
+        InternalBegin();
+    }
 }
 
 void UClimateComponent::UpdateCurrentTemperature(float DeltaTime, bool NonContiguous)
@@ -919,6 +952,8 @@ void UClimateComponent::InternalBegin()
 
         DTSTimeScale = DateTimeSystem->GetTimeScale();
     }
+
+    IsInitialised = true;
 }
 
 void UClimateComponent::SetClimateUpdateFrequency(float Frequency)
