@@ -5,6 +5,7 @@
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "GameFramework/GameState.h"
+#include "DateTimeCommonCore.h"
 
 void UClimateComponent::ClimateSetup()
 {
