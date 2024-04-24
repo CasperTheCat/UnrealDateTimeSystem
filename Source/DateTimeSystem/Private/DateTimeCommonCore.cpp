@@ -373,13 +373,13 @@ FMatrix UDateTimeSystemCore::GetNightSkyRotation(double PercLatitude, double Per
 }
 
 float UDateTimeSystemCore::GetMoonApparentLuminosityScale_Implementation(float NewMoonLuminosity,
-    float FullMoonLuminosity)
+                                                                         float FullMoonLuminosity)
 {
     return GetMoonApparentLuminosityScaleForLocation(FVector::ZeroVector, NewMoonLuminosity, FullMoonLuminosity);
 }
 
 float UDateTimeSystemCore::GetMoonApparentLuminosityScaleForLocation_Implementation(FVector Location,
-                                                                                    float NewMoonLuminosity, float FullMoonLuminosity)
+    float NewMoonLuminosity, float FullMoonLuminosity)
 {
     return GetMoonLuminosityScale(PercentLatitude, PercentLongitude, Location, NewMoonLuminosity, FullMoonLuminosity);
 }
@@ -651,7 +651,8 @@ float UDateTimeSystemCore::GetMoonApparentLuminosityScaleForLatLong_Implementati
     const auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
     const auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
 
-    return GetMoonLuminosityScale(LocalisedPercentLatitude, LocalisedPercentLongitude, FVector::ZeroVector, NewMoonLuminosity, FullMoonLuminosity);
+    return GetMoonLuminosityScale(LocalisedPercentLatitude, LocalisedPercentLongitude, FVector::ZeroVector,
+                                  NewMoonLuminosity, FullMoonLuminosity);
 }
 
 float UDateTimeSystemCore::GetMoonLuminosityScale(double PercLatitude, double PercLongitude, FVector Location,
@@ -661,17 +662,17 @@ float UDateTimeSystemCore::GetMoonLuminosityScale(double PercLatitude, double Pe
     const auto Longitude = GetLongitudeFromLocation(PercLatitude, PercLongitude, Location);
 
     // Observer to Sun
-    auto SunVec = GetSunVector(Latitude, Longitude);
+    const auto SunVec = GetSunVector(Latitude, Longitude);
 
     // Observer to the moon
-    auto MoonVec = GetMoonVector(Latitude, Longitude);
+    const auto MoonVec = GetMoonVector(Latitude, Longitude);
 
     // We care about the vector from the MoonToEarth (-MoonVec) and MoonToSun
     // Given the moon is only 0.002569 au from earth, MoonToSun is approximately just the sun vector
-    auto MoonToEarth = -MoonVec;
-    auto MoonToSun = SunVec;
+    const auto MoonToEarth = -MoonVec;
+    const auto MoonToSun = SunVec;
 
-    auto BaseScalar = ((FVector::DotProduct(MoonToEarth, MoonToSun) + 1) * 0.5);
+    const auto BaseScalar = ((FVector::DotProduct(MoonToEarth, MoonToSun) + 1) * 0.5);
 
     return BaseScalar * (FullMoonLuminosity - NewMoonLuminosity) + NewMoonLuminosity;
 }

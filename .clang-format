@@ -117,6 +117,7 @@ SpaceBeforeAssignmentOperators: true
 SpaceBeforeCpp11BracedList: false
 SpaceBeforeCtorInitializerColon: true
 SpaceBeforeInheritanceColon: true
+InsertNewlineAtEOF: true
 SpaceBeforeParens: ControlStatements
 SpaceBeforeRangeBasedForLoopColon: true
 SpaceInEmptyBlock: false

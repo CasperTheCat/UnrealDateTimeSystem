@@ -875,7 +875,8 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|Moon")
     float GetMoonApparentLuminosityScale(float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
 
-    virtual float GetMoonApparentLuminosityScale_Implementation(float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
+    virtual float GetMoonApparentLuminosityScale_Implementation(float NewMoonLuminosity = 0.002,
+                                                                float FullMoonLuminosity = 0.15);
 
     /**
      * @brief Get the apparent lunar luminosity
@@ -884,9 +885,11 @@ public:
      * @return float
      */
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|Moon")
-    float GetMoonApparentLuminosityScaleForLocation(FVector Location, float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
+    float GetMoonApparentLuminosityScaleForLocation(FVector Location, float NewMoonLuminosity = 0.002,
+                                                    float FullMoonLuminosity = 0.15);
 
-    virtual float GetMoonApparentLuminosityScaleForLocation_Implementation(FVector Location, float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
+    virtual float GetMoonApparentLuminosityScaleForLocation_Implementation(
+        FVector Location, float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
 
     /**
      * @brief Get the apparent lunar luminosity
@@ -895,9 +898,11 @@ public:
      * @return float
      */
     UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|Moon")
-    float GetMoonApparentLuminosityScaleForLatLong(double Latitude, double Longitude, float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
+    float GetMoonApparentLuminosityScaleForLatLong(double Latitude, double Longitude, float NewMoonLuminosity = 0.002,
+                                                   float FullMoonLuminosity = 0.15);
 
-    virtual float GetMoonApparentLuminosityScaleForLatLong_Implementation(double Latitude, double Longitude, float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
+    virtual float GetMoonApparentLuminosityScaleForLatLong_Implementation(
+        double Latitude, double Longitude, float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
 
     /**
      * @brief Get the apparent lunar luminosity
@@ -905,7 +910,8 @@ public:
      *
      * @return float
      */
-    virtual float GetMoonLuminosityScale(double PercLatitude, double PercLongitude, FVector Location, float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
+    virtual float GetMoonLuminosityScale(double PercLatitude, double PercLongitude, FVector Location,
+                                         float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
 
     ///// ///// ////////// ///// /////
     // Getters
