@@ -144,10 +144,10 @@ float UDateTimeSystemCore::GetLatitudeFromLocation_Implementation(float BaseLati
 {
     auto LatLoc = Location.X * 0.01 * InvPlanetRadius * INV_PI * 2; // Divide distance walked by Pi/2
     LatLoc += BaseLatitudePercent;
-    auto ScaledX = LatLoc - 1; // Shift range to from -1 to 1, to -2 to 0
-    auto Modded =
+    const auto ScaledX = LatLoc - 1; // Shift range to from -1 to 1, to -2 to 0
+    const auto Modded =
         DateTimeHelpers::HelperMod(ScaledX, 4) - 2; // Take the modulus, which now goes from -2 to 2 when x is -3 to 1
-    auto Absolute = FMath::Abs(Modded) - 1;         // Invert the negatives and give use a triangle wave
+    const auto Absolute = FMath::Abs(Modded) - 1;   // Invert the negatives and give use a triangle wave
 
     return HALF_PI * Absolute;
 }
@@ -162,14 +162,14 @@ float UDateTimeSystemCore::GetLongitudeFromLocation_Implementation(float BaseLat
     LatLoc += BaseLatitudePercent;
     LongLoc += BaseLongitudePercent;
 
-    auto Flipped = DateTimeHelpers::HelperMod((LatLoc - 1) * 0.5, 2) < 1;
+    const auto Flipped = DateTimeHelpers::HelperMod((LatLoc - 1) * 0.5, 2) < 1;
     if (Flipped)
     {
         LongLoc += 1; // Flip into the other hemisphere
     }
 
-    auto ScaledX = LongLoc;
-    auto Modded = DateTimeHelpers::HelperMod(ScaledX, 2);
+    const auto ScaledX = LongLoc;
+    const auto Modded = DateTimeHelpers::HelperMod(ScaledX, 2);
     // auto Absolute = FMath::Abs(Modded) - 1; // Radians
 
     // FMath::Wrap(ScaledX, 0.0, 4.0);
@@ -204,8 +204,8 @@ FRotator UDateTimeSystemCore::GetSunRotationForLocation_Implementation(FVector L
 
 FRotator UDateTimeSystemCore::GetSunRotationForLatLong_Implementation(double Latitude, double Longitude)
 {
-    auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
-    auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
+    const auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
+    const auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
 
     return GetLocalisedSunRotation(LocalisedPercentLatitude, LocalisedPercentLongitude, FVector::ZeroVector);
 }
@@ -220,8 +220,8 @@ FVector UDateTimeSystemCore::GetSunVector_Implementation(float Latitude, float L
     DECLARE_SCOPE_CYCLE_COUNTER(TEXT("GetSunVector_Implementation"), STAT_ACIGetSunVector, STATGROUP_ACIDateTimeCommon);
 
     // Check Cache. We may compute this a few times per frame
-    auto HashType = HashCombine(GetTypeHash(Latitude), GetTypeHash(Longitude));
-    auto Cache = CachedSunVectors.Find(HashType);
+    const auto HashType = HashCombine(GetTypeHash(Latitude), GetTypeHash(Longitude));
+    const auto Cache = CachedSunVectors.Find(HashType);
     if (Cache)
     {
         return *Cache;
@@ -229,25 +229,26 @@ FVector UDateTimeSystemCore::GetSunVector_Implementation(float Latitude, float L
 
     // https://gml.noaa.gov/grad/solcalc/solareqns.PDF
 
-    float LocalLat = Latitude;
-    float LocalLong = Longitude;
-    float YearInRads = GetSolarFractionalYear();
-    float DeclAngle = SolarDeclinationAngle(YearInRads);
+    const float LocalLat = Latitude;
+    const float LocalLong = Longitude;
+    const float YearInRads = GetSolarFractionalYear();
+    const float DeclAngle = SolarDeclinationAngle(YearInRads);
 
     // Equation of Time
-    double EQTime = SolarTimeCorrection(YearInRads);
+    const double EQTime = SolarTimeCorrection(YearInRads);
 
     // New Method
-    float LatOut = DeclAngle;
-    float LongOut = FMath::DegreesToRadians(-15 * (((InternalDate.Seconds - LengthOfDay * 0.5) + EQTime * 60) / 3600));
-    float LongDiff = LongOut - LocalLong;
-    float SX = FMath::Cos(LatOut) * FMath::Sin(LongDiff);
-    float SY =
+    const float LatOut = DeclAngle;
+    const float LongOut = FMath::DegreesToRadians(
+        -15 * (((InternalDate.Seconds - LengthOfDay * 0.5) + EQTime * 60) / 3600));
+    const float LongDiff = LongOut - LocalLong;
+    const float SX = FMath::Cos(LatOut) * FMath::Sin(LongDiff);
+    const float SY =
         FMath::Cos(LocalLat) * FMath::Sin(LatOut) - FMath::Sin(LocalLat) * FMath::Cos(LatOut) * FMath::Cos(LongDiff);
-    float SZ =
+    const float SZ =
         FMath::Sin(LocalLat) * FMath::Sin(LatOut) + FMath::Cos(LocalLat) * FMath::Cos(LatOut) * FMath::Cos(LongDiff);
 
-    auto SunInverse = FVector(SY, SX, SZ).GetSafeNormal();
+    const auto SunInverse = FVector(SY, SX, SZ).GetSafeNormal();
 
     CachedSunVectors.Add(HashType, SunInverse);
 
@@ -266,8 +267,8 @@ FRotator UDateTimeSystemCore::GetMoonRotation_Implementation()
 
 FRotator UDateTimeSystemCore::GetMoonRotationForLatLong_Implementation(double Latitude, double Longitude)
 {
-    auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
-    auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
+    const auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
+    const auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
 
     return GetLocalisedMoonRotation(LocalisedPercentLatitude, LocalisedPercentLongitude, FVector::ZeroVector);
 }
@@ -281,53 +282,54 @@ FVector UDateTimeSystemCore::GetMoonVector_Implementation(float Latitude, float 
                                 STATGROUP_ACIDateTimeCommon);
 
     // Check Cache. We may compute this a few times per frame
-    auto HashType = HashCombine(GetTypeHash(Latitude), GetTypeHash(Longitude));
-    auto Cache = CachedMoonVectors.Find(HashType);
+    const auto HashType = HashCombine(GetTypeHash(Latitude), GetTypeHash(Longitude));
+    const auto Cache = CachedMoonVectors.Find(HashType);
     if (Cache)
     {
         return *Cache;
     }
 
-    auto SinMoonParallax = PlanetRadius / 385000;
+    const auto SinMoonParallax = PlanetRadius / 385000;
 
     // Non-LatLong dependant compution
     // We use a faster approximation of sidereal time
     // And Declination and Right Ascension are also simplified
     auto DRaSt = LunarDeclinationRightAscensionSiderealTime();
-    auto MoonDeclination = DRaSt.Get<0>();
-    auto MoonRightAscension = DRaSt.Get<1>();
-    auto ApparentSiderealTime = DRaSt.Get<2>();
+    const auto MoonDeclination = DRaSt.Get<0>();
+    const auto MoonRightAscension = DRaSt.Get<1>();
+    const auto ApparentSiderealTime = DRaSt.Get<2>();
 
-    auto HourAngle = ApparentSiderealTime + Longitude - MoonRightAscension;
+    const auto HourAngle = ApparentSiderealTime + Longitude - MoonRightAscension;
 
-    auto FlatteningTerm = FMath::Atan(0.99664719 * FMath::Tan(Latitude));
-    auto ObserverElevationTerm = FMath::Cos(FlatteningTerm);
-    auto TermY = 0.99664719 * FMath::Sin(FlatteningTerm);
+    const auto FlatteningTerm = FMath::Atan(0.99664719 * FMath::Tan(Latitude));
+    const auto ObserverElevationTerm = FMath::Cos(FlatteningTerm);
+    const auto TermY = 0.99664719 * FMath::Sin(FlatteningTerm);
 
-    auto MoonRightAscParallax =
+    const auto MoonRightAscParallax =
         FMath::Atan2((-ObserverElevationTerm * SinMoonParallax * FMath::Sin(HourAngle)),
                      (FMath::Cos(MoonDeclination) - ObserverElevationTerm * SinMoonParallax * FMath::Cos(HourAngle)));
 
     // Local Hour Angle: Hour angle with parallax accounted for
-    auto LHA = HourAngle - MoonRightAscParallax;
+    const auto LHA = HourAngle - MoonRightAscParallax;
 
     // Topocentric Declination
-    auto DeclPrime =
+    const auto DeclPrime =
         FMath::Atan2(((FMath::Sin(MoonDeclination) - TermY * SinMoonParallax) * FMath::Cos(MoonRightAscParallax)),
                      (FMath::Cos(MoonDeclination) - TermY * SinMoonParallax * FMath::Cos(HourAngle)));
 
     // Topocentric Elevation
-    auto MoonTopoElevationAngle = FMath::Asin(FMath::Sin(Latitude) * FMath::Sin(DeclPrime) +
-                                              FMath::Cos(Latitude) * FMath::Cos(DeclPrime) * FMath::Cos(LHA));
+    const auto MoonTopoElevationAngle = FMath::Asin(FMath::Sin(Latitude) * FMath::Sin(DeclPrime) +
+                                                    FMath::Cos(Latitude) * FMath::Cos(DeclPrime) * FMath::Cos(LHA));
 
     // Topocentric Azimuth
-    auto MoonTopoAzimuthAngle = PI + FMath::Atan2(FMath::Sin(LHA), (FMath::Cos(LHA) * FMath::Sin(Latitude) -
-                                                                    FMath::Tan(DeclPrime) * FMath::Cos(Latitude)));
+    const auto MoonTopoAzimuthAngle = PI + FMath::Atan2(FMath::Sin(LHA), (FMath::Cos(LHA) * FMath::Sin(Latitude) -
+                                                                          FMath::Tan(DeclPrime) * FMath::Cos(
+                                                                              Latitude)));
 
     // Result. Cache and return
-    auto MoonInverse = FVector(FMath::Cos(MoonTopoAzimuthAngle) * FMath::Cos(MoonTopoElevationAngle),
-                               FMath::Sin(MoonTopoAzimuthAngle) * FMath::Cos(MoonTopoElevationAngle),
-                               FMath::Sin(MoonTopoElevationAngle))
+    const auto MoonInverse = FVector(FMath::Cos(MoonTopoAzimuthAngle) * FMath::Cos(MoonTopoElevationAngle),
+                                     FMath::Sin(MoonTopoAzimuthAngle) * FMath::Cos(MoonTopoElevationAngle),
+                                     FMath::Sin(MoonTopoElevationAngle))
         .GetSafeNormal();
 
     CachedMoonVectors.Add(HashType, MoonInverse);
@@ -347,27 +349,39 @@ FMatrix UDateTimeSystemCore::GetNightSkyRotationMatrix_Implementation()
 
 FMatrix UDateTimeSystemCore::GetNightSkyRotationMatrixForLatLong_Implementation(double Latitude, double Longitude)
 {
-    auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
-    auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
+    const auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
+    const auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
 
     return GetNightSkyRotation(LocalisedPercentLatitude, LocalisedPercentLongitude, FVector::ZeroVector);
 }
 
 FMatrix UDateTimeSystemCore::GetNightSkyRotation(double PercLatitude, double PercLongitude, FVector Location)
 {
-    auto Latitude = GetLatitudeFromLocation(PercLatitude, Location);
-    auto Longitude = GetLongitudeFromLocation(PercLatitude, PercLongitude, Location);
+    const auto Latitude = GetLatitudeFromLocation(PercLatitude, Location);
+    const auto Longitude = GetLongitudeFromLocation(PercLatitude, PercLongitude, Location);
 
     // +X points north
 
     // X rotation is the hour angle
-    auto T = GetSolarYears(InternalDate) * 0.01;
-    auto GMST = 6.697374558 + 879'000.051336906897 * T + 0.000026 * T * T;
-    auto GAST = GMST * 15;
+    const auto T = GetSolarYears(InternalDate) * 0.01;
+    const auto GMST = 6.697374558 + 879'000.051336906897 * T + 0.000026 * T * T;
+    const auto GAST = GMST * 15;
 
-    auto HourAngle = DateTimeHelpers::HelperMod(GAST + FMath::RadiansToDegrees(Longitude), 360.f);
+    const auto HourAngle = DateTimeHelpers::HelperMod(GAST + FMath::RadiansToDegrees(Longitude), 360.f);
 
     return FRotationMatrix(FRotator(FMath::RadiansToDegrees(Latitude), 0, HourAngle));
+}
+
+float UDateTimeSystemCore::GetMoonApparentLuminosityScale_Implementation(float NewMoonLuminosity,
+                                                                         float FullMoonLuminosity)
+{
+    return GetMoonApparentLuminosityScaleForLocation(FVector::ZeroVector, NewMoonLuminosity, FullMoonLuminosity);
+}
+
+float UDateTimeSystemCore::GetMoonApparentLuminosityScaleForLocation_Implementation(FVector Location,
+    float NewMoonLuminosity, float FullMoonLuminosity)
+{
+    return GetMoonLuminosityScale(PercentLatitude, PercentLongitude, Location, NewMoonLuminosity, FullMoonLuminosity);
 }
 
 FText UDateTimeSystemCore::GetNameOfMonth(UPARAM(ref) FDateTimeSystemStruct &DateStruct)
@@ -387,7 +401,7 @@ float UDateTimeSystemCore::GetLengthOfDay()
 
 FMatrix UDateTimeSystemCore::RotateMatrixByNorthing(const FMatrix &RotationMatrix, FVector NorthingDirection)
 {
-    auto NorthingRotation = NorthingDirection.ToOrientationRotator();
+    const auto NorthingRotation = NorthingDirection.ToOrientationRotator();
     return FRotationMatrix(NorthingRotation).GetTransposed() * RotationMatrix;
 }
 
@@ -426,13 +440,13 @@ bool UDateTimeSystemCore::AdvanceToClockTime(int Hour, int Minute, int Second, b
     FDateTimeSystemStruct Local{};
 
     // CLAMP
-    auto InternalHour = Hour % 24;
-    auto InternalMinute = Minute % 60;
-    auto InternalSecond = Second % 60;
+    const auto InternalHour = Hour % 24;
+    const auto InternalMinute = Minute % 60;
+    const auto InternalSecond = Second % 60;
 
     // Step one. Compute the second value of this
-    auto ClockTimeInSeconds = (InternalHour * 60 + InternalMinute) * 60 + InternalSecond;
-    auto TimeToTravel = ClockTimeInSeconds - InternalDate.Seconds;
+    const auto ClockTimeInSeconds = (InternalHour * 60 + InternalMinute) * 60 + InternalSecond;
+    const auto TimeToTravel = ClockTimeInSeconds - InternalDate.Seconds;
 
     // Step two. Have we already missed this clock time?
     // If we have, we'll get it tomorrow. Unless, we are really close to the wanted time.
@@ -472,9 +486,9 @@ float UDateTimeSystemCore::ComputeDeltaBetweenDatesYears(UPARAM(ref) FDateTimeSy
     FDateTimeSystemStruct Delta{};
     auto TupleResult = ComputeDeltaBetweenDatesInternal(Date1, Date2, Delta);
 
-    auto DeltaYears = TupleResult.Get<0>();
+    const auto DeltaYears = TupleResult.Get<0>();
 
-    auto FractionalYear = GetFractionalCalendarYear(Delta);
+    const auto FractionalYear = GetFractionalCalendarYear(Delta);
     auto FractionalMonth = GetFractionalMonth(Delta);
 
     return DeltaYears + FractionalYear;
@@ -486,9 +500,9 @@ float UDateTimeSystemCore::ComputeDeltaBetweenDatesMonths(UPARAM(ref) FDateTimeS
     FDateTimeSystemStruct Delta{};
     auto TupleResult = ComputeDeltaBetweenDatesInternal(Date1, Date2, Delta);
 
-    auto DeltaMonths = TupleResult.Get<1>();
+    const auto DeltaMonths = TupleResult.Get<1>();
 
-    auto FractionalMonth = GetFractionalMonth(Delta);
+    const auto FractionalMonth = GetFractionalMonth(Delta);
 
     return DeltaMonths + FractionalMonth;
 }
@@ -499,9 +513,9 @@ float UDateTimeSystemCore::ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSys
     FDateTimeSystemStruct Delta{};
     auto TupleResult = ComputeDeltaBetweenDatesInternal(Date1, Date2, Delta);
 
-    auto DeltaDays = TupleResult.Get<2>();
+    const auto DeltaDays = TupleResult.Get<2>();
 
-    auto FractionalDay = GetFractionalDay(Delta);
+    const auto FractionalDay = GetFractionalDay(Delta);
 
     return DeltaDays + FractionalDay;
 }
@@ -509,7 +523,7 @@ float UDateTimeSystemCore::ComputeDeltaBetweenDatesDays(UPARAM(ref) FDateTimeSys
 double UDateTimeSystemCore::ComputeDeltaBetweenDatesSeconds(UPARAM(ref) FDateTimeSystemStruct &Date1,
                                                             UPARAM(ref) FDateTimeSystemStruct &Date2)
 {
-    double Days = ComputeDeltaBetweenDatesDays(Date1, Date2);
+    const double Days = ComputeDeltaBetweenDatesDays(Date1, Date2);
 
     return Days * LengthOfDay;
 }
@@ -534,9 +548,9 @@ TTuple<float, float, float> UDateTimeSystemCore::ComputeDeltaBetweenDatesInterna
     for (int32 i = 0; i < Result.Month; ++i)
     {
         auto CurrentMonthDays = GetDaysInMonth((To.Month + i) % GetMonthsInYear(To.Year));
-        auto MonthDays = GetDaysInMonth((To.Month + i + 1) % GetMonthsInYear(To.Year));
+        const auto MonthDays = GetDaysInMonth((To.Month + i + 1) % GetMonthsInYear(To.Year));
 
-        auto ShortSkip = (To.Day + 1) - MonthDays;
+        const auto ShortSkip = (To.Day + 1) - MonthDays;
 
         if (ShortSkip > 0)
         {
@@ -550,8 +564,8 @@ TTuple<float, float, float> UDateTimeSystemCore::ComputeDeltaBetweenDatesInterna
     for (int32 i = 0; i < Result.Year; ++i)
     {
         auto CurrentYearDays = GetLengthOfCalendarYear(InternalDate.Year + i);
-        auto CurrentYearLeap = DoesYearLeap(InternalDate.Year + i);
-        auto NextYearLeap = DoesYearLeap(InternalDate.Year + i + 1);
+        const auto CurrentYearLeap = DoesYearLeap(InternalDate.Year + i);
+        const auto NextYearLeap = DoesYearLeap(InternalDate.Year + i + 1);
 
         // Hardcoded FebLeap hack
         if (InternalDate.Month > 1 && CurrentYearLeap)
@@ -580,9 +594,9 @@ void UDateTimeSystemCore::AddDateStruct(FDateTimeSystemStruct &DateStruct)
     for (int32 i = 0; i < DateStruct.Month; ++i)
     {
         auto CurrentMonthDays = GetDaysInMonth((InternalDate.Month + i) % GetMonthsInYear(InternalDate.Year));
-        auto MonthDays = GetDaysInMonth((InternalDate.Month + i + 1) % GetMonthsInYear(InternalDate.Year));
+        const auto MonthDays = GetDaysInMonth((InternalDate.Month + i + 1) % GetMonthsInYear(InternalDate.Year));
 
-        auto ShortSkip = (InternalDate.Day + 1) - MonthDays;
+        const auto ShortSkip = (InternalDate.Day + 1) - MonthDays;
 
         if (ShortSkip > 0)
         {
@@ -596,8 +610,8 @@ void UDateTimeSystemCore::AddDateStruct(FDateTimeSystemStruct &DateStruct)
     for (int32 i = 0; i < DateStruct.Year; ++i)
     {
         auto CurrentYearDays = GetLengthOfCalendarYear(InternalDate.Year + i);
-        auto CurrentYearLeap = DoesYearLeap(InternalDate.Year + i);
-        auto NextYearLeap = DoesYearLeap(InternalDate.Year + i + 1);
+        const auto CurrentYearLeap = DoesYearLeap(InternalDate.Year + i);
+        const auto NextYearLeap = DoesYearLeap(InternalDate.Year + i + 1);
 
         // Hardcoded FebLeap hack
         if (InternalDate.Month > 1 && CurrentYearLeap)
@@ -631,9 +645,41 @@ void UDateTimeSystemCore::AddDateStruct(FDateTimeSystemStruct &DateStruct)
     InternalTick(0, true);
 }
 
+float UDateTimeSystemCore::GetMoonApparentLuminosityScaleForLatLong_Implementation(double Latitude, double Longitude,
+    float NewMoonLuminosity, float FullMoonLuminosity)
+{
+    const auto LocalisedPercentLatitude = FMath::DegreesToRadians(Latitude) * INV_PI * 2;
+    const auto LocalisedPercentLongitude = FMath::DegreesToRadians(Longitude) * INV_PI;
+
+    return GetMoonLuminosityScale(LocalisedPercentLatitude, LocalisedPercentLongitude, FVector::ZeroVector,
+                                  NewMoonLuminosity, FullMoonLuminosity);
+}
+
+float UDateTimeSystemCore::GetMoonLuminosityScale(double PercLatitude, double PercLongitude, FVector Location,
+                                                  float NewMoonLuminosity, float FullMoonLuminosity)
+{
+    const auto Latitude = GetLatitudeFromLocation(PercLatitude, Location);
+    const auto Longitude = GetLongitudeFromLocation(PercLatitude, PercLongitude, Location);
+
+    // Observer to Sun
+    const auto SunVec = GetSunVector(Latitude, Longitude);
+
+    // Observer to the moon
+    const auto MoonVec = GetMoonVector(Latitude, Longitude);
+
+    // We care about the vector from the MoonToEarth (-MoonVec) and MoonToSun
+    // Given the moon is only 0.002569 au from earth, MoonToSun is approximately just the sun vector
+    const auto MoonToEarth = -MoonVec;
+    const auto MoonToSun = SunVec;
+
+    const auto BaseScalar = ((FVector::DotProduct(MoonToEarth, MoonToSun) + 1) * 0.5);
+
+    return BaseScalar * (FullMoonLuminosity - NewMoonLuminosity) + NewMoonLuminosity;
+}
+
 float UDateTimeSystemCore::GetFractionalDay(FDateTimeSystemStruct &DateStruct)
 {
-    float FracDay = (DateStruct.Seconds) * InvLengthOfDay;
+    const float FracDay = (DateStruct.Seconds) * InvLengthOfDay;
     return FracDay;
 }
 
@@ -646,9 +692,9 @@ float UDateTimeSystemCore::GetFractionalMonth(FDateTimeSystemStruct &DateStruct)
     {
         check(YearBook[DateStruct.Month]->NumberOfDays > 0);
 
-        auto FracDay = GetFractionalDay(DateStruct);
-        auto LeapMonth = InternalDoesLeap(DateStruct.Year) && YearBook[DateStruct.Month]->AffectedByLeap;
-        auto FracMonth = (DateStruct.Day + FracDay) / (YearBook[DateStruct.Month]->NumberOfDays + LeapMonth);
+        const auto FracDay = GetFractionalDay(DateStruct);
+        const auto LeapMonth = InternalDoesLeap(DateStruct.Year) && YearBook[DateStruct.Month]->AffectedByLeap;
+        const auto FracMonth = (DateStruct.Day + FracDay) / (YearBook[DateStruct.Month]->NumberOfDays + LeapMonth);
 
         return FracMonth;
     }
@@ -658,8 +704,8 @@ float UDateTimeSystemCore::GetFractionalMonth(FDateTimeSystemStruct &DateStruct)
 
 float UDateTimeSystemCore::GetFractionalOrbitalYear(FDateTimeSystemStruct &DateStruct)
 {
-    float FracDay = InternalDate.SolarDays - 1 + GetFractionalDay(DateStruct);
-    float FracYear = FracDay / DaysInOrbitalYear;
+    const float FracDay = InternalDate.SolarDays - 1 + GetFractionalDay(DateStruct);
+    const float FracYear = FracDay / DaysInOrbitalYear;
     return FMath::Frac(FracYear);
 }
 
@@ -678,8 +724,8 @@ float UDateTimeSystemCore::GetFractionalCalendarYear(FDateTimeSystemStruct &Date
             CumulativeDays += YearBook[i]->NumberOfDays;
         }
 
-        float FracDay = GetFractionalDay(DateStruct);
-        float FracYear = (CumulativeDays + FracDay) / GetLengthOfCalendarYear(DateStruct.Year);
+        const float FracDay = GetFractionalDay(DateStruct);
+        const float FracYear = (CumulativeDays + FracDay) / GetLengthOfCalendarYear(DateStruct.Year);
         return FracYear;
     }
 
@@ -694,16 +740,16 @@ int UDateTimeSystemCore::GetLengthOfCalendarYear(int Year)
 
 double UDateTimeSystemCore::GetJulianDay(FDateTimeSystemStruct &DateStruct)
 {
-    auto JulianSolarDays = 4716 * DaysInOrbitalYear + DateStruct.SolarDays;
-    auto JulianPartialDays = (InternalDate.StoredSolarSeconds - LengthOfDay) * InvLengthOfDay;
+    const auto JulianSolarDays = 4716 * DaysInOrbitalYear + DateStruct.SolarDays;
+    const auto JulianPartialDays = (InternalDate.StoredSolarSeconds - LengthOfDay) * InvLengthOfDay;
 
     return JulianSolarDays + JulianPartialDays - 0.5;
 }
 
 double UDateTimeSystemCore::GetSolarYears(FDateTimeSystemStruct &DateStruct)
 {
-    auto SolarDays = DateStruct.SolarDays + InternalDate.StoredSolarSeconds * InvLengthOfDay;
-    auto SolarYears = SolarDays / DaysInOrbitalYear;
+    const auto SolarDays = DateStruct.SolarDays + InternalDate.StoredSolarSeconds * InvLengthOfDay;
+    const auto SolarYears = SolarDays / DaysInOrbitalYear;
 
     return SolarYears;
 }
@@ -795,8 +841,8 @@ bool UDateTimeSystemCore::HandleDayRollover(FDateTimeSystemStruct &DateStruct)
 
 bool UDateTimeSystemCore::HandleMonthRollover(FDateTimeSystemStruct &DateStruct)
 {
-    auto SafeMonth = DateTimeHelpers::IntHelperMod(DateStruct.Month, GetMonthsInYear(DateStruct.Year));
-    auto DaysInMonth = GetDaysInMonth(SafeMonth);
+    const auto SafeMonth = DateTimeHelpers::IntHelperMod(DateStruct.Month, GetMonthsInYear(DateStruct.Year));
+    const auto DaysInMonth = GetDaysInMonth(SafeMonth);
 
     if (DateStruct.Day >= DaysInMonth)
     {
@@ -818,7 +864,7 @@ bool UDateTimeSystemCore::HandleMonthRollover(FDateTimeSystemStruct &DateStruct)
 
 bool UDateTimeSystemCore::HandleYearRollover(FDateTimeSystemStruct &DateStruct)
 {
-    auto MonthsInYear = GetMonthsInYear(DateStruct.Year);
+    const auto MonthsInYear = GetMonthsInYear(DateStruct.Year);
     if (DateStruct.Month >= MonthsInYear)
     {
         DateStruct.Month -= MonthsInYear;
@@ -864,7 +910,7 @@ bool UDateTimeSystemCore::SanitiseDateTime(FDateTimeSystemStruct &DateStruct)
 {
     DECLARE_SCOPE_CYCLE_COUNTER(TEXT("SanitiseDateTime"), STAT_ACISanitiseDateTime, STATGROUP_ACIDateTimeCommon);
 
-    auto DidRolloverDay = HandleDayRollover(DateStruct);
+    const auto DidRolloverDay = HandleDayRollover(DateStruct);
 
     // Loop externally to the month function
     // It's cleaner as we need yearbook for it
@@ -910,7 +956,7 @@ bool UDateTimeSystemCore::SanitiseSolarDateTime(FDateTimeSystemStruct &DateStruc
 
 float UDateTimeSystemCore::GetSolarFractionalDay()
 {
-    float FracDay = (InternalDate.StoredSolarSeconds - LengthOfDay * 0.5) * InvLengthOfDay;
+    const float FracDay = (InternalDate.StoredSolarSeconds - LengthOfDay * 0.5) * InvLengthOfDay;
     return FracDay;
 }
 
@@ -921,9 +967,9 @@ float UDateTimeSystemCore::GetSolarFractionalYear()
         return CachedSolarFractionalYear.Value;
     }
 
-    float FracDays =
+    const float FracDays =
         InternalDate.SolarDays - 1 + ((InternalDate.StoredSolarSeconds - LengthOfDay * 0.5) * InvLengthOfDay);
-    float YearInRadians = (TWO_PI / DaysInOrbitalYear) * (FracDays);
+    const float YearInRadians = (TWO_PI / DaysInOrbitalYear) * (FracDays);
 
     CachedSolarFractionalYear.Value = YearInRadians;
     CachedSolarFractionalYear.Valid = true;
@@ -941,9 +987,9 @@ float UDateTimeSystemCore::SolarDeclinationAngle(float YearInRadians)
         return CachedSolarDeclinationAngle.Value;
     }
 
-    float A1 = 0.006918 - 0.399912 * FMath::Cos(YearInRadians) + 0.070257 * FMath::Sin(YearInRadians) -
-               0.006758 * FMath::Cos(2 * YearInRadians) + 0.000907 * FMath::Sin(2 * YearInRadians) -
-               0.002697 * FMath::Cos(3 * YearInRadians) + 0.00148 * FMath::Sin(3 * YearInRadians);
+    const float A1 = 0.006918 - 0.399912 * FMath::Cos(YearInRadians) + 0.070257 * FMath::Sin(YearInRadians) -
+                     0.006758 * FMath::Cos(2 * YearInRadians) + 0.000907 * FMath::Sin(2 * YearInRadians) -
+                     0.002697 * FMath::Cos(3 * YearInRadians) + 0.00148 * FMath::Sin(3 * YearInRadians);
 
     CachedSolarDeclinationAngle.Valid = true;
     CachedSolarDeclinationAngle.Value = A1;
@@ -966,26 +1012,26 @@ TTuple<double, double, double> UDateTimeSystemCore::LunarDeclinationRightAscensi
 
     // Shortcut this
     // The US Govt. paper shows 0.00273... which is 1/365.25
-    auto T = GetSolarYears(InternalDate) * 0.01; // JCE
-    auto U = T * 0.01;
+    const auto T = GetSolarYears(InternalDate) * 0.01; // JCE
+    const auto U = T * 0.01;
 
     // Geocentric LatLong
-    double GeocentricLongDeg = 218.3164477 + 481'267.88123421 * T - 0.0015786 * T * T +
-                               1.855835023689734077399455498004e-6 * T * T * T -
-                               1.5338834862103874589686167438721e-8 * T * T * T * T;
+    const double GeocentricLongDeg = 218.3164477 + 481'267.88123421 * T - 0.0015786 * T * T +
+                                     1.855835023689734077399455498004e-6 * T * T * T -
+                                     1.5338834862103874589686167438721e-8 * T * T * T * T;
 
-    double GeocentricLatRad = 0.089535390624750 * FMath::Sin(1.62839219 + 8433.4662010464 * T) +
-                              0.004886921905444 * FMath::Sin(3.98284135293722 + 16762.15766910478 * T) -
-                              0.004886921905444 * FMath::Sin(5.555383008939 + 104.77473298810291 * T) -
-                              0.002967059728305 * FMath::Sin(3.797836452231 - 7109.2882137217735 * T);
+    const double GeocentricLatRad = 0.089535390624750 * FMath::Sin(1.62839219 + 8433.4662010464 * T) +
+                                    0.004886921905444 * FMath::Sin(3.98284135293722 + 16762.15766910478 * T) -
+                                    0.004886921905444 * FMath::Sin(5.555383008939 + 104.77473298810291 * T) -
+                                    0.002967059728305 * FMath::Sin(3.797836452231 - 7109.2882137217735 * T);
 
-    auto GeocentricLongRad = FMath::DegreesToRadians(GeocentricLongDeg);
+    const auto GeocentricLongRad = FMath::DegreesToRadians(GeocentricLongDeg);
 
     // Epsilon Term from U
-    auto EpsilonZeroArcSec = 84381.448 - 4680.93 * U - 1.55 * U * U + 1999.25 * U * U * U - 51.38 * U * U * U * U;
-    auto EpsilonZero = FMath::DegreesToRadians(EpsilonZeroArcSec / 3600);
+    const auto EpsilonZeroArcSec = 84381.448 - 4680.93 * U - 1.55 * U * U + 1999.25 * U * U * U - 51.38 * U * U * U * U;
+    const auto EpsilonZero = FMath::DegreesToRadians(EpsilonZeroArcSec / 3600);
 
-    auto GMST = 6.697374558 + 879'000.051336906897 * T + 0.000026 * T * T;
+    const auto GMST = 6.697374558 + 879'000.051336906897 * T + 0.000026 * T * T;
 
     auto MoonDeclination =
         FMath::Asin(FMath::Sin(GeocentricLatRad) * FMath::Cos(EpsilonZero) +
@@ -1010,22 +1056,22 @@ bool UDateTimeSystemCore::InternalDoesLeap(int Year)
     // Check Cache
     if (CachedDoesLeap.Valid)
     {
-        return bool(CachedDoesLeap.Value);
+        return static_cast<bool>(CachedDoesLeap.Value);
     }
 
     CachedDoesLeap.Value = DoesYearLeap(Year);
     CachedDoesLeap.Valid = true;
 
-    return bool(CachedDoesLeap.Value);
+    return static_cast<bool>(CachedDoesLeap.Value);
 }
 
 FRotator UDateTimeSystemCore::GetLocalisedSunRotation(float BaseLatitudePercent, float BaseLongitudePercent,
                                                       FVector Location)
 {
-    auto Lat = GetLatitudeFromLocation(BaseLatitudePercent, Location);
-    auto Long = GetLongitudeFromLocation(BaseLatitudePercent, BaseLongitudePercent, Location);
-    auto SunInverse = GetSunVector(Lat, Long);
-    FVector Flip = -SunInverse;
+    const auto Lat = GetLatitudeFromLocation(BaseLatitudePercent, Location);
+    const auto Long = GetLongitudeFromLocation(BaseLatitudePercent, BaseLongitudePercent, Location);
+    const auto SunInverse = GetSunVector(Lat, Long);
+    const FVector Flip = -SunInverse;
 
     return Flip.ToOrientationRotator();
 }
@@ -1033,10 +1079,10 @@ FRotator UDateTimeSystemCore::GetLocalisedSunRotation(float BaseLatitudePercent,
 FRotator UDateTimeSystemCore::GetLocalisedMoonRotation(float BaseLatitudePercent, float BaseLongitudePercent,
                                                        FVector Location)
 {
-    auto Lat = GetLatitudeFromLocation(BaseLatitudePercent, Location);
-    auto Long = GetLongitudeFromLocation(BaseLatitudePercent, BaseLongitudePercent, Location);
-    auto MoonInverse = GetMoonVector(Lat, Long);
-    FVector Flip = -MoonInverse;
+    const auto Lat = GetLatitudeFromLocation(BaseLatitudePercent, Location);
+    const auto Long = GetLongitudeFromLocation(BaseLatitudePercent, BaseLongitudePercent, Location);
+    const auto MoonInverse = GetMoonVector(Lat, Long);
+    const FVector Flip = -MoonInverse;
 
     return Flip.ToOrientationRotator();
 }
@@ -1051,7 +1097,7 @@ void UDateTimeSystemCore::InternalTick(float DeltaTime, bool NonContiguous)
     // Increment Time
     InternalDate.Seconds += DeltaTime;
     InternalDate.StoredSolarSeconds += DeltaTime;
-    auto DidRoll = SanitiseDateTime(InternalDate);
+    const auto DidRoll = SanitiseDateTime(InternalDate);
     SanitiseSolarDateTime(InternalDate);
 
     if (DidRoll || NonContiguous)
@@ -1068,10 +1114,10 @@ void UDateTimeSystemCore::InternalTick(float DeltaTime, bool NonContiguous)
         }
 
         // Check Override
-        auto Row = GetDateOverride(&InternalDate);
+        const auto Row = GetDateOverride(&InternalDate);
         if (Row)
         {
-            auto asPtr = *Row;
+            const auto asPtr = *Row;
 
             // We have an override.
             if (OverridedDatesSetDate)
@@ -1084,7 +1130,7 @@ void UDateTimeSystemCore::InternalTick(float DeltaTime, bool NonContiguous)
             }
             else
             {
-                auto LV = FDateTimeSystemStruct::CreateFromRow(asPtr);
+                const auto LV = FDateTimeSystemStruct::CreateFromRow(asPtr);
                 if (DateOverrideCallback.IsBound())
                 {
                     DateOverrideCallback.Broadcast(LV, asPtr->CallbackAttributes);
@@ -1136,8 +1182,8 @@ void UDateTimeSystemCore::InternalBegin(FDateTimeCommonCoreInitializer &CoreInit
     InvLengthOfDay = 1 / LengthOfDay;
     InvPlanetRadius = 1 / (PlanetRadius * 1000);
 
-    auto ReferenceLatitude = CoreInitializer.ReferenceLatitude;
-    auto ReferenceLongitude = CoreInitializer.ReferenceLongitude;
+    const auto ReferenceLatitude = CoreInitializer.ReferenceLatitude;
+    const auto ReferenceLongitude = CoreInitializer.ReferenceLongitude;
 
     PercentLatitude = FMath::DegreesToRadians(ReferenceLatitude) * INV_PI * 2;
     PercentLongitude = FMath::DegreesToRadians(ReferenceLongitude) * INV_PI;
@@ -1151,7 +1197,7 @@ void UDateTimeSystemCore::InternalBegin(FDateTimeCommonCoreInitializer &CoreInit
         CoreInitializer.YearbookTable->GetAllRows<FDateTimeSystemYearbookRow>(FString("Yearbook Rows"), LocalYearbook);
 
         LengthOfCalendarYearInDays = 0;
-        for (auto val : LocalYearbook)
+        for (const auto val : LocalYearbook)
         {
             LengthOfCalendarYearInDays += val->NumberOfDays;
 
@@ -1165,7 +1211,7 @@ void UDateTimeSystemCore::InternalBegin(FDateTimeCommonCoreInitializer &CoreInit
         CoreInitializer.DateOverridesTable->GetAllRows<FDateTimeSystemDateOverrideRow>(FString("Yearbook Rows"),
             LocalDOTemps);
 
-        for (auto val : LocalDOTemps)
+        for (const auto val : LocalDOTemps)
         {
             auto DateOverridePtr = DateTimeRowHelpers::CreateOverrideItemFromTableRow(val);
             if (UseDayIndexForOverride)
@@ -1196,8 +1242,8 @@ void UDateTimeSystemCore::InternalInitialise()
     // Cache Leap
     InternalDoesLeap(InternalDate.Year);
 
-    double Val = InternalDate.Year * DaysInOrbitalYear;
-    double Days = GetFractionalCalendarYear(InternalDate) * DaysInOrbitalYear;
+    const double Val = InternalDate.Year * DaysInOrbitalYear;
+    const double Days = GetFractionalCalendarYear(InternalDate) * DaysInOrbitalYear;
     InternalDate.SolarDays = FMath::TruncToInt(Val) + FMath::TruncToInt(Days);
     InternalDate.StoredSolarSeconds = (FMath::Fractional(Val) + FMath::Fractional(Days)) * LengthOfDay;
 }
@@ -1205,24 +1251,24 @@ void UDateTimeSystemCore::InternalInitialise()
 FVector UDateTimeSystemCore::AlignWorldLocationInternalCoordinates(FVector WorldLocation, FVector NorthingDirection)
 {
     // Internally, we use X northing, Y easting, and Z surface normal
-    auto InverseRotation = NorthingDirection.ToOrientationRotator().GetInverse();
+    const auto InverseRotation = NorthingDirection.ToOrientationRotator().GetInverse();
 
-    auto RetVal = FRotationMatrix(InverseRotation).TransformVector(WorldLocation);
+    const auto RetVal = FRotationMatrix(InverseRotation).TransformVector(WorldLocation);
 
     return FVector(RetVal);
 }
 
 FVector UDateTimeSystemCore::RotateLocationByNorthing(FVector Location, FVector NorthingDirection)
 {
-    auto NorthingRotation = NorthingDirection.ToOrientationRotator();
-    auto RetVal = FRotationMatrix(NorthingRotation).TransformVector(Location);
+    const auto NorthingRotation = NorthingDirection.ToOrientationRotator();
+    const auto RetVal = FRotationMatrix(NorthingRotation).TransformVector(Location);
 
     return FVector(RetVal);
 }
 
 FRotator UDateTimeSystemCore::RotateRotationByNorthing(FRotator Rotation, FVector NorthingDirection)
 {
-    auto NorthingRotation = NorthingDirection.ToOrientationRotator();
+    const auto NorthingRotation = NorthingDirection.ToOrientationRotator();
     return NorthingRotation + Rotation;
 }
 
@@ -1235,9 +1281,9 @@ float UDateTimeSystemCore::SolarTimeCorrection(float YearInRadians)
         return CachedSolarTimeCorrection.Value;
     }
 
-    float A1 = 0.000075 + 0.001868 * FMath::Cos(YearInRadians) - 0.032077 * FMath::Sin(YearInRadians) -
-               0.014615 * FMath::Cos(YearInRadians * 2) - 0.040849 * FMath::Sin(YearInRadians * 2);
-    float EQTime = 229.18f * A1;
+    const float A1 = 0.000075 + 0.001868 * FMath::Cos(YearInRadians) - 0.032077 * FMath::Sin(YearInRadians) -
+                     0.014615 * FMath::Cos(YearInRadians * 2) - 0.040849 * FMath::Sin(YearInRadians * 2);
+    const float EQTime = 229.18f * A1;
 
     CachedSolarTimeCorrection.Valid = true;
     CachedSolarTimeCorrection.Value = EQTime;
@@ -1247,19 +1293,19 @@ float UDateTimeSystemCore::SolarTimeCorrection(float YearInRadians)
 
 uint32 UDateTimeSystemCore::GetHashForDate(FDateTimeSystemStruct *DateStruct)
 {
-    auto DayHash = GetTypeHash(DateStruct->Day);
-    auto MonthHash = GetTypeHash(DateStruct->Month);
-    auto YearHash = GetTypeHash(DateStruct->Year);
-    auto Hash = HashCombine(YearHash, MonthHash);
+    const auto DayHash = GetTypeHash(DateStruct->Day);
+    const auto MonthHash = GetTypeHash(DateStruct->Month);
+    const auto YearHash = GetTypeHash(DateStruct->Year);
+    const auto Hash = HashCombine(YearHash, MonthHash);
     return HashCombine(Hash, DayHash);
 }
 
 uint32 UDateTimeSystemCore::GetHashForDate(UDateTimeSystemDateOverrideItem *DateStruct)
 {
-    auto DayHash = GetTypeHash(DateStruct->Day);
-    auto MonthHash = GetTypeHash(DateStruct->Month);
-    auto YearHash = GetTypeHash(DateStruct->Year);
-    auto Hash = HashCombine(YearHash, MonthHash);
+    const auto DayHash = GetTypeHash(DateStruct->Day);
+    const auto MonthHash = GetTypeHash(DateStruct->Month);
+    const auto YearHash = GetTypeHash(DateStruct->Year);
+    const auto Hash = HashCombine(YearHash, MonthHash);
     return HashCombine(Hash, DayHash);
 }
 

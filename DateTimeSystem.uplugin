@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
-	"Version": 10500,
-	"VersionName": "1.5.0",
+	"Version": 10601,
+	"VersionName": "1.6.1",
 	"FriendlyName": "Date and Time System",
 	"Description": "Date and Time System",
 	"Category": "Other",
@@ -10,7 +10,7 @@
 	"DocsURL": "https://acinonyx.nz/documentation-date-climate-root/",
 	"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/9c68a1bd8bdb4206976ef68de0ee49ef",
 	"SupportURL": "",
-	"EngineVersion" : "5.3.0",
+	"EngineVersion" : "5.4.0",
 	"CanContainContent": true,
 	"IsBetaVersion": false,
 	"IsExperimentalVersion": false,

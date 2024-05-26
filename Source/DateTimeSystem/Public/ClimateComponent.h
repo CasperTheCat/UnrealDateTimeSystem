@@ -2,13 +2,12 @@
 
 #pragma once
 
-#include "Components/ActorComponent.h"
 #include "CoreMinimal.h"
-#include "DateTimeSystem/Public/DateTimeTypes.h"
-#include "DateTimeSystemComponent.h"
 #include "DateTimeSystemDataRows.h"
 #include "GameplayTagContainer.h"
 #include "Interfaces.h"
+#include "Components/ActorComponent.h"
+#include "DateTimeSystem/Public/DateTimeTypes.h"
 
 #include "ClimateComponent.generated.h"
 
@@ -64,6 +63,12 @@ class DATETIMESYSTEM_API UClimateComponent : public UActorComponent
     GENERATED_BODY()
 
 private:
+    /**
+     * @brief Is the system initialised?
+     */
+    UPROPERTY()
+    bool IsInitialised;
+
     /**
      * @brief Tick rate when engine is ticking the component
      *
@@ -449,7 +454,7 @@ public:
 
     /**
      * @brief Lighter weight DateTime Update Callback
-     *
+     * Primarily used as a shortcut to binding to the DTS directly
      */
     UPROPERTY(BlueprintAssignable)
     FLocalDateTimeEvent LocalTimeUpdateSignal;
@@ -1266,4 +1271,19 @@ public:
      * @return FDateTimeClimateDataStruct
      */
     virtual void GetClimateDataByRef_Implementation(UPARAM(ref) FDateTimeClimateDataStruct &ClimateData);
+
+    /**
+     * 
+     * @param NewClimateTable The new table object
+     * @param ForceReinitialise Should we warn about initialisation or just force redo it
+     */
+    virtual void SetClimateTable(TObjectPtr<UDataTable> NewClimateTable, bool ForceReinitialise = false);
+
+    /**
+     * 
+     * @param NewClimateOverrideTable The new table object
+     * @param ForceReinitialise Should we warn about initialisation or just force redo it
+     */
+    virtual void SetClimateOverridesTable(TObjectPtr<UDataTable> NewClimateOverrideTable,
+                                          bool ForceReinitialise = false);
 };

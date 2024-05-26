@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "DateTimeSystemDataRows.h"
 #include "DateTimeTypes.h"
-#include "GameplayTagContainer.h"
 #include "Interfaces.h"
 #include "UObject/WeakInterfacePtr.h"
 
@@ -865,6 +864,54 @@ public:
      * @return FMatrix4x4
      */
     virtual FMatrix GetNightSkyRotation(double PercLatitude, double PercLongitude, FVector Location);
+
+
+    /**
+     * @brief Get the apparent lunar luminosity
+     * Used to modulate the moon light intensity
+     *
+     * @return float
+     */
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|Moon")
+    float GetMoonApparentLuminosityScale(float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
+
+    virtual float GetMoonApparentLuminosityScale_Implementation(float NewMoonLuminosity = 0.002,
+                                                                float FullMoonLuminosity = 0.15);
+
+    /**
+     * @brief Get the apparent lunar luminosity
+     * Used to modulate the moon light intensity
+     *
+     * @return float
+     */
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|Moon")
+    float GetMoonApparentLuminosityScaleForLocation(FVector Location, float NewMoonLuminosity = 0.002,
+                                                    float FullMoonLuminosity = 0.15);
+
+    virtual float GetMoonApparentLuminosityScaleForLocation_Implementation(
+        FVector Location, float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
+
+    /**
+     * @brief Get the apparent lunar luminosity
+     * Used to modulate the moon light intensity
+     *
+     * @return float
+     */
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Date and Time|Getters|Moon")
+    float GetMoonApparentLuminosityScaleForLatLong(double Latitude, double Longitude, float NewMoonLuminosity = 0.002,
+                                                   float FullMoonLuminosity = 0.15);
+
+    virtual float GetMoonApparentLuminosityScaleForLatLong_Implementation(
+        double Latitude, double Longitude, float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
+
+    /**
+     * @brief Get the apparent lunar luminosity
+     * Used to modulate the moon light intensity
+     *
+     * @return float
+     */
+    virtual float GetMoonLuminosityScale(double PercLatitude, double PercLongitude, FVector Location,
+                                         float NewMoonLuminosity = 0.002, float FullMoonLuminosity = 0.15);
 
     ///// ///// ////////// ///// /////
     // Getters

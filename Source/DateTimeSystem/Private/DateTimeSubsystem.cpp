@@ -1063,11 +1063,11 @@ void UDateTimeSystem::Initialize(FSubsystemCollectionBase &Collection)
 
     if (IsValid(CoreObject))
     {
-        auto LocalYearBookTableObj = Settings->YearBookTable.TryLoad();
-        auto LocalDateOverridesTableObj = Settings->DateOverridesTable.TryLoad();
+        const auto LocalYearBookTableObj = Settings->YearBookTable.TryLoad();
+        const auto LocalDateOverridesTableObj = Settings->DateOverridesTable.TryLoad();
 
-        auto LocalYearBookTable = Cast<UDataTable>(LocalYearBookTableObj);
-        auto LocalDateOverridesTable = Cast<UDataTable>(LocalDateOverridesTableObj);
+        const auto LocalYearBookTable = Cast<UDataTable>(LocalYearBookTableObj);
+        const auto LocalDateOverridesTable = Cast<UDataTable>(LocalDateOverridesTableObj);
 
         FDateTimeCommonCoreInitializer CoreInitializer{};
         CoreInitializer.LengthOfDay = Settings->LengthOfDay;
