@@ -317,7 +317,7 @@ public:
         return DateHash;
     }
 
-    FDateTime &GetDateTime()
+    FDateTime GetDateTime()
     {
         const auto _Hour = FMath::TruncToInt32(Seconds / 3600);
         const auto _Minute = FMath::TruncToInt32(DateTimeHelpers::HelperMod(Seconds, 3600) / 60);
@@ -326,7 +326,7 @@ public:
 
         auto UEDateTime = FDateTime(Year, Month + 1, Day + 1, _Hour, _Minute, _Seconds, Milli);
 
-        return UEDateTime;
+        return MoveTemp(UEDateTime);
     }
 };
 
